@@ -16,7 +16,7 @@ import { useSettings } from "@/contexts/settings-context";
 import { ThemeToggle } from "./theme-toggle";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useState } from "react";
-import { smartSessionRecommendation } from "@/ai/flows/smart-session-recommendation";
+// import { smartSessionRecommendation } from "@/ai/flows/smart-session-recommendation";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
 
@@ -32,50 +32,45 @@ export function SettingsSheet({ open, onOpenChange }: SettingsSheetProps) {
   const { toast } = useToast();
 
   const handleSmartRecommendation = async () => {
-    if (!aiTask.trim()) {
-      toast({
-        title: "Task is empty",
-        description: "Please enter a task to get a recommendation.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setIsRecommending(true);
-    try {
-      const hours = new Date().getHours();
-      const timeOfDay =
-        hours < 12 ? "Morning" :
-        hours < 18 ? "Afternoon" :
-        hours < 21 ? "Evening" : "Night";
-
-      const recommendation = await smartSessionRecommendation({
-        task: aiTask,
-        timeOfDay,
-      });
-
-      setSettings(prev => ({
-        ...prev,
-        focusDuration: recommendation.focusDuration,
-        shortRestDuration: recommendation.shortRestDuration,
-        longRestDuration: recommendation.longRestDuration,
-      }));
-
-      toast({
-        title: "AI Recommendation Applied",
-        description: "Your session durations have been updated.",
-      });
-
-    } catch (error) {
-      console.error("AI recommendation failed", error);
-      toast({
-        title: "Recommendation Failed",
-        description: "Could not get a recommendation. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsRecommending(false);
-    }
+    // if (!aiTask.trim()) {
+    //   toast({
+    //     title: "Task is empty",
+    //     description: "Please enter a task to get a recommendation.",
+    //     variant: "destructive",
+    //   });
+    //   return;
+    // }
+    // setIsRecommending(true);
+    // try {
+    //   const hours = new Date().getHours();
+    //   const timeOfDay =
+    //     hours < 12 ? "Morning" :
+    //     hours < 18 ? "Afternoon" :
+    //     hours < 21 ? "Evening" : "Night";
+    //   const recommendation = await smartSessionRecommendation({
+    //     task: aiTask,
+    //     timeOfDay,
+    //   });
+    //   setSettings(prev => ({
+    //     ...prev,
+    //     focusDuration: recommendation.focusDuration,
+    //     shortRestDuration: recommendation.shortRestDuration,
+    //     longRestDuration: recommendation.longRestDuration,
+    //   }));
+    //   toast({
+    //     title: "AI Recommendation Applied",
+    //     description: "Your session durations have been updated.",
+    //   });
+    // } catch (error) {
+    //   console.error("AI recommendation failed", error);
+    //   toast({
+    //     title: "Recommendation Failed",
+    //     description: "Could not get a recommendation. Please try again.",
+    //     variant: "destructive",
+    //   });
+    // } finally {
+    //   setIsRecommending(false);
+    // }
   };
 
   return (
@@ -128,6 +123,7 @@ export function SettingsSheet({ open, onOpenChange }: SettingsSheetProps) {
             </div>
           </div>
           
+          {/*
           <Card>
             <CardHeader>
               <CardTitle>Smart Recommendation</CardTitle>
@@ -145,6 +141,7 @@ export function SettingsSheet({ open, onOpenChange }: SettingsSheetProps) {
               </Button>
             </CardContent>
           </Card>
+          */}
 
           <div className="space-y-4">
             <h3 className="font-medium text-lg">General</h3>
