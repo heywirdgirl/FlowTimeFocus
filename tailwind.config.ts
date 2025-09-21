@@ -10,8 +10,8 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        body: ['Inter', 'sans-serif'],
-        headline: ['Inter', 'sans-serif'],
+        body: ['"PT Sans"', 'sans-serif'],
+        headline: ['"PT Sans"', 'sans-serif'],
         code: ['monospace'],
       },
       colors: {
@@ -64,6 +64,14 @@ export default {
           'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
           border: 'hsl(var(--sidebar-border))',
           ring: 'hsl(var(--sidebar-ring))',
+        },
+        'session-focus': {
+          bg: 'hsl(var(--session-focus-bg))',
+          'bg-dark': 'hsl(var(--session-focus-bg-dark))',
+        },
+        'session-rest': {
+          bg: 'hsl(var(--session-rest-bg))',
+          'bg-dark': 'hsl(var(--session-rest-bg-dark))',
         },
       },
       borderRadius: {
