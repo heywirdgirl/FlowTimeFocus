@@ -1,0 +1,84 @@
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Collection: users (document per userId)
+    match /users/{userId} {
+      // Chỉ owner đọc/ghi document chính (UserProfile)
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+      
+      // Subcollection: privateCycles (Cycle[])
+      match /privateCycles/{cycleId} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+      }
+      
+      // Subcollection: trainingHistory (TrainingHistory[])
+      match /trainingHistory/{historyId} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+        
+        // Validation: Đảm bảo dữ liệu hợp lệ
+        create: if request.resource.data.keys().hasAll(['cycleId', 'name', 'startTime', 'endTime', 'totalDuration', 'cycleCount', 'completedAt'])
+                 && request.resource.data.totalDuration is number && request.resource.data.totalDuration > 0
+                 && request.resource.data.cycleCount is number && request.resource.data.cycleCount >= 1;
+      }
+      
+      // Subcollection: audioLibrary (AudioAsset[])
+      match /audioLibrary/{assetId} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+        
+        // Validation: URL hợp lệ, size >= 0
+        create: if request.resource.data.keys().hasAll(['id', 'name', 'url', 'uploadedAt'])
+                 && request.resource.data.url is string && request.resource.data.size is number && request.resource.data.size >= 0;
+      }
+    }
+    
+    // Collection: cycleTemplates (CycleTemplate)
+    match /cycleTemplates/{templateId} {
+      // Đọc: Public nếu isPublic: true, hoặc owner
+      allow read: if resource.data.isPublic == true || 
+                     (request.auth != null && request.auth.uid == resource.data.authorId);
+      
+      // Ghi: Chỉ author, hoặc official
+      allow create: if request.auth != null && 
+                       (request.auth.uid == request.resource.data.authorId || 
+                        request.auth.token.isOfficial == true);
+      allow update, delete: if request.auth != null && 
+                               (request.auth.uid == resource.data.authorId || 
+                                request.auth.token.isOfficial == true);
+      
+      // Validation: Fields required, likes/shares >= 0
+      create: if request.resource.data.keys().hasAll(['id', 'name', 'description', 'phases', 'isPublic', 'authorId', 'authorName', 'likes', 'shares', 'createdAt', 'updatedAt'])
+               && request.resource.data.likes is number && request.resource.data.likes >= 0
+               && request.resource.data.shares is number && request.resource.data.shares >= 0
+               && request.resource.data.isPublic is bool;
+      update: if request.resource.data.keys().hasAll(['id', 'name', 'description', 'phases', 'isPublic', 'authorId', 'authorName', 'likes', 'shares', 'createdAt', 'updatedAt'])
+               && request.resource.data.likes is number && request.resource.data.likes >= 0
+               && request.resource.data.shares is number && request.resource.data.shares >= 0
+               && request.resource.data.isPublic is bool;
+    }
+    
+    // Collection: phaseTemplates (PhaseTemplate)
+    match /phaseTemplates/{templateId} {
+      // Đọc: Public nếu isPublic: true, hoặc owner
+      allow read: if resource.data.isPublic == true || 
+                     (request.auth != null && request.auth.uid == resource.data.createdBy);
+      
+      // Ghi: Chỉ creator, hoặc official
+      allow create: if request.auth != null && 
+                       (request.auth.uid == request.resource.data.createdBy || 
+                        request.auth.token.isOfficial == true);
+      allow update, delete: if request.auth != null && 
+                               (request.auth.uid == resource.data.createdBy || 
+                                request.auth.token.isOfficial == true);
+      
+      // Validation: Duration > 0, isPublic bool
+      create: if request.resource.data.keys().hasAll(['id', 'title', 'duration', 'description', 'soundFile', 'isPublic', 'createdBy', 'createdAt'])
+               && request.resource.data.duration is number && request.resource.data.duration > 0
+               && request.resource.data.isPublic is bool;
+      update: if request.resource.data.keys().hasAll(['id', 'title', 'duration', 'description', 'soundFile', 'isPublic', 'createdBy', 'createdAt'])
+               && request.resource.data.duration is number && request.resource.data.duration > 0
+               && request.resource.data.isPublic is bool;
+    }
+  }
+}
