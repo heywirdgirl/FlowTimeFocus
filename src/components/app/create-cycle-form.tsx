@@ -7,6 +7,10 @@ import * as z from "zod";
 import { Cycle, Phase } from "@/lib/types";
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent } from "@dnd-kit/core";
 import { SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from "@dnd-kit/sortable";
+import { collection, addDoc } from "firebase/firestore";
+import { db } from "@/lib/firebase";
+import { useToast } from "@/hooks/use-toast";
+
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -14,8 +18,8 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Plus, GripVertical } from "lucide-react";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage }from "@/components/ui/form";
+import { Plus, GripVertical, Loader2 } from "lucide-react";
 import { SortablePhaseCard } from "./sortable-phase-card";
 
 const phaseSchema = z.object({
@@ -45,6 +49,8 @@ const defaultPhase: Omit<Phase, 'id'> = {
 };
 
 export function CreateCycleForm() {
+  const [isSaving, setIsSaving] = useState(false);
+  const { toast } = useToast();
   const form = useForm<CycleFormData>({
     resolver: zodResolver(cycleSchema),
     defaultValues: {
@@ -76,10 +82,40 @@ export function CreateCycleForm() {
     }
   };
 
-  const onSubmit = (data: CycleFormData) => {
-    console.log("Form data:", data);
-    // Here you would call Firebase to save the data.
-    // E.g. addDoc(collection(db, 'cycleTemplates'), data);
+  const onSubmit = async (data: CycleFormData) => {
+    setIsSaving(true);
+    try {
+      const cycleData: Omit<Cycle, 'id'> = {
+        ...data,
+        authorId: "user_placeholder", // Replace with actual user ID from auth
+        authorName: "User Placeholder", // Replace with actual user name
+        likes: 0,
+        shares: 0,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        version: 1,
+      };
+
+      const docRef = await addDoc(collection(db, 'cycleTemplates'), cycleData);
+      console.log("Document written with ID: ", docRef.id);
+      
+      toast({
+        title: "Cycle Saved Successfully!",
+        description: `Your new cycle "${data.name}" has been saved.`,
+      });
+
+      form.reset();
+
+    } catch (error) {
+      console.error("Error adding document: ", error);
+      toast({
+        title: "Error Saving Cycle",
+        description: "There was a problem saving your cycle. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSaving(false);
+    }
   };
   
   return (
@@ -88,7 +124,7 @@ export function CreateCycleForm() {
         <Card>
           <CardHeader>
             <CardTitle>Create New Cycle</CardTitle>
-            <CardDescription>Version 1</CardDescription>
+            <CardDescription>Design and share your own focus and rest routines.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <FormField
@@ -164,12 +200,15 @@ export function CreateCycleForm() {
                  <div className="p-4 bg-muted rounded-lg">
                     <h4 className="font-medium">Total Duration: {form.watch('phases').reduce((acc, phase) => acc + (phase.duration || 0), 0).toFixed(1)} minutes</h4>
                     <p className="text-sm text-muted-foreground">
-                        {form.watch('phases').map(p => `${p.title} (${p.duration}m)`).join(' → ')}
+                        {form.watch('phases').map(p => `${p.title} (${p.duration || 0}m)`).join(' → ')}
                     </p>
                 </div>
                 <div className="flex gap-2">
                     <Button type="button" variant="secondary">Preview Timer</Button>
-                    <Button type="submit">Save Cycle</Button>
+                    <Button type="submit" disabled={isSaving}>
+                      {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                      Save Cycle
+                    </Button>
                 </div>
             </CardContent>
         </Card>
