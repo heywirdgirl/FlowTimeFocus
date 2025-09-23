@@ -3,7 +3,8 @@ export interface Phase {
   title: string;
   duration: number; // in minutes
   description: string;
-  soundFile: string | null;
+  soundFile: { url: string; name?: string; type?: string } | null;
+  removable?: boolean;
 }
 
 export interface Cycle {
@@ -11,13 +12,14 @@ export interface Cycle {
   name: string;
   description: string;
   phases: Phase[];
-  isPublic?: boolean;
-  authorId?: string;
-  authorName?: string;
-  likes?: number;
-  shares?: number;
+  isPublic: boolean;
+  authorId: string;
+  authorName: string;
+  likes: number;
+  shares: number;
   createdAt: string;
-  updatedAt?: string;
+  updatedAt: string;
+  version?: number;
 }
 
 export interface PhaseTemplate {
@@ -25,10 +27,11 @@ export interface PhaseTemplate {
   title: string;
   duration: number; // in minutes
   description: string;
-  soundFile: string | null;
+  soundFile: { url: string; name?: string; type?: string } | null;
   isPublic: boolean;
   createdBy: string;
   createdAt: string;
+  removable?: boolean;
 }
 
 export interface CycleTemplate {
@@ -43,6 +46,8 @@ export interface CycleTemplate {
   shares: number;
   createdAt: string;
   updatedAt: string;
+  version?: number;
+  isOfficial?: boolean;
 }
 
 export interface TrainingHistory {
@@ -53,6 +58,8 @@ export interface TrainingHistory {
   totalDuration: number; // in minutes
   cycleCount: number;
   completedAt: string;
+  status?: "completed" | "interrupted";
+  notes?: string;
 }
 
 export interface AudioAsset {
@@ -60,12 +67,18 @@ export interface AudioAsset {
     name: string;
     url: string;
     uploadedAt: string;
+    size?: number; // in bytes
+    type?: string; // MIME type
+    isPublic?: boolean;
 }
 
 export interface UserProfile {
   userId: string;
   email: string;
-  privateCycles: Cycle[];
-  trainingHistory: TrainingHistory[];
-  audioLibrary: AudioAsset[];
+  displayName?: string;
+  privateCycles: Cycle[]; // Consider subcollection for scalability
+  trainingHistory: TrainingHistory[]; // Consider subcollection for scalability
+  audioLibrary: AudioAsset[]; // Consider subcollection for scalability
+  createdAt: string;
+  lastLogin?: string;
 }
