@@ -2,10 +2,11 @@
 
 import { useTimer } from "@/contexts/timer-context";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { useSettings } from "@/contexts/settings-context";
-import { Play, Pause, RotateCcw, SkipForward } from "lucide-react";
+import { Play, Pause, RotateCcw, SkipForward, Volume2, VolumeX } from "lucide-react";
+import { useCycle } from "@/contexts/cycle-context";
 
 const formatTime = (seconds: number) => {
   const mins = Math.floor(seconds / 60);
@@ -14,41 +15,40 @@ const formatTime = (seconds: number) => {
 };
 
 export function TimerDisplay() {
-  const { timeLeft, isActive, sessionType, startPause, reset, skip } = useTimer();
-  const { settings } = useSettings();
+  const { timeLeft, isActive, startPause, reset, skip } = useTimer();
+  const { settings, setSettings } = useSettings();
+  const { currentCycle, currentPhaseIndex } = useCycle();
   
-  const getDuration = () => {
-    switch (sessionType) {
-      case 'focus': return settings.focusDuration * 60;
-      case 'shortRest': return settings.shortRestDuration * 60;
-      case 'longRest': return settings.longRestDuration * 60;
-      default: return 0;
-    }
-  };
+  const currentPhase = currentCycle?.phases[currentPhaseIndex];
+  const totalPhases = currentCycle?.phases.length ?? 0;
 
-  const totalDuration = getDuration();
+  const totalDuration = currentPhase ? currentPhase.duration * 60 : 0;
   const progress = totalDuration > 0 ? ((totalDuration - timeLeft) / totalDuration) * 100 : 0;
 
-  const sessionTitles = {
-    focus: "Focus",
-    shortRest: "Short Break",
-    longRest: "Long Break",
+  const toggleSound = () => {
+    setSettings(s => ({ ...s, playSounds: !s.playSounds }));
   };
 
   return (
     <Card className="w-full text-center border-2 shadow-lg">
       <CardHeader>
-        <CardTitle className="text-3xl font-headline tracking-wider text-muted-foreground">
-          {sessionTitles[sessionType]}
+         <CardTitle className="text-3xl font-headline tracking-wider text-muted-foreground">
+          {currentPhase?.title ?? "Ready?"}
         </CardTitle>
+        <CardDescription>
+          {totalPhases > 0 && `Phase ${currentPhaseIndex + 1}/${totalPhases}`}
+        </CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col items-center justify-center">
         <div className="relative font-mono text-8xl md:text-9xl font-bold tracking-tighter text-foreground tabular-nums mb-4">
           {formatTime(timeLeft)}
         </div>
         <Progress value={progress} className="w-full h-3" />
+        <div className="mt-4 text-center text-muted-foreground min-h-[40px] px-6">
+          <p>{currentPhase?.description}</p>
+        </div>
       </CardContent>
-      <CardFooter className="flex justify-center gap-4">
+      <CardFooter className="flex justify-center items-center gap-4">
         <Button onClick={reset} variant="outline" size="icon" className="h-14 w-14 rounded-full">
           <RotateCcw />
           <span className="sr-only">Reset</span>
@@ -62,6 +62,12 @@ export function TimerDisplay() {
           <span className="sr-only">Skip</span>
         </Button>
       </CardFooter>
+      <div className="absolute top-4 right-4">
+         <Button onClick={toggleSound} variant="ghost" size="icon">
+          {settings.playSounds ? <Volume2 /> : <VolumeX />}
+          <span className="sr-only">Toggle Sound</span>
+        </Button>
+      </div>
     </Card>
   );
 }

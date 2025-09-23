@@ -4,14 +4,11 @@ import React, { createContext, useContext, useState, useEffect, useRef, useCallb
 import type { FC, ReactNode } from 'react';
 import { useSettings } from './settings-context';
 import type * as Tone from 'tone';
-
-type SessionType = 'focus' | 'shortRest' | 'longRest';
+import { useCycle } from './cycle-context';
 
 interface TimerContextType {
-  sessionType: SessionType;
   timeLeft: number;
   isActive: boolean;
-  sessionsCompleted: number;
   startPause: () => void;
   reset: () => void;
   skip: () => void;
@@ -29,22 +26,17 @@ export const useTimer = () => {
 
 export const TimerProvider: FC<{ children: ReactNode }> = ({ children }) => {
   const { settings } = useSettings();
-  const [sessionType, setSessionType] = useState<SessionType>('focus');
-  const [sessionsCompleted, setSessionsCompleted] = useState(0);
+  const { currentCycle, currentPhaseIndex, advancePhase, resetCycle } = useCycle();
   const [isActive, setIsActive] = useState(false);
 
-  const getDuration = useCallback((type: SessionType = sessionType) => {
-    switch (type) {
-      case 'focus':
-        return settings.focusDuration * 60;
-      case 'shortRest':
-        return settings.shortRestDuration * 60;
-      case 'longRest':
-        return settings.longRestDuration * 60;
+  const getDuration = useCallback(() => {
+    if (currentCycle && currentCycle.phases[currentPhaseIndex]) {
+      return currentCycle.phases[currentPhaseIndex].duration * 60;
     }
-  }, [settings, sessionType]);
+    return 0;
+  }, [currentCycle, currentPhaseIndex]);
 
-  const [timeLeft, setTimeLeft] = useState(getDuration('focus'));
+  const [timeLeft, setTimeLeft] = useState(getDuration());
 
   const synth = useRef<Tone.Synth | null>(null);
 
@@ -59,28 +51,13 @@ export const TimerProvider: FC<{ children: ReactNode }> = ({ children }) => {
       synth.current.triggerAttackRelease(note, "8n");
     }
   };
-
-  const advanceSession = useCallback(() => {
+  
+  const handleSessionEnd = useCallback(() => {
     setIsActive(false);
-    let nextSessionType: SessionType = 'focus';
-    let nextSessionsCompleted = sessionsCompleted;
-
-    if (sessionType === 'focus') {
-        nextSessionsCompleted++;
-        if (nextSessionsCompleted > 0 && nextSessionsCompleted % settings.sessionsUntilLongRest === 0) {
-            nextSessionType = 'longRest';
-        } else {
-            nextSessionType = 'shortRest';
-        }
-        playSound('C5');
-    } else {
-        playSound('G4');
-    }
-
-    setSessionType(nextSessionType);
-    setSessionsCompleted(nextSessionsCompleted);
-    setTimeLeft(getDuration(nextSessionType));
-  }, [sessionType, sessionsCompleted, settings.sessionsUntilLongRest, getDuration]);
+    playSound('C5'); // Sound for phase end
+    // Here you would record the TrainingHistory
+    advancePhase();
+  }, [playSound, advancePhase]);
 
 
   useEffect(() => {
@@ -90,23 +67,23 @@ export const TimerProvider: FC<{ children: ReactNode }> = ({ children }) => {
         setTimeLeft((prevTime) => prevTime - 1);
       }, 1000);
     } else if (isActive && timeLeft === 0) {
-      advanceSession();
+      handleSessionEnd();
     }
     return () => {
       if (interval) clearInterval(interval);
     };
-  }, [isActive, timeLeft, advanceSession]);
+  }, [isActive, timeLeft, handleSessionEnd]);
 
   useEffect(() => {
-    // Reset timer when durations change
-    if (!isActive) {
-      setTimeLeft(getDuration(sessionType));
-    }
-  }, [settings, sessionType, isActive, getDuration]);
+    // Reset timer when phase changes
+    setTimeLeft(getDuration());
+    // if (!isActive) {
+    // }
+  }, [currentPhaseIndex, currentCycle, getDuration]);
 
   const startPause = () => {
     if (timeLeft === 0) {
-      advanceSession();
+      handleSessionEnd();
       setTimeout(() => setIsActive(true), 100);
     } else {
       setIsActive(!isActive);
@@ -115,17 +92,24 @@ export const TimerProvider: FC<{ children: ReactNode }> = ({ children }) => {
 
   const reset = () => {
     setIsActive(false);
-    setSessionType('focus');
-    setSessionsCompleted(0);
-    setTimeLeft(getDuration('focus'));
+    resetCycle();
+    setTimeLeft(getDuration());
   };
 
   const skip = () => {
-    advanceSession();
+    handleSessionEnd();
   };
 
+  const value = {
+    timeLeft,
+    isActive,
+    startPause,
+    reset,
+    skip
+  }
+
   return (
-    <TimerContext.Provider value={{ sessionType, timeLeft, isActive, sessionsCompleted, startPause, reset, skip }}>
+    <TimerContext.Provider value={value}>
       {children}
     </TimerContext.Provider>
   );

@@ -34,19 +34,7 @@ export interface PhaseTemplate {
   removable?: boolean;
 }
 
-export interface CycleTemplate {
-  id: string;
-  name: string;
-  description: string;
-  phases: Phase[];
-  isPublic: boolean;
-  authorId: string;
-  authorName: string;
-  likes: number;
-  shares: number;
-  createdAt: string;
-  updatedAt: string;
-  version?: number;
+export interface CycleTemplate extends Omit<Cycle, 'isPublic' | 'authorId' | 'authorName' | 'likes' | 'shares'> {
   isOfficial?: boolean;
 }
 
