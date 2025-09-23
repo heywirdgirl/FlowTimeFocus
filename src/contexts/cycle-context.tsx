@@ -1,6 +1,6 @@
 "use client";
 
-import { Cycle, Phase, TrainingHistory } from "@/lib/types";
+import { Cycle, Phase, TrainingHistory, AudioAsset } from "@/lib/types";
 import React, { createContext, useContext, useState, ReactNode, useMemo } from "react";
 
 // Mock data based on your types
@@ -69,6 +69,21 @@ const mockTrainingHistory: TrainingHistory[] = [
     }
 ]
 
+const mockAudioLibrary: AudioAsset[] = [
+    {
+        id: "audio_1",
+        name: "rain.mp3",
+        url: "/sounds/rain.mp3",
+        uploadedAt: "2025-09-22T23:00:00Z"
+    },
+    {
+        id: "audio_2",
+        name: "singing-bowl.mp3",
+        url: "/sounds/singing-bowl.mp3",
+        uploadedAt: "2025-09-22T23:00:00Z"
+    }
+]
+
 
 interface CycleContextType {
   privateCycles: Cycle[];
@@ -76,6 +91,7 @@ interface CycleContextType {
   currentPhaseIndex: number;
   currentPhase: Phase | null;
   trainingHistory: TrainingHistory[];
+  audioLibrary: AudioAsset[];
   setCurrentCycle: (cycle: Cycle) => void;
   advancePhase: () => void;
   resetCycle: () => void;
@@ -96,6 +112,7 @@ export function CycleProvider({ children }: { children: ReactNode }) {
   const [currentCycle, setCurrentCycleState] = useState<Cycle | null>(privateCycles[0] || null);
   const [currentPhaseIndex, setCurrentPhaseIndex] = useState(0);
   const [trainingHistory, setTrainingHistory] = useState<TrainingHistory[]>(mockTrainingHistory);
+  const [audioLibrary] = useState<AudioAsset[]>(mockAudioLibrary);
 
   const setCurrentCycle = (cycle: Cycle) => {
     setCurrentCycleState(cycle);
@@ -131,6 +148,7 @@ export function CycleProvider({ children }: { children: ReactNode }) {
     currentPhaseIndex,
     currentPhase,
     trainingHistory,
+    audioLibrary,
     setCurrentCycle,
     advancePhase,
     resetCycle,
