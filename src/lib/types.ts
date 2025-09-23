@@ -29,7 +29,8 @@ export interface PhaseTemplate {
   description: string;
   soundFile: { url: string; name?: string; type?: string } | null;
   isPublic: boolean;
-  createdBy: string;
+  authorId: string;  // Thay createdBy
+  authorName?: string;  // Thêm cho nhất quán
   createdAt: string;
   removable?: boolean;
 }
@@ -38,7 +39,7 @@ export interface CycleTemplate {
   id: string;
   name: string;
   description: string;
-  phases: Phase[];
+  phases: PhaseTemplate[];  // Sửa từ Phase[]
   isPublic: boolean;
   authorId: string;
   authorName: string;
