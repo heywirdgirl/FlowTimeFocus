@@ -31,8 +31,15 @@ export function Homepage() {
   return (
     <div className={cn("min-h-screen w-full transition-colors duration-1000 flex flex-col", sessionTypeClass())}>
       <Header />
-      <main className="flex-grow container mx-auto max-w-4xl px-4 py-8 md:py-12 flex flex-col justify-center">
-        <TimerDisplay />
+      <main className="flex-grow container mx-auto max-w-4xl px-4 py-8 md:py-12">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="md:col-span-1">
+                <CycleList />
+            </div>
+            <div className="md:col-span-2 flex flex-col items-center gap-8">
+                <TimerDisplay />
+            </div>
+        </div>
       </main>
       <Footer />
     </div>
