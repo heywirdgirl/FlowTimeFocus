@@ -93,6 +93,7 @@ interface CycleContextType {
   trainingHistory: TrainingHistory[];
   audioLibrary: AudioAsset[];
   setCurrentCycle: (cycle: Cycle) => void;
+  setCurrentPhaseIndex: (index: number) => void;
   advancePhase: () => void;
   resetCycle: () => void;
   updateCycle: (updates: Partial<Cycle>) => void;
@@ -193,6 +194,7 @@ export function CycleProvider({ children }: { children: ReactNode }) {
     trainingHistory,
     audioLibrary,
     setCurrentCycle,
+    setCurrentPhaseIndex,
     advancePhase,
     resetCycle,
     updateCycle,

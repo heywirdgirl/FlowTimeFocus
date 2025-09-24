@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useState } from "react";
 import { useSettings } from "@/contexts/settings-context";
+import { cn } from "@/lib/utils";
 
 const formatTime = (seconds: number) => {
   const mins = Math.floor(seconds / 60);
@@ -18,7 +19,7 @@ const formatTime = (seconds: number) => {
 
 export function TimerDisplay() {
   const { timeLeft, isActive, cyclesCompleted, startPause, reset, skip } = useTimer();
-  const { currentCycle, currentPhaseIndex, updateCycle, updatePhase, addPhaseAfter, deletePhase } = useCycle();
+  const { currentCycle, currentPhaseIndex, updateCycle, updatePhase, addPhaseAfter, deletePhase, setCurrentPhaseIndex } = useCycle();
   const { settings } = useSettings();
 
   const [isEditingCycle, setIsEditingCycle] = useState(false);
@@ -139,7 +140,7 @@ export function TimerDisplay() {
           </div>
         </div>
 
-        <div className="mt-6 text-center min-h-[84px] w-full">
+        <div className="mt-6 text-center min-h-[60px] w-full">
            {isEditingPhase ? (
              <div className="flex flex-col gap-2 items-center">
                <div className="flex gap-2">
@@ -156,24 +157,11 @@ export function TimerDisplay() {
                <Button size="sm" onClick={handleDoneEditingPhaseClick}>Done</Button>
              </div>
            ) : (
-             <div className="flex items-center justify-center gap-2">
-                <p className="text-xl text-muted-foreground">{currentPhase.title}</p>
-                <Button variant="ghost" size="icon" onClick={handleEditPhaseClick}>
-                    <Edit className="h-4 w-4" />
-                </Button>
-             </div>
+            <>
+              <p className="text-xl text-muted-foreground">{currentPhase.title}</p>
+              <p className="text-sm text-muted-foreground">{currentPhase.description}</p>
+            </>
            )}
-           <p className="text-sm text-muted-foreground">{currentPhase.description}</p>
-        </div>
-         <div className="flex gap-2 mt-2">
-            <Button variant="outline" size="sm" onClick={() => addPhaseAfter(currentPhase.id)}>
-                <Plus className="mr-1 h-4 w-4" /> Add Phase
-            </Button>
-            {totalPhases > 1 && (
-                <Button variant="destructive" size="sm" onClick={() => deletePhase(currentPhase.id)}>
-                    <Trash2 className="mr-1 h-4 w-4" /> Delete Phase
-                </Button>
-            )}
         </div>
       </CardContent>
 
@@ -192,8 +180,38 @@ export function TimerDisplay() {
                 <span className="sr-only">Skip</span>
             </Button>
         </div>
+
+        <div className="w-full space-y-4">
+          <div className="flex flex-wrap items-center justify-center gap-2">
+              {currentCycle.phases.map((phase, index) => (
+                  <Button 
+                      key={phase.id}
+                      variant={index === currentPhaseIndex ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => setCurrentPhaseIndex(index)}
+                      className={cn("h-auto py-1 px-3", index === currentPhaseIndex && "shadow-md")}
+                  >
+                      {phase.title} ({phase.duration}m)
+                  </Button>
+              ))}
+          </div>
+          <div className="flex justify-center items-center gap-2">
+              <Button variant="ghost" size="icon" onClick={handleEditPhaseClick} title="Edit Current Phase">
+                  <Edit className="h-4 w-4" />
+              </Button>
+              <Button variant="ghost" size="icon" onClick={() => addPhaseAfter(currentPhase.id)} title="Add Phase After Current">
+                  <Plus className="h-4 w-4" />
+              </Button>
+              {totalPhases > 1 && (
+                  <Button variant="ghost" size="icon" onClick={() => deletePhase(currentPhase.id)} title="Delete Current Phase" className="text-destructive hover:text-destructive">
+                      <Trash2 className="h-4 w-4" />
+                  </Button>
+              )}
+          </div>
+        </div>
+
         <div className="text-sm text-muted-foreground">
-            Phase {currentPhaseIndex + 1}/{totalPhases} | Cycle {cyclesCompleted + 1}/{settings.sessionsUntilLongRest > 0 ? settings.sessionsUntilLongRest : '∞'} | Total: {totalDuration.toFixed(1)}m
+            Cycle {cyclesCompleted + 1}/{settings.sessionsUntilLongRest > 0 ? settings.sessionsUntilLongRest : '∞'} | Total: {totalDuration.toFixed(1)}m
         </div>
       </CardFooter>
     </Card>
