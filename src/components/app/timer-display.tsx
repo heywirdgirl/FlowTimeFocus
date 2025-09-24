@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useTimer } from "@/contexts/timer-context";
@@ -55,6 +56,7 @@ export function TimerDisplay() {
   const handlePhaseDurationInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setPhaseDurationInput(value);
+    // Only update the actual duration if it's a valid number
     const duration = parseFloat(value);
     if (!isNaN(duration) && duration >= 0.1) {
         updatePhase(currentPhase.id, { duration });
@@ -146,7 +148,14 @@ export function TimerDisplay() {
                <div className="flex gap-2">
                 <Input value={currentPhase.title} onChange={handlePhaseTitleChange} className="text-center"/>
                 <div className="w-32">
-                    <Input type="number" value={phaseDurationInput} onChange={handlePhaseDurationInputChange} className="w-full text-center"/>
+                    <Input 
+                      type="number" 
+                      value={phaseDurationInput} 
+                      onChange={handlePhaseDurationInputChange} 
+                      className="w-full text-center"
+                      min="0.1"
+                      step="0.1"
+                    />
                     {!isPhaseDurationValid && (
                         <p className="text-xs text-destructive mt-1">
                             Số phút phải lớn hơn hoặc bằng 0.1
@@ -182,16 +191,17 @@ export function TimerDisplay() {
         </div>
 
         <div className="w-full space-y-4">
-          <div className="flex flex-wrap items-center justify-center gap-2">
+          <div className="flex flex-col items-center justify-center gap-2 w-full max-w-sm mx-auto">
               {currentCycle.phases.map((phase, index) => (
                   <Button 
                       key={phase.id}
                       variant={index === currentPhaseIndex ? "default" : "outline"}
                       size="sm"
                       onClick={() => setCurrentPhaseIndex(index)}
-                      className={cn("h-auto py-1 px-3", index === currentPhaseIndex && "shadow-md")}
+                      className={cn("h-auto py-2 px-4 w-full justify-between", index === currentPhaseIndex && "shadow-md")}
                   >
-                      {phase.title} ({phase.duration}m)
+                      <span>{phase.title}</span>
+                      <span>{phase.duration}m</span>
                   </Button>
               ))}
           </div>
@@ -217,3 +227,5 @@ export function TimerDisplay() {
     </Card>
   );
 }
+
+    
