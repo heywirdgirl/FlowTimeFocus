@@ -30,16 +30,16 @@ export const useTimer = () => {
 
 export const TimerProvider: FC<{ children: ReactNode }> = ({ children }) => {
   const { settings } = useSettings();
-  const { currentCycle, currentPhaseIndex, advancePhase, resetCycle, logTraining, setCurrentPhaseIndex, currentPhase, audioLibrary } = useCycle();
+  const { currentCycle, currentPhaseIndex, advancePhase, resetCycle, logTraining, setCurrentPhaseIndex, currentPhase } = useCycle();
+  
   const [isActive, setIsActive] = useState(false);
   const [cyclesCompleted, setCyclesCompleted] = useState(0);
-
   const [sessionPhaseRecords, setSessionPhaseRecords] = useState<PhaseRecord[]>([]);
 
   const getDuration = useCallback(() => {
-    if (currentCycle && currentCycle.phases[currentPhaseIndex]) {
-        const duration = currentCycle.phases[currentPhaseIndex].duration;
-        return duration > 0 ? duration * 60 : 0;
+    if (currentCycle && currentPhaseIndex < currentCycle.phases.length) {
+      const duration = currentCycle.phases[currentPhaseIndex].duration;
+      return duration > 0 ? duration * 60 : 0;
     }
     return 0;
   }, [currentCycle, currentPhaseIndex]);
@@ -48,31 +48,33 @@ export const TimerProvider: FC<{ children: ReactNode }> = ({ children }) => {
 
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const sessionsUntilLongRestRef = useRef(5);
+  const soundRef = useRef<Howl | null>(null);
 
   const playSound = useCallback(() => {
     if (!settings.playSounds) return;
-
-    const soundUrl = currentPhase?.soundFile?.url || audioLibrary.find(a => a.name.includes('singing-bowl'))?.url;
+    
+    const soundUrl = currentPhase?.soundFile?.url || "/sounds/singing-bowl.mp3";
     
     if (soundUrl) {
-      const sound = new Howl({
+      if (soundRef.current) {
+        soundRef.current.stop();
+      }
+      soundRef.current = new Howl({
         src: [soundUrl],
-        html5: true, // Important for avoiding issues in some browsers
+        html5: true,
       });
-      sound.play();
+      soundRef.current.play();
     }
-  }, [settings.playSounds, currentPhase, audioLibrary]);
+  }, [settings.playSounds, currentPhase]);
   
-
+  // Main timer loop
   useEffect(() => {
     if (isActive && timeLeft > 0) {
       intervalRef.current = setInterval(() => {
         setTimeLeft((prevTime) => prevTime - 1);
       }, 1000);
     } else if (isActive && timeLeft <= 0) {
-      // Session ended automatically
-      playSound();
-      
+      // Phase ended automatically
       if (currentPhase) {
         setSessionPhaseRecords(prev => [...prev, {
           title: currentPhase.title,
@@ -80,6 +82,8 @@ export const TimerProvider: FC<{ children: ReactNode }> = ({ children }) => {
           completionStatus: 'completed',
         }]);
       }
+      
+      playSound();
       
       const nextPhaseIndex = advancePhase();
 
@@ -116,18 +120,16 @@ export const TimerProvider: FC<{ children: ReactNode }> = ({ children }) => {
     };
   }, [isActive, timeLeft, currentCycle, currentPhase, cyclesCompleted, sessionPhaseRecords, advancePhase, logTraining, playSound, setCurrentPhaseIndex]);
 
+  // Reset timer value when phase changes
   useEffect(() => {
-    // Reset timer when phase changes, but only if timer is not active.
-    // If it's active, the main useEffect will handle time updates.
     setTimeLeft(getDuration());
   }, [currentPhaseIndex, getDuration]);
 
+  // Full reset when cycle is changed
   useEffect(() => {
-    // This effect resets the entire timer state when the cycle itself is changed by the user.
     reset();
-  }, [currentCycle, getDuration]);
-  
-  
+  }, [currentCycle]);
+
   const startPause = (sessionsUntilLongRest: number) => {
     sessionsUntilLongRestRef.current = sessionsUntilLongRest;
     if (cyclesCompleted >= sessionsUntilLongRest && sessionsUntilLongRest > 0) {
@@ -147,7 +149,6 @@ export const TimerProvider: FC<{ children: ReactNode }> = ({ children }) => {
       clearInterval(intervalRef.current);
     }
   }, [getDuration, resetCycle]);
-
 
   const handleSkip = useCallback(() => {
     if (currentPhase) {
@@ -184,9 +185,10 @@ export const TimerProvider: FC<{ children: ReactNode }> = ({ children }) => {
 
       if (sessionsUntilLongRestRef.current > 0 && newCyclesCompleted >= sessionsUntilLongRestRef.current) {
           setIsActive(false);
-          return;
+          return true; // Indicate that the timer should stop
       }
     }
+    return false; // Indicate that the timer should continue
   }, [playSound, advancePhase, currentCycle, cyclesCompleted, logTraining, currentPhase, sessionPhaseRecords, setCurrentPhaseIndex]);
 
 
@@ -195,12 +197,16 @@ export const TimerProvider: FC<{ children: ReactNode }> = ({ children }) => {
     setIsActive(false); // Stop the timer when skipping
     if (intervalRef.current) clearInterval(intervalRef.current);
     
-    handleSkip();
-    
-    // Set timer to next phase duration, but don't start it.
-    const nextIndex = currentCycle ? (currentPhaseIndex + 1) % currentCycle.phases.length : 0;
-    const nextPhaseDuration = currentCycle?.phases[nextIndex]?.duration ?? 0;
-    setTimeLeft(nextPhaseDuration * 60);
+    const shouldStop = handleSkip();
+
+    if (shouldStop) {
+      setTimeLeft(getDuration());
+    } else {
+      // Set timer to next phase duration, but don't start it.
+      const nextIndex = currentCycle ? (currentPhaseIndex + 1) % currentCycle.phases.length : 0;
+      const nextPhaseDuration = currentCycle?.phases[nextIndex]?.duration ?? 0;
+      setTimeLeft(nextPhaseDuration * 60);
+    }
   };
 
   const value = {

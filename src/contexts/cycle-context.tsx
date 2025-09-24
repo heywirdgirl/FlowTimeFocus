@@ -9,14 +9,14 @@ const pomodoroCycle: Cycle = {
     id: "cycle_pomodoro",
     name: "Pomodoro Classic",
     phases: [
-      { id: "p1", title: "Focus", duration: 25, soundFile: null, removable: false },
-      { id: "p2", title: "Break", duration: 5, soundFile: null, removable: false },
-      { id: "p3", title: "Focus", duration: 25, soundFile: null, removable: false },
-      { id: "p4", title: "Break", duration: 5, soundFile: null, removable: false },
-      { id: "p5", title: "Focus", duration: 25, soundFile: null, removable: false },
-      { id: "p6", title: "Break", duration: 5, soundFile: null, removable: false },
-      { id: "p7", title: "Focus", duration: 25, soundFile: null, removable: false },
-      { id: "p8", title: "Long Break", duration: 15, soundFile: null, removable: false },
+      { id: "p1", title: "Focus", duration: 25, soundFile: { url: "/sounds/singing-bowl.mp3", name: "singing-bowl.mp3"}, removable: false },
+      { id: "p2", title: "Break", duration: 5, soundFile: { url: "/sounds/singing-bowl.mp3", name: "singing-bowl.mp3"}, removable: false },
+      { id: "p3", title: "Focus", duration: 25, soundFile: { url: "/sounds/singing-bowl.mp3", name: "singing-bowl.mp3"}, removable: false },
+      { id: "p4", title: "Break", duration: 5, soundFile: { url: "/sounds/singing-bowl.mp3", name: "singing-bowl.mp3"}, removable: false },
+      { id: "p5", title: "Focus", duration: 25, soundFile: { url: "/sounds/singing-bowl.mp3", name: "singing-bowl.mp3"}, removable: false },
+      { id: "p6", title: "Break", duration: 5, soundFile: { url: "/sounds/singing-bowl.mp3", name: "singing-bowl.mp3"}, removable: false },
+      { id: "p7", title: "Focus", duration: 25, soundFile: { url: "/sounds/singing-bowl.mp3", name: "singing-bowl.mp3"}, removable: false },
+      { id: "p8", title: "Long Break", duration: 15, soundFile: { url: "/sounds/singing-bowl.mp3", name: "singing-bowl.mp3"}, removable: false },
     ],
     isPublic: true,
     authorId: "user123",
@@ -34,19 +34,19 @@ const wimHofCycle: Cycle = {
       id: "phase_1",
       title: "Deep Breathing",
       duration: 1,
-      soundFile: null,
+      soundFile: { url: "/sounds/singing-bowl.mp3", name: "singing-bowl.mp3"},
     },
     {
       id: "phase_2",
       title: "Breath Hold",
       duration: 1.5,
-      soundFile: null,
+      soundFile: { url: "/sounds/singing-bowl.mp3", name: "singing-bowl.mp3"},
     },
     {
       id: "phase_3",
       title: "Recovery Breath",
       duration: 0.5,
-      soundFile: null,
+      soundFile: { url: "/sounds/singing-bowl.mp3", name: "singing-bowl.mp3"},
     },
   ],
   isPublic: true,
@@ -123,28 +123,34 @@ export function useCycle() {
 export function CycleProvider({ children }: { children: ReactNode }) {
   const [privateCycles, setPrivateCycles] = useState<Cycle[]>([pomodoroCycle, wimHofCycle]);
   const [currentCycle, setCurrentCycleState] = useState<Cycle | null>(privateCycles[0] || null);
-  const [currentPhaseIndex, setCurrentPhaseIndex] = useState(0);
+  const [currentPhaseIndex, setCurrentPhaseIndexState] = useState(0);
   const [trainingHistory, setTrainingHistory] = useState<TrainingHistory[]>(mockTrainingHistory);
   const [audioLibrary] = useState<AudioAsset[]>(mockAudioLibrary);
 
   const setCurrentCycle = (cycle: Cycle) => {
     setCurrentCycleState(cycle);
-    setCurrentPhaseIndex(0);
+    setCurrentPhaseIndexState(0);
   };
 
   const advancePhase = () => {
     if (currentCycle) {
       const nextPhaseIndex = (currentPhaseIndex + 1);
-       setCurrentPhaseIndex(nextPhaseIndex);
+       setCurrentPhaseIndexState(nextPhaseIndex);
        return nextPhaseIndex;
     }
     return 0;
   };
+  
+  const setCurrentPhaseIndex = (index: number) => {
+      if (currentCycle && index >= 0 && index < currentCycle.phases.length) {
+          setCurrentPhaseIndexState(index);
+      }
+  }
 
   const resetCycle = () => {
       if(currentCycle) {
           // This should ideally reload from original source, but for now we just reset index
-          setCurrentPhaseIndex(0);
+          setCurrentPhaseIndexState(0);
       }
   }
 
@@ -193,7 +199,7 @@ export function CycleProvider({ children }: { children: ReactNode }) {
       const newPhases = prev.phases.filter(p => p.id !== phaseId);
       const newIndex = Math.min(currentPhaseIndex, newPhases.length - 1);
       if (currentPhaseIndex >= newPhases.length) {
-          setCurrentPhaseIndex(0);
+          setCurrentPhaseIndexState(0);
       }
       return { ...prev, phases: newPhases };
     });
