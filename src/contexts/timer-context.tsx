@@ -1,11 +1,12 @@
+
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, useRef, useCallback } from 'react';
 import type { FC, ReactNode } from 'react';
 import { useSettings } from './settings-context';
-import type * as Tone from 'tone';
-import { useCycle } from './cycle-context';
 import type { PhaseRecord } from '@/lib/types';
+import { useCycle } from './cycle-context';
+import type * as Tone from 'tone';
 
 interface TimerContextType {
   timeLeft: number;
@@ -46,20 +47,22 @@ export const TimerProvider: FC<{ children: ReactNode }> = ({ children }) => {
   const [timeLeft, setTimeLeft] = useState(getDuration());
 
   const synth = useRef<Tone.Synth | null>(null);
+  const ToneRef = useRef<typeof Tone | null>(null);
   const toneLoaded = useRef(false);
   const sessionsUntilLongRestRef = useRef(5);
 
   useEffect(() => {
     if (toneLoaded.current) return;
     import('tone').then(Tone => {
+      ToneRef.current = Tone;
       synth.current = new Tone.Synth().toDestination();
       toneLoaded.current = true;
     });
   }, []);
 
   const playSound = useCallback((note: string) => {
-    if (settings.playSounds && synth.current) {
-      synth.current.triggerAttackRelease(note, "8n");
+    if (settings.playSounds && synth.current && ToneRef.current) {
+      synth.current.triggerAttackRelease(note, "8n", ToneRef.current.now());
     }
   }, [settings.playSounds]);
   
