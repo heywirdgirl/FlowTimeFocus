@@ -15,25 +15,22 @@ import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage }from "@/components/ui/form";
-import { Plus, GripVertical, Loader2 } from "lucide-react";
+import { Plus, Loader2 } from "lucide-react";
 import { SortablePhaseCard } from "./sortable-phase-card";
 
 const phaseSchema = z.object({
   id: z.string().default(() => `phase_${Math.random().toString(36).substr(2, 9)}`),
   title: z.string().min(1, "Title is required"),
   duration: z.number().min(0.1, "Duration must be at least 0.1 minutes"),
-  description: z.string().optional(),
   soundFile: z.object({ url: z.string(), name: z.string().optional(), type: z.string().optional() }).nullable().default(null),
   removable: z.boolean().optional().default(true),
 });
 
 const cycleSchema = z.object({
   name: z.string().min(1, "Cycle name is required"),
-  description: z.string().optional(),
   isPublic: z.boolean().default(false),
   phases: z.array(phaseSchema).min(1, "At least one phase is required"),
 });
@@ -43,7 +40,6 @@ type CycleFormData = z.infer<typeof cycleSchema>;
 const defaultPhase: Omit<Phase, 'id'> = {
     title: 'Focus',
     duration: 25,
-    description: 'Work on your task',
     soundFile: null,
     removable: true,
 };
@@ -55,7 +51,6 @@ export function CreateCycleForm() {
     resolver: zodResolver(cycleSchema),
     defaultValues: {
       name: "",
-      description: "",
       isPublic: false,
       phases: [{...defaultPhase, id: `phase_${Math.random().toString(36).substr(2, 9)}`}],
     },
@@ -135,19 +130,6 @@ export function CreateCycleForm() {
                   <FormLabel>Cycle Name</FormLabel>
                   <FormControl>
                     <Input placeholder="e.g., Wim Hof Method" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="description"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Description</FormLabel>
-                  <FormControl>
-                    <Textarea placeholder="Describe the purpose of this cycle." {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

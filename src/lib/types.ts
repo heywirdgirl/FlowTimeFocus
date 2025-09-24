@@ -2,7 +2,6 @@ export interface Phase {
   id: string;
   title: string;
   duration: number; // in minutes
-  description: string;
   soundFile: { url: string; name?: string; type?: string } | null;
   removable?: boolean;
 }
@@ -10,7 +9,6 @@ export interface Phase {
 export interface Cycle {
   id: string;
   name: string;
-  description: string;
   phases: Phase[];
   isPublic: boolean;
   authorId: string;
@@ -26,7 +24,6 @@ export interface PhaseTemplate {
   id: string;
   title: string;
   duration: number; // in minutes
-  description: string;
   soundFile: { url: string; name?: string; type?: string } | null;
   isPublic: boolean;
   createdBy: string;

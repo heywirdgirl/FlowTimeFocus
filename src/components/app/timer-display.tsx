@@ -7,7 +7,6 @@ import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
 import { useCycle } from "@/contexts/cycle-context";
 import { Play, Pause, RotateCcw, SkipForward, Edit, Plus, Trash2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { useState } from "react";
 import { useSettings } from "@/contexts/settings-context";
 import { cn } from "@/lib/utils";
@@ -86,20 +85,14 @@ export function TimerDisplay() {
     updateCycle({ name: e.target.value });
   };
   
-  const handleCycleDescriptionChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    updateCycle({ description: e.target.value });
-  };
-
   const handleSavePhase = (phaseId: string, updates: Partial<Phase>) => {
       updatePhase(phaseId, updates);
       setEditingPhaseId(null);
   }
 
-  const handleAddPhase = (newPhase: Partial<Phase>) => {
-      if (newPhase.title && newPhase.duration) {
-          addPhase(newPhase);
-      }
-      setIsAddingPhase(false);
+  const handleAddPhase = (newPhaseData: Partial<Phase>) => {
+    addPhase(newPhaseData);
+    setIsAddingPhase(false);
   }
 
   return (
@@ -112,12 +105,6 @@ export function TimerDisplay() {
               onChange={handleCycleNameChange}
               className="text-3xl font-headline tracking-wider text-center"
             />
-            <Textarea
-              value={currentCycle.description}
-              onChange={handleCycleDescriptionChange}
-              placeholder="Cycle description"
-              className="text-sm text-center"
-            />
             <Button size="sm" onClick={() => setIsEditingCycle(false)}>Done</Button>
           </div>
         ) : (
@@ -128,7 +115,6 @@ export function TimerDisplay() {
             </Button>
           </div>
         )}
-        <p className="text-sm text-muted-foreground">{currentCycle.description}</p>
       </CardHeader>
       
       <CardContent className="flex flex-col items-center justify-center pt-4">
@@ -166,7 +152,6 @@ export function TimerDisplay() {
 
         <div className="mt-6 text-center min-h-[60px] w-full">
             <p className="text-xl text-muted-foreground">{currentPhase.title}</p>
-            <p className="text-sm text-muted-foreground">{currentPhase.description}</p>
         </div>
       </CardContent>
 

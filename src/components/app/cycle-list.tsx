@@ -29,7 +29,6 @@ export function CycleList() {
                             <Card key={cycle.id} className="flex items-center justify-between p-3">
                                 <div>
                                     <p className="font-semibold">{cycle.name}</p>
-                                    <p className="text-sm text-muted-foreground truncate">{cycle.description}</p>
                                 </div>
                                 <Button size="icon" variant="ghost" onClick={() => setCurrentCycle(cycle)}>
                                     <Play className="h-5 w-5" />

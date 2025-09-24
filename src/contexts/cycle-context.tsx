@@ -8,10 +8,9 @@ import React, { createContext, useContext, useState, ReactNode, useMemo, useCall
 const pomodoroCycle: Cycle = {
     id: "cycle_pomodoro",
     name: "Pomodoro Classic",
-    description: "Làm việc 25 phút, nghỉ 5 phút.",
     phases: [
-      { id: "p1", title: "Focus", duration: 25, description: "Work on your task.", soundFile: null, removable: true },
-      { id: "p2", title: "Break", duration: 5, description: "Take a short break.", soundFile: null, removable: true },
+      { id: "p1", title: "Focus", duration: 25, soundFile: null, removable: true },
+      { id: "p2", title: "Break", duration: 5, soundFile: null, removable: true },
     ],
     isPublic: true,
     authorId: "user123",
@@ -24,27 +23,23 @@ const pomodoroCycle: Cycle = {
 const wimHofCycle: Cycle = {
   id: "cycle_template_wimhof",
   name: "Wim Hof Morning",
-  description: "Phương pháp thở Wim Hof để tăng năng lượng và tập trung.",
   phases: [
     {
       id: "phase_1",
       title: "Hít thở sâu",
       duration: 1,
-      description: "Hít thở sâu 30 lần trong 1 phút.",
       soundFile: null,
     },
     {
       id: "phase_2",
       title: "Giữ hơi thở",
       duration: 1.5,
-      description: "Giữ hơi thở sau khi thở ra.",
       soundFile: null,
     },
     {
       id: "phase_3",
       title: "Thở ra giữ",
       duration: 0.5,
-      description: "Thở ra nhẹ nhàng và giữ 30 giây.",
       soundFile: null,
     },
   ],
@@ -114,7 +109,7 @@ export function useCycle() {
 }
 
 export function CycleProvider({ children }: { children: ReactNode }) {
-  const [privateCycles] = useState<Cycle[]>([pomodoroCycle, wimHofCycle]);
+  const [privateCycles, setPrivateCycles] = useState<Cycle[]>([pomodoroCycle, wimHofCycle]);
   const [currentCycle, setCurrentCycleState] = useState<Cycle | null>(privateCycles[0] || null);
   const [currentPhaseIndex, setCurrentPhaseIndex] = useState(0);
   const [trainingHistory, setTrainingHistory] = useState<TrainingHistory[]>(mockTrainingHistory);
@@ -157,20 +152,20 @@ export function CycleProvider({ children }: { children: ReactNode }) {
   
   const addPhase = useCallback((newPhaseData: Partial<Phase>) => {
     setCurrentCycleState(prev => {
-      if (!prev) return null;
-      const newPhase: Phase = {
-        id: `phase_${Math.random().toString(36).substr(2, 9)}`,
-        title: newPhaseData.title || 'New Phase',
-        duration: newPhaseData.duration || 5,
-        description: newPhaseData.description || 'A new phase.',
-        soundFile: null,
-        removable: true,
-        ...newPhaseData,
-      };
-      const newPhases = [...prev.phases, newPhase];
-      return { ...prev, phases: newPhases };
+        if (!prev) return null;
+        if (!newPhaseData.title || !newPhaseData.duration) return prev;
+        const newPhase: Phase = {
+            id: `phase_${Math.random().toString(36).substr(2, 9)}`,
+            title: newPhaseData.title,
+            duration: newPhaseData.duration,
+            soundFile: null,
+            removable: true,
+            ...newPhaseData,
+        };
+        const newPhases = [...prev.phases, newPhase];
+        return { ...prev, phases: newPhases };
     });
-  }, []);
+}, []);
   
   const deletePhase = useCallback((phaseId: string) => {
     setCurrentCycleState(prev => {

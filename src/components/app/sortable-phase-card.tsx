@@ -5,7 +5,6 @@ import { CSS } from "@dnd-kit/utilities";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { GripVertical, Trash2 } from "lucide-react";
@@ -65,19 +64,6 @@ export function SortablePhaseCard({ id, index, remove }: SortablePhaseCardProps)
                 />
             </div>
             <div className="space-y-2">
-                 <FormField
-                    control={control}
-                    name={`phases.${index}.description`}
-                    render={({ field }) => (
-                    <FormItem>
-                        <FormLabel>Description</FormLabel>
-                        <FormControl>
-                        <Textarea placeholder="Describe this phase" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                    </FormItem>
-                    )}
-                />
                  <FormField
                     control={control}
                     name={`phases.${index}.soundFile`}
