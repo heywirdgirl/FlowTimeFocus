@@ -99,7 +99,7 @@ interface CycleContextType {
   resetCycle: () => void;
   updateCycle: (updates: Partial<Cycle>) => void;
   updatePhase: (phaseId: string, updates: Partial<Phase>) => void;
-  addPhaseAfter: (phaseId: string, newPhaseData: Partial<Phase>) => void;
+  addPhase: (newPhaseData: Partial<Phase>) => void;
   deletePhase: (phaseId: string) => void;
 }
 
@@ -155,7 +155,7 @@ export function CycleProvider({ children }: { children: ReactNode }) {
     });
   }, []);
   
-  const addPhaseAfter = useCallback((currentPhaseId: string, newPhaseData: Partial<Phase>) => {
+  const addPhase = useCallback((newPhaseData: Partial<Phase>) => {
     setCurrentCycleState(prev => {
       if (!prev) return null;
       const newPhase: Phase = {
@@ -165,10 +165,9 @@ export function CycleProvider({ children }: { children: ReactNode }) {
         description: newPhaseData.description || 'A new phase.',
         soundFile: null,
         removable: true,
+        ...newPhaseData,
       };
-      const currentIndex = prev.phases.findIndex(p => p.id === currentPhaseId);
-      const newPhases = [...prev.phases];
-      newPhases.splice(currentIndex + 1, 0, newPhase);
+      const newPhases = [...prev.phases, newPhase];
       return { ...prev, phases: newPhases };
     });
   }, []);
@@ -200,7 +199,7 @@ export function CycleProvider({ children }: { children: ReactNode }) {
     resetCycle,
     updateCycle,
     updatePhase,
-    addPhaseAfter,
+    addPhase,
     deletePhase,
   };
 

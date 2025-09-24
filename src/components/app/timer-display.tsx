@@ -44,7 +44,6 @@ function PhaseEditor({ phase, onSave, onCancel, isNew }: { phase: Partial<Phase>
                 value={duration}
                 onChange={(e) => setDuration(e.target.value)}
                 placeholder="Duration (min)"
-                min="0.1"
                 step="0.1"
             />
              {parseFloat(duration) < 0.1 && (
@@ -62,7 +61,7 @@ function PhaseEditor({ phase, onSave, onCancel, isNew }: { phase: Partial<Phase>
 
 export function TimerDisplay() {
   const { timeLeft, isActive, cyclesCompleted, startPause, reset, skip } = useTimer();
-  const { currentCycle, currentPhaseIndex, updateCycle, updatePhase, addPhaseAfter, deletePhase, setCurrentPhaseIndex } = useCycle();
+  const { currentCycle, currentPhaseIndex, updateCycle, updatePhase, addPhase, deletePhase, setCurrentPhaseIndex } = useCycle();
   const { settings } = useSettings();
 
   const [isEditingCycle, setIsEditingCycle] = useState(false);
@@ -98,7 +97,7 @@ export function TimerDisplay() {
 
   const handleAddPhase = (newPhase: Partial<Phase>) => {
       if (newPhase.title && newPhase.duration) {
-          addPhaseAfter(currentPhase.id, newPhase);
+          addPhase(newPhase);
       }
       setIsAddingPhase(false);
   }
@@ -221,7 +220,7 @@ export function TimerDisplay() {
               ))}
           </div>
           <div className="flex justify-center items-center">
-             <Button variant="outline" size="sm" onClick={() => setIsAddingPhase(true)} title="Add Phase After Current" className="mt-2">
+             <Button variant="outline" size="sm" onClick={() => setIsAddingPhase(true)} title="Add Phase" className="mt-2">
                   <Plus className="mr-2 h-4 w-4" /> Add Phase
               </Button>
           </div>
