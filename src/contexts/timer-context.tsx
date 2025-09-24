@@ -57,13 +57,13 @@ export const TimerProvider: FC<{ children: ReactNode }> = ({ children }) => {
         try {
             const ToneModule = await import('tone');
             ToneRef.current = ToneModule;
+            // Ensure context is running
+            await ToneRef.current.start();
             if (!synth.current) {
                 synth.current = new ToneModule.Synth().toDestination();
-                // Start the transport if it's not already started
-                if (ToneRef.current.Transport.state !== 'started') {
-                    await ToneRef.current.start();
-                    ToneRef.current.Transport.start();
-                }
+            }
+             if (ToneRef.current.Transport.state !== 'started') {
+                ToneRef.current.Transport.start();
             }
             isAudioInitialized.current = true;
         } catch (error) {
@@ -85,6 +85,7 @@ export const TimerProvider: FC<{ children: ReactNode }> = ({ children }) => {
   const playSound = useCallback(() => {
     if (settings.playSounds && synth.current && ToneRef.current) {
       const tone = ToneRef.current;
+      // Ensure the audio context is running before playing a sound.
       if (tone.context.state !== 'running') {
         tone.context.resume();
       }
