@@ -1,16 +1,17 @@
 "use client";
 
 import { useTimer } from "@/contexts/timer-context";
-import { useSettings } from "@/contexts/settings-context";
 import { cn } from "@/lib/utils";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useCycle } from "@/contexts/cycle-context";
 
-export function CycleProgressBar() {
+interface CycleProgressBarProps {
+  totalCycles: number;
+}
+
+export function CycleProgressBar({ totalCycles }: CycleProgressBarProps) {
   const { cyclesCompleted, sessionPhaseRecords } = useTimer();
-  const { settings } = useSettings();
   const { currentCycle } = useCycle();
-  const totalCycles = settings.sessionsUntilLongRest > 0 ? settings.sessionsUntilLongRest : 0;
 
   if (totalCycles <= 0) {
     return (
@@ -47,7 +48,7 @@ export function CycleProgressBar() {
 
   return (
     <TooltipProvider>
-      <div className="flex items-end justify-center gap-9 h-10 w-full max-w-[12rem] mx-auto" aria-label={`Cycle ${cyclesCompleted + 1} of ${totalCycles}`}>
+      <div className="flex items-end justify-center gap-9 h-10 w-full max-w-[12rem] mx-auto pt-2" aria-label={`Cycle ${cyclesCompleted + 1} of ${totalCycles}`}>
         {Array.from({ length: totalCycles }).map((_, i) => {
           const isCurrent = i === cyclesCompleted;
           const isCompleted = i < cyclesCompleted;

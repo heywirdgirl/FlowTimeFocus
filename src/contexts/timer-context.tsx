@@ -12,9 +12,9 @@ interface TimerContextType {
   isActive: boolean;
   cyclesCompleted: number;
   sessionPhaseRecords: PhaseRecord[];
-  startPause: () => void;
+  startPause: (sessionsUntilLongRest: number) => void;
   reset: () => void;
-  skip: () => void;
+  skip: (sessionsUntilLongRest: number) => void;
 }
 
 const TimerContext = createContext<TimerContextType | undefined>(undefined);
@@ -47,6 +47,7 @@ export const TimerProvider: FC<{ children: ReactNode }> = ({ children }) => {
 
   const synth = useRef<Tone.Synth | null>(null);
   const toneLoaded = useRef(false);
+  const sessionsUntilLongRestRef = useRef(5);
 
   useEffect(() => {
     if (toneLoaded.current) return;
@@ -95,12 +96,12 @@ export const TimerProvider: FC<{ children: ReactNode }> = ({ children }) => {
       
       setCurrentPhaseIndex(0);
 
-      if (settings.sessionsUntilLongRest > 0 && newCyclesCompleted >= settings.sessionsUntilLongRest) {
+      if (sessionsUntilLongRestRef.current > 0 && newCyclesCompleted >= sessionsUntilLongRestRef.current) {
           setIsActive(false); // Stop the timer
           return;
       }
     }
-  }, [playSound, advancePhase, currentCycle, currentPhaseIndex, cyclesCompleted, settings.sessionsUntilLongRest, logTraining, currentPhase, sessionPhaseRecords, setCurrentPhaseIndex]);
+  }, [playSound, advancePhase, currentCycle, currentPhaseIndex, cyclesCompleted, logTraining, currentPhase, sessionPhaseRecords, setCurrentPhaseIndex]);
 
 
   useEffect(() => {
@@ -121,8 +122,9 @@ export const TimerProvider: FC<{ children: ReactNode }> = ({ children }) => {
     setTimeLeft(getDuration());
   }, [currentPhaseIndex, currentCycle, getDuration]);
   
-  const startPause = () => {
-    if (cyclesCompleted >= settings.sessionsUntilLongRest && settings.sessionsUntilLongRest > 0) {
+  const startPause = (sessionsUntilLongRest: number) => {
+    sessionsUntilLongRestRef.current = sessionsUntilLongRest;
+    if (cyclesCompleted >= sessionsUntilLongRest && sessionsUntilLongRest > 0) {
       reset();
       // Don't auto-start, let the user begin the new set of cycles.
     } else {
@@ -138,7 +140,8 @@ export const TimerProvider: FC<{ children: ReactNode }> = ({ children }) => {
     setSessionPhaseRecords([]);
   };
 
-  const skip = () => {
+  const skip = (sessionsUntilLongRest: number) => {
+    sessionsUntilLongRestRef.current = sessionsUntilLongRest;
     // a skip should not keep the timer running if it was paused
     handleSessionEnd('skipped');
     if (!isActive) {

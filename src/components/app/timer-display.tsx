@@ -12,6 +12,7 @@ import { useSettings } from "@/contexts/settings-context";
 import { cn } from "@/lib/utils";
 import type { Phase } from "@/lib/types";
 import { CycleProgressBar } from "./cycle-progress-bar";
+import { Label } from "../ui/label";
 
 
 const formatTime = (seconds: number) => {
@@ -62,11 +63,12 @@ function PhaseEditor({ phase, onSave, onCancel, isNew }: { phase: Partial<Phase>
 export function TimerDisplay() {
   const { timeLeft, isActive, startPause, reset, skip } = useTimer();
   const { currentCycle, currentPhaseIndex, updateCycle, updatePhase, addPhase, deletePhase, setCurrentPhaseIndex } = useCycle();
-  const { settings } = useSettings();
-
+  
   const [isEditingCycle, setIsEditingCycle] = useState(false);
   const [editingPhaseId, setEditingPhaseId] = useState<string | null>(null);
   const [isAddingPhase, setIsAddingPhase] = useState(false);
+  const [sessionsUntilLongRest, setSessionsUntilLongRest] = useState(5);
+
 
   const currentPhase = currentCycle?.phases[currentPhaseIndex];
   const totalPhases = currentCycle?.phases.length ?? 0;
@@ -162,18 +164,29 @@ export function TimerDisplay() {
                 <RotateCcw />
                 <span className="sr-only">Reset</span>
             </Button>
-            <Button onClick={startPause} size="icon" className="h-20 w-20 rounded-full text-3xl shadow-lg">
+            <Button onClick={() => startPause(sessionsUntilLongRest)} size="icon" className="h-20 w-20 rounded-full text-3xl shadow-lg">
                 {isActive ? <Pause className="h-10 w-10" /> : <Play className="h-10 w-10" />}
                 <span className="sr-only">{isActive ? "Pause" : "Start"}</span>
             </Button>
-            <Button onClick={skip} variant="outline" size="icon" className="h-14 w-14 rounded-full">
+            <Button onClick={() => skip(sessionsUntilLongRest)} variant="outline" size="icon" className="h-14 w-14 rounded-full">
                 <SkipForward />
                 <span className="sr-only">Skip</span>
             </Button>
         </div>
 
         <div className="w-full space-y-2 py-4">
-            <CycleProgressBar />
+            <div className="max-w-[12rem] mx-auto space-y-2">
+                <Label htmlFor="sessionsUntilLongRest" className="text-sm font-medium">Lặp lại chu trình</Label>
+                <Input
+                    id="sessionsUntilLongRest"
+                    type="number"
+                    value={sessionsUntilLongRest}
+                    onChange={(e) => setSessionsUntilLongRest(Number(e.target.value))}
+                    className="w-full"
+                    min="1"
+                />
+            </div>
+            <CycleProgressBar totalCycles={sessionsUntilLongRest} />
         </div>
 
 
@@ -228,7 +241,7 @@ export function TimerDisplay() {
         </div>
 
         <div className="text-sm text-muted-foreground">
-            Total duration: {totalDuration.toFixed(1)}m
+            Tổng thời gian: {totalDuration.toFixed(1)}m
         </div>
       </CardFooter>
     </Card>

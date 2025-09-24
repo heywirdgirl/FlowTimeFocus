@@ -6,10 +6,6 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 type Theme = "light" | "dark" | "system";
 
 interface Settings {
-  focusDuration: number;
-  shortRestDuration: number;
-  longRestDuration: number;
-  sessionsUntilLongRest: number;
   playSounds: boolean;
   theme: Theme;
 }
@@ -20,10 +16,6 @@ interface SettingsContextType {
 }
 
 const defaultSettings: Settings = {
-  focusDuration: 25,
-  shortRestDuration: 5,
-  longRestDuration: 15,
-  sessionsUntilLongRest: 5,
   playSounds: true,
   theme: "system",
 };
