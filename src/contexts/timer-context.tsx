@@ -51,18 +51,25 @@ export const TimerProvider: FC<{ children: ReactNode }> = ({ children }) => {
   const sessionsUntilLongRestRef = useRef(5);
 
   useEffect(() => {
-    // This effect runs only once on the client after the component mounts
     const initializeAudio = async () => {
       const ToneModule = await import('tone');
       ToneRef.current = ToneModule;
-      synth.current = new ToneModule.Synth().toDestination();
+      if (!synth.current) {
+        synth.current = new ToneModule.Synth().toDestination();
+      }
     };
     initializeAudio();
+
+    return () => {
+      if (synth.current) {
+        synth.current.dispose();
+        synth.current = null;
+      }
+    };
   }, []);
 
   const playSound = useCallback((note: string) => {
     if (settings.playSounds && synth.current && ToneRef.current) {
-        // Ensure the audio context is running
         if (ToneRef.current.context.state !== 'running') {
             ToneRef.current.context.resume();
         }
@@ -79,7 +86,7 @@ export const TimerProvider: FC<{ children: ReactNode }> = ({ children }) => {
       }]);
     }
 
-    playSound('C5'); // Sound for phase end
+    playSound('C5');
     
     const nextPhaseIndex = advancePhase();
 
@@ -104,11 +111,11 @@ export const TimerProvider: FC<{ children: ReactNode }> = ({ children }) => {
       setCurrentPhaseIndex(0);
 
       if (sessionsUntilLongRestRef.current > 0 && newCyclesCompleted >= sessionsUntilLongRestRef.current) {
-          setIsActive(false); // Stop the timer
+          setIsActive(false);
           return;
       }
     }
-  }, [playSound, advancePhase, currentCycle, currentPhaseIndex, cyclesCompleted, logTraining, currentPhase, sessionPhaseRecords, setCurrentPhaseIndex]);
+  }, [playSound, advancePhase, currentCycle, cyclesCompleted, logTraining, currentPhase, sessionPhaseRecords, setCurrentPhaseIndex]);
 
 
   useEffect(() => {
@@ -136,7 +143,6 @@ export const TimerProvider: FC<{ children: ReactNode }> = ({ children }) => {
     sessionsUntilLongRestRef.current = sessionsUntilLongRest;
     if (cyclesCompleted >= sessionsUntilLongRest && sessionsUntilLongRest > 0) {
       reset();
-      // Don't auto-start, let the user begin the new set of cycles.
     } else {
       setIsActive(!isActive);
     }
@@ -152,10 +158,9 @@ export const TimerProvider: FC<{ children: ReactNode }> = ({ children }) => {
 
   const skip = (sessionsUntilLongRest: number) => {
     sessionsUntilLongRestRef.current = sessionsUntilLongRest;
-    // a skip should not keep the timer running if it was paused
     handleSessionEnd('skipped');
     if (!isActive) {
-        setTimeLeft(getDuration()); // Ensure new duration is set if paused
+        setTimeLeft(getDuration());
     }
   };
 
