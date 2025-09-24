@@ -11,6 +11,7 @@ interface TimerContextType {
   timeLeft: number;
   isActive: boolean;
   cyclesCompleted: number;
+  sessionPhaseRecords: PhaseRecord[];
   startPause: () => void;
   reset: () => void;
   skip: () => void;
@@ -149,6 +150,7 @@ export const TimerProvider: FC<{ children: ReactNode }> = ({ children }) => {
     timeLeft,
     isActive,
     cyclesCompleted,
+    sessionPhaseRecords,
     startPause,
     reset,
     skip

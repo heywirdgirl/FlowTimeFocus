@@ -11,6 +11,7 @@ import { useState } from "react";
 import { useSettings } from "@/contexts/settings-context";
 import { cn } from "@/lib/utils";
 import type { Phase } from "@/lib/types";
+import { CycleProgressBar } from "./cycle-progress-bar";
 
 
 const formatTime = (seconds: number) => {
@@ -59,7 +60,7 @@ function PhaseEditor({ phase, onSave, onCancel, isNew }: { phase: Partial<Phase>
 }
 
 export function TimerDisplay() {
-  const { timeLeft, isActive, cyclesCompleted, startPause, reset, skip } = useTimer();
+  const { timeLeft, isActive, startPause, reset, skip } = useTimer();
   const { currentCycle, currentPhaseIndex, updateCycle, updatePhase, addPhase, deletePhase, setCurrentPhaseIndex } = useCycle();
   const { settings } = useSettings();
 
@@ -171,6 +172,11 @@ export function TimerDisplay() {
             </Button>
         </div>
 
+        <div className="w-full space-y-2 py-4">
+            <CycleProgressBar />
+        </div>
+
+
         <div className="w-full space-y-2">
           <div className="flex flex-col items-center justify-center gap-2 w-full max-w-sm mx-auto">
               {currentCycle.phases.map((phase, index) => (
@@ -222,7 +228,7 @@ export function TimerDisplay() {
         </div>
 
         <div className="text-sm text-muted-foreground">
-            Cycle {cyclesCompleted + 1}/{settings.sessionsUntilLongRest > 0 ? settings.sessionsUntilLongRest : '∞'} | Total: {totalDuration.toFixed(1)}m
+            Total duration: {totalDuration.toFixed(1)}m
         </div>
       </CardFooter>
     </Card>
