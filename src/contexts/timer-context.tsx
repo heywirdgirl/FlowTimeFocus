@@ -49,14 +49,17 @@ export const TimerProvider: FC<{ children: ReactNode }> = ({ children }) => {
   const synth = useRef<Tone.Synth | null>(null);
   const ToneRef = useRef<typeof import('tone') | null>(null);
   const sessionsUntilLongRestRef = useRef(5);
+  const isAudioInitialized = useRef(false);
 
   useEffect(() => {
     const initializeAudio = async () => {
+      if (isAudioInitialized.current) return;
       const ToneModule = await import('tone');
       ToneRef.current = ToneModule;
       if (!synth.current) {
         synth.current = new ToneModule.Synth().toDestination();
       }
+      isAudioInitialized.current = true;
     };
     initializeAudio();
 
@@ -64,16 +67,19 @@ export const TimerProvider: FC<{ children: ReactNode }> = ({ children }) => {
       if (synth.current) {
         synth.current.dispose();
         synth.current = null;
+        isAudioInitialized.current = false;
       }
     };
   }, []);
 
   const playSound = useCallback((note: string) => {
     if (settings.playSounds && synth.current && ToneRef.current) {
-        if (ToneRef.current.context.state !== 'running') {
-            ToneRef.current.context.resume();
+        const tone = ToneRef.current;
+        if (tone.context.state !== 'running') {
+            tone.context.resume();
         }
-        synth.current.triggerAttackRelease(note, "8n", ToneRef.current.now());
+        // Schedule the sound to play at the current time in the audio context
+        synth.current.triggerAttackRelease(note, "8n", tone.now());
     }
   }, [settings.playSounds]);
   
@@ -133,8 +139,21 @@ export const TimerProvider: FC<{ children: ReactNode }> = ({ children }) => {
   }, [isActive, timeLeft, handleSessionEnd]);
 
   useEffect(() => {
+    // When the phase changes, reset the timer to the new duration
+    // Only reset if the timer isn't already active from a previous phase
+    if (!isActive) {
+        setTimeLeft(getDuration());
+    }
+  }, [currentPhaseIndex, currentCycle, getDuration, isActive]);
+
+  useEffect(() => {
+    // This effect ensures the timer is correctly set when a new cycle is loaded
     setTimeLeft(getDuration());
-  }, [currentPhaseIndex, currentCycle, getDuration]);
+    setIsActive(false);
+    setCyclesCompleted(0);
+    setSessionPhaseRecords([]);
+  }, [currentCycle, getDuration]);
+  
   
   const startPause = (sessionsUntilLongRest: number) => {
     if (ToneRef.current && ToneRef.current.context.state !== 'running') {
@@ -159,8 +178,12 @@ export const TimerProvider: FC<{ children: ReactNode }> = ({ children }) => {
   const skip = (sessionsUntilLongRest: number) => {
     sessionsUntilLongRestRef.current = sessionsUntilLongRest;
     handleSessionEnd('skipped');
+    // If skipping while paused, need to manually update timer for next phase
     if (!isActive) {
-        setTimeLeft(getDuration());
+      // Temporarily create a new getDuration based on what the next phase *will be*
+      const nextIndex = currentCycle ? (currentPhaseIndex + 1) % currentCycle.phases.length : 0;
+      const nextPhaseDuration = currentCycle?.phases[nextIndex]?.duration ?? 0;
+      setTimeLeft(nextPhaseDuration * 60);
     }
   };
 
