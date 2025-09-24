@@ -1,7 +1,7 @@
 
 "use client";
 
-import { Cycle, Phase, TrainingHistory, AudioAsset } from "@/lib/types";
+import { Cycle, Phase, TrainingHistory, AudioAsset, PhaseRecord } from "@/lib/types";
 import React, { createContext, useContext, useState, ReactNode, useMemo, useCallback } from "react";
 
 // Mock data based on your types
@@ -61,7 +61,12 @@ const mockTrainingHistory: TrainingHistory[] = [
       totalDuration: 3,
       cycleCount: 1,
       completedAt: new Date().toISOString(),
-      status: 'completed'
+      status: 'completed',
+      phaseRecords: [
+        { title: 'Hít thở sâu', duration: 1, completionStatus: 'completed' },
+        { title: 'Giữ hơi thở', duration: 1.5, completionStatus: 'completed' },
+        { title: 'Thở ra giữ', duration: 0.5, completionStatus: 'completed' },
+      ]
     }
 ]
 
@@ -90,12 +95,13 @@ interface CycleContextType {
   audioLibrary: AudioAsset[];
   setCurrentCycle: (cycle: Cycle) => void;
   setCurrentPhaseIndex: (index: number) => void;
-  advancePhase: () => void;
+  advancePhase: () => number;
   resetCycle: () => void;
   updateCycle: (updates: Partial<Cycle>) => void;
   updatePhase: (phaseId: string, updates: Partial<Phase>) => void;
   addPhase: (newPhaseData: Partial<Phase>) => void;
   deletePhase: (phaseId: string) => void;
+  logTraining: (log: Omit<TrainingHistory, 'completedAt' | 'startTime' | 'endTime'>) => void;
 }
 
 const CycleContext = createContext<CycleContextType | undefined>(undefined);
@@ -123,12 +129,10 @@ export function CycleProvider({ children }: { children: ReactNode }) {
   const advancePhase = () => {
     if (currentCycle) {
       const nextPhaseIndex = (currentPhaseIndex + 1);
-      if (nextPhaseIndex >= currentCycle.phases.length) {
-        setCurrentPhaseIndex(0);
-      } else {
-        setCurrentPhaseIndex(nextPhaseIndex);
-      }
+       setCurrentPhaseIndex(nextPhaseIndex);
+       return nextPhaseIndex;
     }
+    return 0;
   };
 
   const resetCycle = () => {
@@ -137,6 +141,16 @@ export function CycleProvider({ children }: { children: ReactNode }) {
           setCurrentPhaseIndex(0);
       }
   }
+
+  const logTraining = useCallback((log: Omit<TrainingHistory, 'completedAt' | 'startTime' | 'endTime'>) => {
+    const newLog: TrainingHistory = {
+      ...log,
+      startTime: new Date().toISOString(),
+      endTime: new Date().toISOString(),
+      completedAt: new Date().toISOString(),
+    }
+    setTrainingHistory(prev => [newLog, ...prev]);
+  }, []);
 
   const updateCycle = useCallback((updates: Partial<Cycle>) => {
     setCurrentCycleState(prev => prev ? { ...prev, ...updates } : null);
@@ -153,7 +167,7 @@ export function CycleProvider({ children }: { children: ReactNode }) {
   const addPhase = useCallback((newPhaseData: Partial<Phase>) => {
     setCurrentCycleState(prev => {
         if (!prev) return null;
-        if (!newPhaseData.title || !newPhaseData.duration) return prev;
+        if (!newPhaseData.title || newPhaseData.duration === undefined) return prev;
         const newPhase: Phase = {
             id: `phase_${Math.random().toString(36).substr(2, 9)}`,
             title: newPhaseData.title,
@@ -172,7 +186,9 @@ export function CycleProvider({ children }: { children: ReactNode }) {
       if (!prev || prev.phases.length <= 1) return prev;
       const newPhases = prev.phases.filter(p => p.id !== phaseId);
       const newIndex = Math.min(currentPhaseIndex, newPhases.length - 1);
-      setCurrentPhaseIndex(newIndex);
+      if (currentPhaseIndex >= newPhases.length) {
+          setCurrentPhaseIndex(0);
+      }
       return { ...prev, phases: newPhases };
     });
   }, [currentPhaseIndex]);
@@ -196,6 +212,7 @@ export function CycleProvider({ children }: { children: ReactNode }) {
     updatePhase,
     addPhase,
     deletePhase,
+    logTraining,
   };
 
   return (

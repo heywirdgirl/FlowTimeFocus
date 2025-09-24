@@ -35,6 +35,13 @@ export interface CycleTemplate extends Omit<Cycle, 'isPublic' | 'authorId' | 'au
   isOfficial?: boolean;
 }
 
+export interface PhaseRecord {
+  title: string;
+  duration: number;
+  completionStatus: 'completed' | 'skipped';
+}
+
+
 export interface TrainingHistory {
   cycleId: string;
   name: string;
@@ -45,6 +52,7 @@ export interface TrainingHistory {
   completedAt: string;
   status?: "completed" | "interrupted";
   notes?: string;
+  phaseRecords?: PhaseRecord[];
 }
 
 export interface AudioAsset {
