@@ -11,6 +11,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { useState } from "react";
 import { useSettings } from "@/contexts/settings-context";
 import { cn } from "@/lib/utils";
+import type { Phase } from "@/lib/types";
+
 
 const formatTime = (seconds: number) => {
   const mins = Math.floor(seconds / 60);
@@ -18,20 +20,15 @@ const formatTime = (seconds: number) => {
   return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
 };
 
-function PhaseEditor({ phaseId, onDone }: { phaseId: string, onDone: () => void }) {
-    const { currentCycle, updatePhase } = useCycle();
-    const phase = currentCycle?.phases.find(p => p.id === phaseId);
+function PhaseEditor({ phase, onSave, onCancel, isNew }: { phase: Partial<Phase>, onSave: (p: Partial<Phase>) => void, onCancel: () => void, isNew?: boolean }) {
     
     const [title, setTitle] = useState(phase?.title || "");
     const [duration, setDuration] = useState(String(phase?.duration || ""));
 
-    if (!phase) return null;
-
     const handleSave = () => {
         const newDuration = parseFloat(duration);
         if (title.trim() && !isNaN(newDuration) && newDuration >= 0.1) {
-            updatePhase(phaseId, { title, duration: newDuration });
-            onDone();
+            onSave({ ...phase, title, duration: newDuration });
         }
     }
 
@@ -55,18 +52,22 @@ function PhaseEditor({ phaseId, onDone }: { phaseId: string, onDone: () => void 
                     Số phút phải lớn hơn hoặc bằng 0.1
                 </p>
             )}
-            <Button onClick={handleSave} size="sm" className="w-full">Done</Button>
+            <div className="flex gap-2">
+              <Button onClick={handleSave} size="sm" className="w-full">{isNew ? 'Add' : 'Save'}</Button>
+              <Button onClick={onCancel} size="sm" variant="outline" className="w-full">Cancel</Button>
+            </div>
         </div>
     )
 }
 
 export function TimerDisplay() {
   const { timeLeft, isActive, cyclesCompleted, startPause, reset, skip } = useTimer();
-  const { currentCycle, currentPhaseIndex, updateCycle, addPhaseAfter, deletePhase, setCurrentPhaseIndex } = useCycle();
+  const { currentCycle, currentPhaseIndex, updateCycle, updatePhase, addPhaseAfter, deletePhase, setCurrentPhaseIndex } = useCycle();
   const { settings } = useSettings();
 
   const [isEditingCycle, setIsEditingCycle] = useState(false);
   const [editingPhaseId, setEditingPhaseId] = useState<string | null>(null);
+  const [isAddingPhase, setIsAddingPhase] = useState(false);
 
   const currentPhase = currentCycle?.phases[currentPhaseIndex];
   const totalPhases = currentCycle?.phases.length ?? 0;
@@ -89,6 +90,18 @@ export function TimerDisplay() {
   const handleCycleDescriptionChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     updateCycle({ description: e.target.value });
   };
+
+  const handleSavePhase = (phaseId: string, updates: Partial<Phase>) => {
+      updatePhase(phaseId, updates);
+      setEditingPhaseId(null);
+  }
+
+  const handleAddPhase = (newPhase: Partial<Phase>) => {
+      if (newPhase.title && newPhase.duration) {
+          addPhaseAfter(currentPhase.id, newPhase);
+      }
+      setIsAddingPhase(false);
+  }
 
   return (
     <Card className="w-full text-center border-2 shadow-lg relative">
@@ -198,16 +211,30 @@ export function TimerDisplay() {
                           )}
                       </div>
                        {editingPhaseId === phase.id && (
-                           <PhaseEditor phaseId={phase.id} onDone={() => setEditingPhaseId(null)} />
+                           <PhaseEditor 
+                            phase={phase}
+                            onSave={(updates) => handleSavePhase(phase.id, updates)}
+                            onCancel={() => setEditingPhaseId(null)}
+                           />
                        )}
                   </div>
               ))}
           </div>
           <div className="flex justify-center items-center">
-             <Button variant="outline" size="sm" onClick={() => addPhaseAfter(currentPhase.id)} title="Add Phase After Current" className="mt-2">
+             <Button variant="outline" size="sm" onClick={() => setIsAddingPhase(true)} title="Add Phase After Current" className="mt-2">
                   <Plus className="mr-2 h-4 w-4" /> Add Phase
               </Button>
           </div>
+          {isAddingPhase && (
+             <div className="w-full max-w-sm mx-auto">
+                <PhaseEditor
+                    isNew
+                    phase={{ title: 'New Phase', duration: 5 }}
+                    onSave={handleAddPhase}
+                    onCancel={() => setIsAddingPhase(false)}
+                />
+             </div>
+          )}
         </div>
 
         <div className="text-sm text-muted-foreground">

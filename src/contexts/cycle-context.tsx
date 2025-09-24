@@ -1,3 +1,4 @@
+
 "use client";
 
 import { Cycle, Phase, TrainingHistory, AudioAsset } from "@/lib/types";
@@ -98,7 +99,7 @@ interface CycleContextType {
   resetCycle: () => void;
   updateCycle: (updates: Partial<Cycle>) => void;
   updatePhase: (phaseId: string, updates: Partial<Phase>) => void;
-  addPhaseAfter: (phaseId: string) => void;
+  addPhaseAfter: (phaseId: string, newPhaseData: Partial<Phase>) => void;
   deletePhase: (phaseId: string) => void;
 }
 
@@ -154,14 +155,14 @@ export function CycleProvider({ children }: { children: ReactNode }) {
     });
   }, []);
   
-  const addPhaseAfter = useCallback((currentPhaseId: string) => {
+  const addPhaseAfter = useCallback((currentPhaseId: string, newPhaseData: Partial<Phase>) => {
     setCurrentCycleState(prev => {
       if (!prev) return null;
       const newPhase: Phase = {
         id: `phase_${Math.random().toString(36).substr(2, 9)}`,
-        title: 'New Phase',
-        duration: 5,
-        description: 'A new phase.',
+        title: newPhaseData.title || 'New Phase',
+        duration: newPhaseData.duration || 5,
+        description: newPhaseData.description || 'A new phase.',
         soundFile: null,
         removable: true,
       };
