@@ -23,12 +23,13 @@ export function TimerDisplay() {
 
   const [isEditingCycle, setIsEditingCycle] = useState(false);
   const [isEditingPhase, setIsEditingPhase] = useState(false);
+  const [phaseDurationInput, setPhaseDurationInput] = useState<string>("");
 
   const currentPhase = currentCycle?.phases[currentPhaseIndex];
   const totalPhases = currentCycle?.phases.length ?? 0;
-  const totalDuration = currentCycle?.phases.reduce((acc, p) => acc + p.duration, 0) ?? 0;
+  const totalDuration = currentCycle?.phases.reduce((acc, p) => acc + (p.duration || 0), 0) ?? 0;
 
-  const progress = currentPhase ? ((currentPhase.duration * 60 - timeLeft) / (currentPhase.duration * 60)) * 100 : 0;
+  const progress = currentPhase && currentPhase.duration > 0 ? ((currentPhase.duration * 60 - timeLeft) / (currentPhase.duration * 60)) * 100 : 0;
   
   if (!currentCycle || !currentPhase) {
     return (
@@ -50,12 +51,31 @@ export function TimerDisplay() {
     updatePhase(currentPhase.id, { title: e.target.value });
   };
 
-  const handlePhaseDurationChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const duration = parseFloat(e.target.value);
-    if (!isNaN(duration)) {
-      updatePhase(currentPhase.id, { duration });
+  const handlePhaseDurationInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setPhaseDurationInput(value);
+    const duration = parseFloat(value);
+    if (!isNaN(duration) && duration >= 0.1) {
+        updatePhase(currentPhase.id, { duration });
     }
   };
+
+  const handleEditPhaseClick = () => {
+    setIsEditingPhase(true);
+    setPhaseDurationInput(String(currentPhase.duration));
+  };
+  
+  const handleDoneEditingPhaseClick = () => {
+    const duration = parseFloat(phaseDurationInput);
+    if (isNaN(duration) || duration < 0.1) {
+        // Revert to original value if input is invalid
+        setPhaseDurationInput(String(currentPhase.duration));
+    }
+    setIsEditingPhase(false);
+  };
+
+
+  const isPhaseDurationValid = parseFloat(phaseDurationInput) >= 0.1;
 
   return (
     <Card className="w-full text-center border-2 shadow-lg relative">
@@ -119,19 +139,26 @@ export function TimerDisplay() {
           </div>
         </div>
 
-        <div className="mt-6 text-center min-h-[60px] w-full">
+        <div className="mt-6 text-center min-h-[84px] w-full">
            {isEditingPhase ? (
              <div className="flex flex-col gap-2 items-center">
                <div className="flex gap-2">
                 <Input value={currentPhase.title} onChange={handlePhaseTitleChange} className="text-center"/>
-                <Input type="number" value={currentPhase.duration} onChange={handlePhaseDurationChange} className="w-20 text-center"/>
+                <div className="w-32">
+                    <Input type="number" value={phaseDurationInput} onChange={handlePhaseDurationInputChange} className="w-full text-center"/>
+                    {!isPhaseDurationValid && (
+                        <p className="text-xs text-destructive mt-1">
+                            Số phút phải lớn hơn hoặc bằng 0.1
+                        </p>
+                    )}
+                </div>
                </div>
-               <Button size="sm" onClick={() => setIsEditingPhase(false)}>Done</Button>
+               <Button size="sm" onClick={handleDoneEditingPhaseClick}>Done</Button>
              </div>
            ) : (
              <div className="flex items-center justify-center gap-2">
                 <p className="text-xl text-muted-foreground">{currentPhase.title}</p>
-                <Button variant="ghost" size="icon" onClick={() => setIsEditingPhase(true)}>
+                <Button variant="ghost" size="icon" onClick={handleEditPhaseClick}>
                     <Edit className="h-4 w-4" />
                 </Button>
              </div>
@@ -166,7 +193,7 @@ export function TimerDisplay() {
             </Button>
         </div>
         <div className="text-sm text-muted-foreground">
-            Phase {currentPhaseIndex + 1}/{totalPhases} | Cycle {cyclesCompleted + 1}/{settings.sessionsUntilLongRest > 0 ? settings.sessionsUntilLongRest : '∞'} | Total: {totalDuration}m
+            Phase {currentPhaseIndex + 1}/{totalPhases} | Cycle {cyclesCompleted + 1}/{settings.sessionsUntilLongRest > 0 ? settings.sessionsUntilLongRest : '∞'} | Total: {totalDuration.toFixed(1)}m
         </div>
       </CardFooter>
     </Card>
