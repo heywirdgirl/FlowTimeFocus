@@ -47,7 +47,7 @@ export function CycleProgressBar() {
 
   return (
     <TooltipProvider>
-      <div className="flex items-end justify-center gap-1.5 h-10 w-full max-w-xs mx-auto" aria-label={`Cycle ${cyclesCompleted + 1} of ${totalCycles}`}>
+      <div className="flex items-end justify-center gap-1.5 h-10 w-full max-w-[12rem] mx-auto" aria-label={`Cycle ${cyclesCompleted + 1} of ${totalCycles}`}>
         {Array.from({ length: totalCycles }).map((_, i) => {
           const isCurrent = i === cyclesCompleted;
           const isCompleted = i < cyclesCompleted;
