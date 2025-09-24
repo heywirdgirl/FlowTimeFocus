@@ -1,7 +1,7 @@
 
 "use client";
 
-import { Cycle, Phase, TrainingHistory, AudioAsset, PhaseRecord } from "@/lib/types";
+import { Cycle, Phase, TrainingHistory, AudioAsset } from "@/lib/types";
 import React, { createContext, useContext, useState, ReactNode, useMemo, useCallback } from "react";
 
 // Mock data based on your types
@@ -148,10 +148,7 @@ export function CycleProvider({ children }: { children: ReactNode }) {
   }
 
   const resetCycle = () => {
-      if(currentCycle) {
-          // This should ideally reload from original source, but for now we just reset index
-          setCurrentPhaseIndexState(0);
-      }
+      setCurrentPhaseIndexState(0);
   }
 
   const logTraining = useCallback((log: Omit<TrainingHistory, 'completedAt' | 'startTime' | 'endTime'>) => {
