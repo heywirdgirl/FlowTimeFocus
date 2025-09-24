@@ -65,42 +65,24 @@ export const TimerProvider: FC<{ children: ReactNode }> = ({ children }) => {
   }, [settings.playSounds, currentPhase]);
   
   useEffect(() => {
-    setTimeLeft(getDuration());
+      setTimeLeft(getDuration());
   }, [currentPhase, getDuration]);
 
+  // Main timer loop
   useEffect(() => {
-    if (isActive && timeLeft > 0) {
+    if (!isActive) {
+      return;
+    }
+
+    if (timeLeft > 0) {
       intervalRef.current = setInterval(() => {
         setTimeLeft(prevTime => prevTime - 1);
       }, 1000);
-    } else if (isActive && timeLeft <= 0) {
-      playSound();
-      const nextPhaseIndex = advancePhase();
-
-      if (nextPhaseIndex >= (currentCycle?.phases.length || 0)) {
-        const newCyclesCompleted = cyclesCompleted + 1;
-        setCyclesCompleted(newCyclesCompleted);
-
-        logTraining({
-          cycleId: currentCycle!.id,
-          name: currentCycle!.name,
-          cycleCount: 1,
-          totalDuration: sessionPhaseRecords.reduce((acc, r) => acc + r.duration, 0) + (currentPhase?.duration || 0),
-          status: 'completed',
-          phaseRecords: [...sessionPhaseRecords, {
-              title: currentPhase!.title,
-              duration: currentPhase!.duration,
-              completionStatus: 'completed',
-          }]
-        });
-
-        setSessionPhaseRecords([]);
-        setCurrentPhaseIndex(0);
-
-        if (sessionsUntilLongRestRef.current > 0 && newCyclesCompleted >= sessionsUntilLongRestRef.current) {
-          setIsActive(false);
-        }
-      }
+    } else { // timeLeft <= 0
+      // This is where the magic happens.
+      // We advance the phase, which will trigger the useEffect above to set the new time.
+      // We don't need to manually setTimeLeft here.
+      handlePhaseEnd();
     }
     
     return () => {
@@ -108,16 +90,52 @@ export const TimerProvider: FC<{ children: ReactNode }> = ({ children }) => {
         clearInterval(intervalRef.current);
       }
     };
-  }, [isActive, timeLeft, currentCycle, currentPhase, advancePhase, logTraining, playSound, setCurrentPhaseIndex, cyclesCompleted, sessionPhaseRecords]);
+  }, [isActive, timeLeft]);
 
+
+  const handlePhaseEnd = (skipped = false) => {
+    if (currentPhase) {
+        setSessionPhaseRecords(prev => [...prev, {
+            title: currentPhase.title,
+            duration: currentPhase.duration,
+            completionStatus: skipped ? 'skipped' : 'completed',
+        }]);
+    }
+    playSound();
+    const nextPhaseIndex = advancePhase();
+
+    if (nextPhaseIndex >= (currentCycle?.phases.length || 0)) {
+        const newCyclesCompleted = cyclesCompleted + 1;
+        setCyclesCompleted(newCyclesCompleted);
+
+        logTraining({
+            cycleId: currentCycle!.id,
+            name: currentCycle!.name,
+            cycleCount: 1,
+            totalDuration: sessionPhaseRecords.reduce((acc, r) => acc + r.duration, 0) + (currentPhase?.duration ?? 0),
+            status: 'completed',
+            phaseRecords: [...sessionPhaseRecords, {
+                title: currentPhase!.title,
+                duration: currentPhase!.duration,
+                completionStatus: skipped ? 'skipped' : 'completed',
+            }]
+        });
+        
+        setSessionPhaseRecords([]);
+        setCurrentPhaseIndex(0);
+
+        if (sessionsUntilLongRestRef.current > 0 && newCyclesCompleted >= sessionsUntilLongRestRef.current) {
+          setIsActive(false); 
+        }
+    }
+  };
 
   const reset = useCallback(() => {
     setIsActive(false);
     resetCycle();
     setCyclesCompleted(0);
     setSessionPhaseRecords([]);
-    setTimeLeft(getDuration());
-  }, [resetCycle, getDuration]);
+  }, [resetCycle]);
   
   const startPause = (sessionsUntilLongRest: number) => {
     sessionsUntilLongRestRef.current = sessionsUntilLongRest;
@@ -134,40 +152,8 @@ export const TimerProvider: FC<{ children: ReactNode }> = ({ children }) => {
     if (intervalRef.current) {
         clearInterval(intervalRef.current);
     }
-    playSound();
     
-    if (currentPhase) {
-        setSessionPhaseRecords(prev => [...prev, {
-            title: currentPhase.title,
-            duration: currentPhase.duration,
-            completionStatus: 'skipped',
-        }]);
-    }
-    
-    const nextPhaseIndex = advancePhase();
-
-    if (nextPhaseIndex >= (currentCycle?.phases.length || 0)) {
-        const newCyclesCompleted = cyclesCompleted + 1;
-        setCyclesCompleted(newCyclesCompleted);
-        logTraining({
-            cycleId: currentCycle!.id,
-            name: currentCycle!.name,
-            cycleCount: 1,
-            totalDuration: sessionPhaseRecords.reduce((acc, r) => acc + r.duration, 0),
-            status: 'completed',
-            phaseRecords: sessionPhaseRecords
-        });
-        setSessionPhaseRecords([]);
-        setCurrentPhaseIndex(0);
-
-        if (sessionsUntilLongRestRef.current > 0 && newCyclesCompleted >= sessionsUntilLongRestRef.current) {
-          setIsActive(false);
-        }
-
-    } else {
-       // If not the end of a cycle, ensure timer continues if it was active
-       setTimeLeft(currentCycle?.phases[nextPhaseIndex]?.duration * 60 || 0);
-    }
+    handlePhaseEnd(true);
   };
 
   const value = {
