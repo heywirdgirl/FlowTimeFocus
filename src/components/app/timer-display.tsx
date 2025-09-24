@@ -18,14 +18,55 @@ const formatTime = (seconds: number) => {
   return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
 };
 
+function PhaseEditor({ phaseId, onDone }: { phaseId: string, onDone: () => void }) {
+    const { currentCycle, updatePhase } = useCycle();
+    const phase = currentCycle?.phases.find(p => p.id === phaseId);
+    
+    const [title, setTitle] = useState(phase?.title || "");
+    const [duration, setDuration] = useState(String(phase?.duration || ""));
+
+    if (!phase) return null;
+
+    const handleSave = () => {
+        const newDuration = parseFloat(duration);
+        if (title.trim() && !isNaN(newDuration) && newDuration >= 0.1) {
+            updatePhase(phaseId, { title, duration: newDuration });
+            onDone();
+        }
+    }
+
+    return (
+        <div className="p-2 my-2 border rounded-lg bg-background space-y-2">
+            <Input 
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="Phase Title"
+            />
+            <Input 
+                type="number"
+                value={duration}
+                onChange={(e) => setDuration(e.target.value)}
+                placeholder="Duration (min)"
+                min="0.1"
+                step="0.1"
+            />
+             {parseFloat(duration) < 0.1 && (
+                <p className="text-xs text-destructive mt-1">
+                    Số phút phải lớn hơn hoặc bằng 0.1
+                </p>
+            )}
+            <Button onClick={handleSave} size="sm" className="w-full">Done</Button>
+        </div>
+    )
+}
+
 export function TimerDisplay() {
   const { timeLeft, isActive, cyclesCompleted, startPause, reset, skip } = useTimer();
-  const { currentCycle, currentPhaseIndex, updateCycle, updatePhase, addPhaseAfter, deletePhase, setCurrentPhaseIndex } = useCycle();
+  const { currentCycle, currentPhaseIndex, updateCycle, addPhaseAfter, deletePhase, setCurrentPhaseIndex } = useCycle();
   const { settings } = useSettings();
 
   const [isEditingCycle, setIsEditingCycle] = useState(false);
-  const [isEditingPhase, setIsEditingPhase] = useState(false);
-  const [phaseDurationInput, setPhaseDurationInput] = useState<string>("");
+  const [editingPhaseId, setEditingPhaseId] = useState<string | null>(null);
 
   const currentPhase = currentCycle?.phases[currentPhaseIndex];
   const totalPhases = currentCycle?.phases.length ?? 0;
@@ -48,37 +89,6 @@ export function TimerDisplay() {
   const handleCycleDescriptionChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     updateCycle({ description: e.target.value });
   };
-
-  const handlePhaseTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    updatePhase(currentPhase.id, { title: e.target.value });
-  };
-
-  const handlePhaseDurationInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    setPhaseDurationInput(value);
-    // Only update the actual duration if it's a valid number
-    const duration = parseFloat(value);
-    if (!isNaN(duration) && duration >= 0.1) {
-        updatePhase(currentPhase.id, { duration });
-    }
-  };
-
-  const handleEditPhaseClick = () => {
-    setIsEditingPhase(true);
-    setPhaseDurationInput(String(currentPhase.duration));
-  };
-  
-  const handleDoneEditingPhaseClick = () => {
-    const duration = parseFloat(phaseDurationInput);
-    if (isNaN(duration) || duration < 0.1) {
-        // Revert to original value if input is invalid
-        setPhaseDurationInput(String(currentPhase.duration));
-    }
-    setIsEditingPhase(false);
-  };
-
-
-  const isPhaseDurationValid = parseFloat(phaseDurationInput) >= 0.1;
 
   return (
     <Card className="w-full text-center border-2 shadow-lg relative">
@@ -143,34 +153,8 @@ export function TimerDisplay() {
         </div>
 
         <div className="mt-6 text-center min-h-[60px] w-full">
-           {isEditingPhase ? (
-             <div className="flex flex-col gap-2 items-center">
-               <div className="flex gap-2">
-                <Input value={currentPhase.title} onChange={handlePhaseTitleChange} className="text-center"/>
-                <div className="w-32">
-                    <Input 
-                      type="number" 
-                      value={phaseDurationInput} 
-                      onChange={handlePhaseDurationInputChange} 
-                      className="w-full text-center"
-                      min="0.1"
-                      step="0.1"
-                    />
-                    {!isPhaseDurationValid && (
-                        <p className="text-xs text-destructive mt-1">
-                            Số phút phải lớn hơn hoặc bằng 0.1
-                        </p>
-                    )}
-                </div>
-               </div>
-               <Button size="sm" onClick={handleDoneEditingPhaseClick}>Done</Button>
-             </div>
-           ) : (
-            <>
-              <p className="text-xl text-muted-foreground">{currentPhase.title}</p>
-              <p className="text-sm text-muted-foreground">{currentPhase.description}</p>
-            </>
-           )}
+            <p className="text-xl text-muted-foreground">{currentPhase.title}</p>
+            <p className="text-sm text-muted-foreground">{currentPhase.description}</p>
         </div>
       </CardContent>
 
@@ -190,33 +174,39 @@ export function TimerDisplay() {
             </Button>
         </div>
 
-        <div className="w-full space-y-4">
+        <div className="w-full space-y-2">
           <div className="flex flex-col items-center justify-center gap-2 w-full max-w-sm mx-auto">
               {currentCycle.phases.map((phase, index) => (
-                  <Button 
-                      key={phase.id}
-                      variant={index === currentPhaseIndex ? "default" : "outline"}
-                      size="sm"
-                      onClick={() => setCurrentPhaseIndex(index)}
-                      className={cn("h-auto py-2 px-4 w-full justify-between", index === currentPhaseIndex && "shadow-md")}
-                  >
-                      <span>{phase.title}</span>
-                      <span>{phase.duration}m</span>
-                  </Button>
+                  <div key={phase.id} className="w-full">
+                      <div className="flex items-center gap-2 w-full">
+                          <Button 
+                              variant={index === currentPhaseIndex ? "default" : "outline"}
+                              size="sm"
+                              onClick={() => setCurrentPhaseIndex(index)}
+                              className={cn("h-auto py-2 px-4 w-full justify-between flex-grow", index === currentPhaseIndex && "shadow-md")}
+                          >
+                              <span>{phase.title}</span>
+                              <span>{phase.duration}m</span>
+                          </Button>
+                          <Button variant="ghost" size="icon" onClick={() => setEditingPhaseId(editingPhaseId === phase.id ? null : phase.id)} title="Edit Phase">
+                              <Edit className="h-4 w-4" />
+                          </Button>
+                          {totalPhases > 1 && (
+                            <Button variant="ghost" size="icon" onClick={() => deletePhase(phase.id)} title="Delete Phase" className="text-destructive hover:text-destructive">
+                                <Trash2 className="h-4 w-4" />
+                            </Button>
+                          )}
+                      </div>
+                       {editingPhaseId === phase.id && (
+                           <PhaseEditor phaseId={phase.id} onDone={() => setEditingPhaseId(null)} />
+                       )}
+                  </div>
               ))}
           </div>
-          <div className="flex justify-center items-center gap-2">
-              <Button variant="ghost" size="icon" onClick={handleEditPhaseClick} title="Edit Current Phase">
-                  <Edit className="h-4 w-4" />
+          <div className="flex justify-center items-center">
+             <Button variant="outline" size="sm" onClick={() => addPhaseAfter(currentPhase.id)} title="Add Phase After Current" className="mt-2">
+                  <Plus className="mr-2 h-4 w-4" /> Add Phase
               </Button>
-              <Button variant="ghost" size="icon" onClick={() => addPhaseAfter(currentPhase.id)} title="Add Phase After Current">
-                  <Plus className="h-4 w-4" />
-              </Button>
-              {totalPhases > 1 && (
-                  <Button variant="ghost" size="icon" onClick={() => deletePhase(currentPhase.id)} title="Delete Current Phase" className="text-destructive hover:text-destructive">
-                      <Trash2 className="h-4 w-4" />
-                  </Button>
-              )}
           </div>
         </div>
 
@@ -227,5 +217,3 @@ export function TimerDisplay() {
     </Card>
   );
 }
-
-    
