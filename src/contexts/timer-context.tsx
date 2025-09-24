@@ -48,16 +48,16 @@ export const TimerProvider: FC<{ children: ReactNode }> = ({ children }) => {
 
   const synth = useRef<Tone.Synth | null>(null);
   const ToneRef = useRef<typeof import('tone') | null>(null);
-  const toneLoaded = useRef(false);
   const sessionsUntilLongRestRef = useRef(5);
 
   useEffect(() => {
-    if (toneLoaded.current) return;
-    import('tone').then(ToneModule => {
+    // This effect runs only once on the client after the component mounts
+    const initializeAudio = async () => {
+      const ToneModule = await import('tone');
       ToneRef.current = ToneModule;
       synth.current = new ToneModule.Synth().toDestination();
-      toneLoaded.current = true;
-    });
+    };
+    initializeAudio();
   }, []);
 
   const playSound = useCallback((note: string) => {
