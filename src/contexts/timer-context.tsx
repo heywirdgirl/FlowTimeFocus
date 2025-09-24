@@ -48,6 +48,7 @@ export const TimerProvider: FC<{ children: ReactNode }> = ({ children }) => {
 
   const synth = useRef<Tone.Synth | null>(null);
   const ToneRef = useRef<typeof import('tone') | null>(null);
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const sessionsUntilLongRestRef = useRef(5);
   const isAudioInitialized = useRef(false);
 
@@ -57,12 +58,11 @@ export const TimerProvider: FC<{ children: ReactNode }> = ({ children }) => {
         try {
             const ToneModule = await import('tone');
             ToneRef.current = ToneModule;
-            // Ensure context is running
             await ToneRef.current.start();
             if (!synth.current) {
                 synth.current = new ToneModule.Synth().toDestination();
             }
-             if (ToneRef.current.Transport.state !== 'started') {
+            if (ToneRef.current.Transport.state !== 'started') {
                 ToneRef.current.Transport.start();
             }
             isAudioInitialized.current = true;
@@ -78,89 +78,107 @@ export const TimerProvider: FC<{ children: ReactNode }> = ({ children }) => {
         synth.current.dispose();
         synth.current = null;
       }
+      if (ToneRef.current && ToneRef.current.Transport.state === 'started') {
+        ToneRef.current.Transport.stop();
+        ToneRef.current.Transport.cancel();
+      }
       isAudioInitialized.current = false;
     };
   }, []);
 
   const playSound = useCallback(() => {
-    if (settings.playSounds && synth.current && ToneRef.current) {
-      const tone = ToneRef.current;
-      // Ensure the audio context is running before playing a sound.
-      if (tone.context.state !== 'running') {
-        tone.context.resume();
-      }
-      // Schedule the sound to play in the near future to avoid timing conflicts
-      tone.Transport.scheduleOnce(t => {
-        synth.current?.triggerAttackRelease("C5", "8n", t);
-      }, "+0.01");
+    const tone = ToneRef.current;
+    if (!settings.playSounds || !synth.current || !tone) return;
+
+    if (tone.context.state !== 'running') {
+      tone.context.resume();
     }
+    
+    // Schedule with a small delay to ensure the time is always in the future
+    tone.Transport.scheduleOnce(time => {
+      synth.current?.triggerAttackRelease("C5", "8n", time);
+    }, tone.now() + 0.05); // 50ms delay
   }, [settings.playSounds]);
   
   const handleSessionEnd = useCallback((status: 'completed' | 'skipped') => {
-    if (currentPhase) {
-      setSessionPhaseRecords(prev => [...prev, {
-        title: currentPhase.title,
-        duration: currentPhase.duration,
-        completionStatus: status,
-      }]);
+    const tone = ToneRef.current;
+    if(tone) {
+      // Clear any pending transport events to prevent conflicts
+      tone.Transport.cancel();
     }
-
-    playSound();
     
-    const nextPhaseIndex = advancePhase();
+    // Add a small buffer to ensure state updates don't collide with audio scheduling
+    setTimeout(() => {
+        if (currentPhase) {
+          setSessionPhaseRecords(prev => [...prev, {
+            title: currentPhase.title,
+            duration: currentPhase.duration,
+            completionStatus: status,
+          }]);
+        }
+    
+        playSound();
+        
+        const nextPhaseIndex = advancePhase();
+    
+        if (currentCycle && nextPhaseIndex >= currentCycle.phases.length) {
+          const newCyclesCompleted = cyclesCompleted + 1;
+          setCyclesCompleted(newCyclesCompleted);
+    
+          logTraining({
+            cycleId: currentCycle.id,
+            name: currentCycle.name,
+            cycleCount: 1,
+            totalDuration: sessionPhaseRecords.reduce((acc, r) => acc + r.duration, 0) + (currentPhase?.duration || 0),
+            status: 'completed',
+            phaseRecords: [...sessionPhaseRecords, {
+              title: currentPhase!.title,
+              duration: currentPhase!.duration,
+              completionStatus: status,
+            }]
+          })
+          setSessionPhaseRecords([]);
+          
+          setCurrentPhaseIndex(0);
+    
+          if (sessionsUntilLongRestRef.current > 0 && newCyclesCompleted >= sessionsUntilLongRestRef.current) {
+              setIsActive(false);
+              return;
+          }
+        }
+    }, 100); // 100ms buffer
 
-    if (currentCycle && nextPhaseIndex >= currentCycle.phases.length) {
-      const newCyclesCompleted = cyclesCompleted + 1;
-      setCyclesCompleted(newCyclesCompleted);
-
-      logTraining({
-        cycleId: currentCycle.id,
-        name: currentCycle.name,
-        cycleCount: 1,
-        totalDuration: sessionPhaseRecords.reduce((acc, r) => acc + r.duration, 0) + (currentPhase?.duration || 0),
-        status: 'completed',
-        phaseRecords: [...sessionPhaseRecords, {
-          title: currentPhase!.title,
-          duration: currentPhase!.duration,
-          completionStatus: status,
-        }]
-      })
-      setSessionPhaseRecords([]);
-      
-      setCurrentPhaseIndex(0);
-
-      if (sessionsUntilLongRestRef.current > 0 && newCyclesCompleted >= sessionsUntilLongRestRef.current) {
-          setIsActive(false);
-          return;
-      }
-    }
   }, [playSound, advancePhase, currentCycle, cyclesCompleted, logTraining, currentPhase, sessionPhaseRecords, setCurrentPhaseIndex]);
 
 
   useEffect(() => {
-    let interval: NodeJS.Timeout | null = null;
     if (isActive && timeLeft > 0) {
-      interval = setInterval(() => {
+      intervalRef.current = setInterval(() => {
         setTimeLeft((prevTime) => prevTime - 1);
       }, 1000);
     } else if (isActive && timeLeft <= 0) {
       handleSessionEnd('completed');
     }
+    
+    // Cleanup function
     return () => {
-      if (interval) clearInterval(interval);
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
+      // Also clear transport on pause/stop to be safe
+      if (!isActive && ToneRef.current) {
+        ToneRef.current.Transport.cancel();
+      }
     };
   }, [isActive, timeLeft, handleSessionEnd]);
 
   useEffect(() => {
-    // When the phase changes, reset the timer to the new duration
-    // Only reset if the timer isn't already active from a previous phase
     if (!isActive) {
         setTimeLeft(getDuration());
     }
   }, [currentPhaseIndex, currentCycle, getDuration, isActive]);
 
   useEffect(() => {
-    // This effect ensures the timer is correctly set when a new cycle is loaded
     setTimeLeft(getDuration());
     setIsActive(false);
     setCyclesCompleted(0);
@@ -169,9 +187,15 @@ export const TimerProvider: FC<{ children: ReactNode }> = ({ children }) => {
   
   
   const startPause = (sessionsUntilLongRest: number) => {
-    if (ToneRef.current && ToneRef.current.context.state !== 'running') {
-        ToneRef.current.context.resume();
+    const tone = ToneRef.current;
+    if (tone && tone.context.state !== 'running') {
+        tone.context.resume();
     }
+    // Make sure transport is started
+    if(tone && tone.Transport.state !== 'started'){
+        tone.Transport.start();
+    }
+
     sessionsUntilLongRestRef.current = sessionsUntilLongRest;
     if (cyclesCompleted >= sessionsUntilLongRest && sessionsUntilLongRest > 0) {
       reset();
@@ -186,14 +210,15 @@ export const TimerProvider: FC<{ children: ReactNode }> = ({ children }) => {
     setCyclesCompleted(0);
     setTimeLeft(getDuration());
     setSessionPhaseRecords([]);
+    if (ToneRef.current) {
+        ToneRef.current.Transport.cancel();
+    }
   };
 
   const skip = (sessionsUntilLongRest: number) => {
     sessionsUntilLongRestRef.current = sessionsUntilLongRest;
     handleSessionEnd('skipped');
-    // If skipping while paused, need to manually update timer for next phase
     if (!isActive) {
-      // Temporarily create a new getDuration based on what the next phase *will be*
       const nextIndex = currentCycle ? (currentPhaseIndex + 1) % currentCycle.phases.length : 0;
       const nextPhaseDuration = currentCycle?.phases[nextIndex]?.duration ?? 0;
       setTimeLeft(nextPhaseDuration * 60);
