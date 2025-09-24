@@ -126,19 +126,6 @@ export const TimerProvider: FC<{ children: ReactNode }> = ({ children }) => {
   }, [currentPhaseIndex, getDuration]);
 
   // Full reset when cycle is changed
-  useEffect(() => {
-    reset();
-  }, [currentCycle]);
-
-  const startPause = (sessionsUntilLongRest: number) => {
-    sessionsUntilLongRestRef.current = sessionsUntilLongRest;
-    if (cyclesCompleted >= sessionsUntilLongRest && sessionsUntilLongRest > 0) {
-      reset();
-    } else {
-      setIsActive(!isActive);
-    }
-  };
-
   const reset = useCallback(() => {
     setIsActive(false);
     resetCycle();
@@ -149,6 +136,20 @@ export const TimerProvider: FC<{ children: ReactNode }> = ({ children }) => {
       clearInterval(intervalRef.current);
     }
   }, [getDuration, resetCycle]);
+  
+  useEffect(() => {
+    reset();
+  }, [currentCycle, reset]);
+
+
+  const startPause = (sessionsUntilLongRest: number) => {
+    sessionsUntilLongRestRef.current = sessionsUntilLongRest;
+    if (cyclesCompleted >= sessionsUntilLongRest && sessionsUntilLongRest > 0) {
+      reset();
+    } else {
+      setIsActive(!isActive);
+    }
+  };
 
   const handleSkip = useCallback(() => {
     if (currentPhase) {
@@ -197,16 +198,9 @@ export const TimerProvider: FC<{ children: ReactNode }> = ({ children }) => {
     setIsActive(false); // Stop the timer when skipping
     if (intervalRef.current) clearInterval(intervalRef.current);
     
-    const shouldStop = handleSkip();
+    handleSkip();
 
-    if (shouldStop) {
-      setTimeLeft(getDuration());
-    } else {
-      // Set timer to next phase duration, but don't start it.
-      const nextIndex = currentCycle ? (currentPhaseIndex + 1) % currentCycle.phases.length : 0;
-      const nextPhaseDuration = currentCycle?.phases[nextIndex]?.duration ?? 0;
-      setTimeLeft(nextPhaseDuration * 60);
-    }
+    setTimeLeft(getDuration());
   };
 
   const value = {
