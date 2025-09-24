@@ -8,7 +8,6 @@ import { useCycle } from "@/contexts/cycle-context";
 import { Play, Pause, RotateCcw, SkipForward, Edit, Plus, Trash2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
-import { useSettings } from "@/contexts/settings-context";
 import { cn } from "@/lib/utils";
 import type { Phase } from "@/lib/types";
 import { CycleProgressBar } from "./cycle-progress-bar";
@@ -155,6 +154,7 @@ export function TimerDisplay() {
 
         <div className="mt-6 text-center min-h-[60px] w-full">
             <p className="text-xl text-muted-foreground">{currentPhase.title}</p>
+            <CycleProgressBar totalCycles={sessionsUntilLongRest} />
         </div>
       </CardContent>
 
@@ -175,22 +175,6 @@ export function TimerDisplay() {
         </div>
 
         <div className="w-full space-y-2 py-4">
-            <div className="max-w-[12rem] mx-auto space-y-2">
-                <Label htmlFor="sessionsUntilLongRest" className="text-sm font-medium">Lặp lại chu trình</Label>
-                <Input
-                    id="sessionsUntilLongRest"
-                    type="number"
-                    value={sessionsUntilLongRest}
-                    onChange={(e) => setSessionsUntilLongRest(Number(e.target.value))}
-                    className="w-full"
-                    min="1"
-                />
-            </div>
-            <CycleProgressBar totalCycles={sessionsUntilLongRest} />
-        </div>
-
-
-        <div className="w-full space-y-2">
           <div className="flex flex-col items-center justify-center gap-2 w-full max-w-sm mx-auto">
               {currentCycle.phases.map((phase, index) => (
                   <div key={phase.id} className="w-full">
@@ -240,8 +224,21 @@ export function TimerDisplay() {
           )}
         </div>
 
-        <div className="text-sm text-muted-foreground">
-            Tổng thời gian: {totalDuration.toFixed(1)}m
+        <div className="w-full max-w-sm mx-auto space-y-2">
+            <div className="max-w-[12rem] mx-auto space-y-2">
+                <Label htmlFor="sessionsUntilLongRest" className="text-sm font-medium">Lặp lại chu trình</Label>
+                <Input
+                    id="sessionsUntilLongRest"
+                    type="number"
+                    value={sessionsUntilLongRest}
+                    onChange={(e) => setSessionsUntilLongRest(Number(e.target.value))}
+                    className="w-full"
+                    min="1"
+                />
+            </div>
+            <div className="text-sm text-muted-foreground pt-4">
+                Tổng thời gian: {totalDuration.toFixed(1)}m
+            </div>
         </div>
       </CardFooter>
     </Card>
