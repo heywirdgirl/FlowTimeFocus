@@ -22,7 +22,7 @@ const defaultSettings: Settings = {
   focusDuration: 25,
   shortRestDuration: 5,
   longRestDuration: 15,
-  sessionsUntilLongRest: 4,
+  sessionsUntilLongRest: 5,
   playSounds: true,
   theme: "system",
 };
