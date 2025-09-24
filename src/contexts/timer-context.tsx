@@ -62,9 +62,6 @@ export const TimerProvider: FC<{ children: ReactNode }> = ({ children }) => {
             if (!synth.current) {
                 synth.current = new ToneModule.Synth().toDestination();
             }
-            if (ToneRef.current.Transport.state !== 'started') {
-                ToneRef.current.Transport.start();
-            }
             isAudioInitialized.current = true;
         } catch (error) {
             console.error("Failed to initialize audio:", error);
@@ -89,12 +86,18 @@ export const TimerProvider: FC<{ children: ReactNode }> = ({ children }) => {
   const playSound = useCallback(() => {
     const tone = ToneRef.current;
     if (!settings.playSounds || !synth.current || !tone) return;
-
+  
+    // Ensure the audio context is running.
     if (tone.context.state !== 'running') {
       tone.context.resume();
     }
-    
-    // Schedule with a small delay to ensure the time is always in the future
+  
+    // Ensure the Transport is started.
+    if (tone.Transport.state !== 'started') {
+      tone.Transport.start();
+    }
+  
+    // Schedule the sound to play in the near future to avoid timing conflicts
     tone.Transport.scheduleOnce(time => {
       synth.current?.triggerAttackRelease("C5", "8n", time);
     }, tone.now() + 0.05); // 50ms delay
@@ -166,7 +169,7 @@ export const TimerProvider: FC<{ children: ReactNode }> = ({ children }) => {
         clearInterval(intervalRef.current);
       }
       // Also clear transport on pause/stop to be safe
-      if (!isActive && ToneRef.current) {
+      if (ToneRef.current) {
         ToneRef.current.Transport.cancel();
       }
     };
