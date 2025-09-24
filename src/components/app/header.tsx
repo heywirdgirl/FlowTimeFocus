@@ -36,7 +36,7 @@ export function Header() {
       <header className="container mx-auto max-w-4xl px-4 pt-4">
         <div className="flex items-center justify-between">
           <h1 className="text-2xl font-bold font-headline text-foreground">
-            Timeflow
+            Timecycle
           </h1>
           <div className="flex items-center gap-4">
             <span className="hidden sm:inline text-sm text-muted-foreground font-mono">{currentTime}</span>
