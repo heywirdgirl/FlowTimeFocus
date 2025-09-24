@@ -9,6 +9,7 @@ import { useCycle } from './cycle-context';
 interface TimerContextType {
   timeLeft: number;
   isActive: boolean;
+  cyclesCompleted: number;
   startPause: () => void;
   reset: () => void;
   skip: () => void;
@@ -28,6 +29,7 @@ export const TimerProvider: FC<{ children: ReactNode }> = ({ children }) => {
   const { settings } = useSettings();
   const { currentCycle, currentPhaseIndex, advancePhase, resetCycle } = useCycle();
   const [isActive, setIsActive] = useState(false);
+  const [cyclesCompleted, setCyclesCompleted] = useState(0);
 
   const getDuration = useCallback(() => {
     if (currentCycle && currentCycle.phases[currentPhaseIndex]) {
@@ -53,11 +55,19 @@ export const TimerProvider: FC<{ children: ReactNode }> = ({ children }) => {
   };
   
   const handleSessionEnd = useCallback(() => {
-    setIsActive(false);
     playSound('C5'); // Sound for phase end
-    // Here you would record the TrainingHistory
+    
+    if (currentCycle && currentPhaseIndex === currentCycle.phases.length - 1) {
+        const newCyclesCompleted = cyclesCompleted + 1;
+        setCyclesCompleted(newCyclesCompleted);
+
+        if (settings.sessionsUntilLongRest > 0 && newCyclesCompleted >= settings.sessionsUntilLongRest) {
+            setIsActive(false); // Stop the timer
+        }
+    }
+    
     advancePhase();
-  }, [playSound, advancePhase]);
+  }, [playSound, advancePhase, currentCycle, currentPhaseIndex, cyclesCompleted, settings.sessionsUntilLongRest]);
 
 
   useEffect(() => {
@@ -75,16 +85,25 @@ export const TimerProvider: FC<{ children: ReactNode }> = ({ children }) => {
   }, [isActive, timeLeft, handleSessionEnd]);
 
   useEffect(() => {
-    // Reset timer when phase changes
     setTimeLeft(getDuration());
-    // if (!isActive) {
-    // }
   }, [currentPhaseIndex, currentCycle, getDuration]);
+  
+  useEffect(() => {
+    if (cyclesCompleted >= settings.sessionsUntilLongRest && settings.sessionsUntilLongRest > 0) {
+      setIsActive(false);
+    }
+  }, [cyclesCompleted, settings.sessionsUntilLongRest]);
+
 
   const startPause = () => {
-    if (timeLeft === 0) {
-      handleSessionEnd();
+    if (cyclesCompleted >= settings.sessionsUntilLongRest && settings.sessionsUntilLongRest > 0) {
+      reset();
       setTimeout(() => setIsActive(true), 100);
+    } else if (timeLeft === 0) {
+      handleSessionEnd();
+      if (!isActive) {
+        setTimeout(() => setIsActive(true), 100);
+      }
     } else {
       setIsActive(!isActive);
     }
@@ -93,16 +112,20 @@ export const TimerProvider: FC<{ children: ReactNode }> = ({ children }) => {
   const reset = () => {
     setIsActive(false);
     resetCycle();
+    setCyclesCompleted(0);
     setTimeLeft(getDuration());
   };
 
   const skip = () => {
-    handleSessionEnd();
+    if (isActive) {
+      handleSessionEnd();
+    }
   };
 
   const value = {
     timeLeft,
     isActive,
+    cyclesCompleted,
     startPause,
     reset,
     skip

@@ -8,6 +8,7 @@ import { Play, Pause, RotateCcw, SkipForward, Edit, Plus, Trash2 } from "lucide-
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useState } from "react";
+import { useSettings } from "@/contexts/settings-context";
 
 const formatTime = (seconds: number) => {
   const mins = Math.floor(seconds / 60);
@@ -16,8 +17,9 @@ const formatTime = (seconds: number) => {
 };
 
 export function TimerDisplay() {
-  const { timeLeft, isActive, startPause, reset, skip } = useTimer();
+  const { timeLeft, isActive, cyclesCompleted, startPause, reset, skip } = useTimer();
   const { currentCycle, currentPhaseIndex, updateCycle, updatePhase, addPhaseAfter, deletePhase } = useCycle();
+  const { settings } = useSettings();
 
   const [isEditingCycle, setIsEditingCycle] = useState(false);
   const [isEditingPhase, setIsEditingPhase] = useState(false);
@@ -164,7 +166,7 @@ export function TimerDisplay() {
             </Button>
         </div>
         <div className="text-sm text-muted-foreground">
-            Phase {currentPhaseIndex + 1}/{totalPhases} | Total Cycle: {totalDuration}m
+            Phase {currentPhaseIndex + 1}/{totalPhases} | Cycle {cyclesCompleted + 1}/{settings.sessionsUntilLongRest > 0 ? settings.sessionsUntilLongRest : '∞'} | Total: {totalDuration}m
         </div>
       </CardFooter>
     </Card>

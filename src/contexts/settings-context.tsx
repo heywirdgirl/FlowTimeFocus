@@ -47,7 +47,7 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
     try {
       const storedSettings = localStorage.getItem("flowtime-settings");
       if (storedSettings) {
-        setSettings(JSON.parse(storedSettings));
+        setSettings(prev => ({...prev, ...JSON.parse(storedSettings)}));
       }
     } catch (error) {
       console.error("Failed to read settings from localStorage", error);
