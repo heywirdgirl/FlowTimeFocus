@@ -32,19 +32,19 @@ const wimHofCycle: Cycle = {
   phases: [
     {
       id: "phase_1",
-      title: "Hít thở sâu",
+      title: "Deep Breathing",
       duration: 1,
       soundFile: null,
     },
     {
       id: "phase_2",
-      title: "Giữ hơi thở",
+      title: "Breath Hold",
       duration: 1.5,
       soundFile: null,
     },
     {
       id: "phase_3",
-      title: "Thở ra giữ",
+      title: "Recovery Breath",
       duration: 0.5,
       soundFile: null,
     },
@@ -69,9 +69,9 @@ const mockTrainingHistory: TrainingHistory[] = [
       completedAt: new Date().toISOString(),
       status: 'completed',
       phaseRecords: [
-        { title: 'Hít thở sâu', duration: 1, completionStatus: 'completed' },
-        { title: 'Giữ hơi thở', duration: 1.5, completionStatus: 'completed' },
-        { title: 'Thở ra giữ', duration: 0.5, completionStatus: 'completed' },
+        { title: 'Deep Breathing', duration: 1, completionStatus: 'completed' },
+        { title: 'Breath Hold', duration: 1.5, completionStatus: 'completed' },
+        { title: 'Recovery Breath', duration: 0.5, completionStatus: 'completed' },
       ]
     }
 ]

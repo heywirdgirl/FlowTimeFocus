@@ -48,7 +48,7 @@ function PhaseEditor({ phase, onSave, onCancel, isNew }: { phase: Partial<Phase>
             />
              {parseFloat(duration) < 0.1 && (
                 <p className="text-xs text-destructive mt-1">
-                    Số phút phải lớn hơn hoặc bằng 0.1
+                    Duration must be at least 0.1 minutes.
                 </p>
             )}
             <div className="flex gap-2">
@@ -224,20 +224,20 @@ export function TimerDisplay() {
           )}
         </div>
 
-        <div className="w-full max-w-sm mx-auto space-y-2">
-            <div className="max-w-[12rem] mx-auto space-y-2">
-                <Label htmlFor="sessionsUntilLongRest" className="text-sm font-medium">Lặp lại chu trình</Label>
+        <div className="w-full max-w-sm mx-auto space-y-4">
+            <div className="flex items-center justify-between">
+                <Label htmlFor="sessionsUntilLongRest" className="text-sm font-medium">Repeat Cycles</Label>
                 <Input
                     id="sessionsUntilLongRest"
                     type="number"
                     value={sessionsUntilLongRest}
                     onChange={(e) => setSessionsUntilLongRest(Number(e.target.value))}
-                    className="w-full"
+                    className="w-20"
                     min="1"
                 />
             </div>
-            <div className="text-sm text-muted-foreground pt-4">
-                Tổng thời gian: {totalDuration.toFixed(1)}m
+            <div className="text-sm text-muted-foreground pt-2">
+                Total duration: {totalDuration.toFixed(1)}m
             </div>
         </div>
       </CardFooter>
