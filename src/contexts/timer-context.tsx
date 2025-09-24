@@ -87,70 +87,62 @@ export const TimerProvider: FC<{ children: ReactNode }> = ({ children }) => {
     const tone = ToneRef.current;
     if (!settings.playSounds || !synth.current || !tone) return;
   
-    // Ensure the audio context is running.
     if (tone.context.state !== 'running') {
       tone.context.resume();
     }
   
-    // Ensure the Transport is started.
     if (tone.Transport.state !== 'started') {
       tone.Transport.start();
     }
   
-    // Schedule the sound to play in the near future to avoid timing conflicts
     tone.Transport.scheduleOnce(time => {
       synth.current?.triggerAttackRelease("C5", "8n", time);
-    }, tone.now() + 0.05); // 50ms delay
+    }, tone.now() + 0.05);
   }, [settings.playSounds]);
   
-  const handleSessionEnd = useCallback((status: 'completed' | 'skipped') => {
+  const handleSkip = useCallback(() => {
     const tone = ToneRef.current;
-    if(tone) {
-      // Clear any pending transport events to prevent conflicts
-      tone.Transport.cancel();
+    if (tone) {
+        tone.Transport.cancel();
     }
-    
-    // Add a small buffer to ensure state updates don't collide with audio scheduling
-    setTimeout(() => {
-        if (currentPhase) {
-          setSessionPhaseRecords(prev => [...prev, {
-            title: currentPhase.title,
-            duration: currentPhase.duration,
-            completionStatus: status,
-          }]);
-        }
-    
-        playSound();
-        
-        const nextPhaseIndex = advancePhase();
-    
-        if (currentCycle && nextPhaseIndex >= currentCycle.phases.length) {
-          const newCyclesCompleted = cyclesCompleted + 1;
-          setCyclesCompleted(newCyclesCompleted);
-    
-          logTraining({
-            cycleId: currentCycle.id,
-            name: currentCycle.name,
-            cycleCount: 1,
-            totalDuration: sessionPhaseRecords.reduce((acc, r) => acc + r.duration, 0) + (currentPhase?.duration || 0),
-            status: 'completed',
-            phaseRecords: [...sessionPhaseRecords, {
-              title: currentPhase!.title,
-              duration: currentPhase!.duration,
-              completionStatus: status,
-            }]
-          })
-          setSessionPhaseRecords([]);
-          
-          setCurrentPhaseIndex(0);
-    
-          if (sessionsUntilLongRestRef.current > 0 && newCyclesCompleted >= sessionsUntilLongRestRef.current) {
-              setIsActive(false);
-              return;
-          }
-        }
-    }, 100); // 100ms buffer
 
+    if (currentPhase) {
+      setSessionPhaseRecords(prev => [...prev, {
+        title: currentPhase.title,
+        duration: currentPhase.duration,
+        completionStatus: 'skipped',
+      }]);
+    }
+
+    playSound();
+    
+    const nextPhaseIndex = advancePhase();
+
+    if (currentCycle && nextPhaseIndex >= currentCycle.phases.length) {
+      const newCyclesCompleted = cyclesCompleted + 1;
+      setCyclesCompleted(newCyclesCompleted);
+
+      logTraining({
+        cycleId: currentCycle.id,
+        name: currentCycle.name,
+        cycleCount: 1,
+        totalDuration: sessionPhaseRecords.reduce((acc, r) => acc + r.duration, 0) + (currentPhase?.duration || 0),
+        status: 'completed',
+        phaseRecords: [...sessionPhaseRecords, {
+          title: currentPhase!.title,
+          duration: currentPhase!.duration,
+          completionStatus: 'skipped',
+        }]
+      })
+      setSessionPhaseRecords([]);
+      
+      setCurrentPhaseIndex(0);
+
+      if (sessionsUntilLongRestRef.current > 0 && newCyclesCompleted >= sessionsUntilLongRestRef.current) {
+          setIsActive(false);
+          return;
+      }
+    }
   }, [playSound, advancePhase, currentCycle, cyclesCompleted, logTraining, currentPhase, sessionPhaseRecords, setCurrentPhaseIndex]);
 
 
@@ -160,28 +152,64 @@ export const TimerProvider: FC<{ children: ReactNode }> = ({ children }) => {
         setTimeLeft((prevTime) => prevTime - 1);
       }, 1000);
     } else if (isActive && timeLeft <= 0) {
-      handleSessionEnd('completed');
+        // Logic from handleSessionEnd moved here directly
+        const tone = ToneRef.current;
+        if (tone) {
+            tone.Transport.cancel();
+        }
+
+        if (currentPhase) {
+            setSessionPhaseRecords(prev => [...prev, {
+                title: currentPhase.title,
+                duration: currentPhase.duration,
+                completionStatus: 'completed',
+            }]);
+        }
+
+        playSound();
+
+        const nextPhaseIndex = advancePhase();
+
+        if (currentCycle && nextPhaseIndex >= currentCycle.phases.length) {
+            const newCyclesCompleted = cyclesCompleted + 1;
+            setCyclesCompleted(newCyclesCompleted);
+
+            logTraining({
+                cycleId: currentCycle.id,
+                name: currentCycle.name,
+                cycleCount: 1,
+                totalDuration: sessionPhaseRecords.reduce((acc, r) => acc + r.duration, 0) + (currentPhase?.duration || 0),
+                status: 'completed',
+                phaseRecords: [...sessionPhaseRecords, {
+                    title: currentPhase!.title,
+                    duration: currentPhase!.duration,
+                    completionStatus: 'completed',
+                }]
+            });
+            setSessionPhaseRecords([]);
+            setCurrentPhaseIndex(0);
+
+            if (sessionsUntilLongRestRef.current > 0 && newCyclesCompleted >= sessionsUntilLongRestRef.current) {
+                setIsActive(false); // Stop timer only if all cycles are done
+            }
+        }
     }
     
-    // Cleanup function
     return () => {
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
       }
-      // Also clear transport on pause/stop to be safe
-      if (ToneRef.current) {
-        ToneRef.current.Transport.cancel();
-      }
     };
-  }, [isActive, timeLeft, handleSessionEnd]);
+  }, [isActive, timeLeft, currentCycle, currentPhase, cyclesCompleted, sessionPhaseRecords, advancePhase, logTraining, playSound, setCurrentPhaseIndex]);
 
   useEffect(() => {
-    if (!isActive) {
-        setTimeLeft(getDuration());
-    }
-  }, [currentPhaseIndex, currentCycle, getDuration, isActive]);
+    // Reset timer when phase changes, but only if timer is not active.
+    // If it's active, the main useEffect will handle time updates.
+    setTimeLeft(getDuration());
+  }, [currentPhaseIndex, getDuration]);
 
   useEffect(() => {
+    // This effect resets the entire timer state when the cycle itself is changed by the user.
     setTimeLeft(getDuration());
     setIsActive(false);
     setCyclesCompleted(0);
@@ -194,7 +222,6 @@ export const TimerProvider: FC<{ children: ReactNode }> = ({ children }) => {
     if (tone && tone.context.state !== 'running') {
         tone.context.resume();
     }
-    // Make sure transport is started
     if(tone && tone.Transport.state !== 'started'){
         tone.Transport.start();
     }
@@ -211,8 +238,8 @@ export const TimerProvider: FC<{ children: ReactNode }> = ({ children }) => {
     setIsActive(false);
     resetCycle();
     setCyclesCompleted(0);
-    setTimeLeft(getDuration());
     setSessionPhaseRecords([]);
+    setTimeLeft(getDuration());
     if (ToneRef.current) {
         ToneRef.current.Transport.cancel();
     }
@@ -220,11 +247,12 @@ export const TimerProvider: FC<{ children: ReactNode }> = ({ children }) => {
 
   const skip = (sessionsUntilLongRest: number) => {
     sessionsUntilLongRestRef.current = sessionsUntilLongRest;
-    handleSessionEnd('skipped');
+    handleSkip();
+    // When skipping, immediately set timer to next phase duration, but don't start it.
     if (!isActive) {
-      const nextIndex = currentCycle ? (currentPhaseIndex + 1) % currentCycle.phases.length : 0;
-      const nextPhaseDuration = currentCycle?.phases[nextIndex]?.duration ?? 0;
-      setTimeLeft(nextPhaseDuration * 60);
+        const nextIndex = currentCycle ? (currentPhaseIndex + 1) % currentCycle.phases.length : 0;
+        const nextPhaseDuration = currentCycle?.phases[nextIndex]?.duration ?? 0;
+        setTimeLeft(nextPhaseDuration * 60);
     }
   };
 
