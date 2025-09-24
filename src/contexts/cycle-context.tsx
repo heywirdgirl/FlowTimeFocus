@@ -1,9 +1,25 @@
 "use client";
 
 import { Cycle, Phase, TrainingHistory, AudioAsset } from "@/lib/types";
-import React, { createContext, useContext, useState, ReactNode, useMemo } from "react";
+import React, { createContext, useContext, useState, ReactNode, useMemo, useCallback } from "react";
 
 // Mock data based on your types
+const pomodoroCycle: Cycle = {
+    id: "cycle_pomodoro",
+    name: "Pomodoro Classic",
+    description: "Làm việc 25 phút, nghỉ 5 phút.",
+    phases: [
+      { id: "p1", title: "Focus", duration: 25, description: "Work on your task.", soundFile: null, removable: true },
+      { id: "p2", title: "Break", duration: 5, description: "Take a short break.", soundFile: null, removable: true },
+    ],
+    isPublic: true,
+    authorId: "user123",
+    authorName: "User",
+    likes: 150, shares: 30,
+    createdAt: "2025-09-23T10:00:00Z",
+    updatedAt: "2025-09-23T10:00:00Z",
+}
+
 const wimHofCycle: Cycle = {
   id: "cycle_template_wimhof",
   name: "Wim Hof Morning",
@@ -39,22 +55,6 @@ const wimHofCycle: Cycle = {
   createdAt: "2025-09-22T23:00:00Z",
   updatedAt: "2025-09-22T23:00:00Z",
 };
-
-const pomodoroCycle: Cycle = {
-    id: "cycle_pomodoro",
-    name: "Classic Focus",
-    description: "Làm việc 25 phút, nghỉ 5 phút.",
-    phases: [
-      { id: "p1", title: "Focus", duration: 25, description: "Work on your task.", soundFile: null },
-      { id: "p2", title: "Short Break", duration: 5, description: "Take a short break.", soundFile: null },
-    ],
-    isPublic: false,
-    authorId: "user123",
-    authorName: "User",
-    likes: 0, shares: 0,
-    createdAt: "2025-09-23T10:00:00Z",
-    updatedAt: "2025-09-23T10:00:00Z",
-}
 
 const mockTrainingHistory: TrainingHistory[] = [
     {
@@ -95,6 +95,10 @@ interface CycleContextType {
   setCurrentCycle: (cycle: Cycle) => void;
   advancePhase: () => void;
   resetCycle: () => void;
+  updateCycle: (updates: Partial<Cycle>) => void;
+  updatePhase: (phaseId: string, updates: Partial<Phase>) => void;
+  addPhaseAfter: (phaseId: string) => void;
+  deletePhase: (phaseId: string) => void;
 }
 
 const CycleContext = createContext<CycleContextType | undefined>(undefined);
@@ -108,7 +112,7 @@ export function useCycle() {
 }
 
 export function CycleProvider({ children }: { children: ReactNode }) {
-  const [privateCycles] = useState<Cycle[]>([wimHofCycle, pomodoroCycle]);
+  const [privateCycles] = useState<Cycle[]>([pomodoroCycle, wimHofCycle]);
   const [currentCycle, setCurrentCycleState] = useState<Cycle | null>(privateCycles[0] || null);
   const [currentPhaseIndex, setCurrentPhaseIndex] = useState(0);
   const [trainingHistory, setTrainingHistory] = useState<TrainingHistory[]>(mockTrainingHistory);
@@ -123,8 +127,6 @@ export function CycleProvider({ children }: { children: ReactNode }) {
     if (currentCycle) {
       const nextPhaseIndex = (currentPhaseIndex + 1);
       if (nextPhaseIndex >= currentCycle.phases.length) {
-        // Cycle finished, you might want to record history here.
-        // For now, let's just reset to the beginning of the cycle.
         setCurrentPhaseIndex(0);
       } else {
         setCurrentPhaseIndex(nextPhaseIndex);
@@ -134,9 +136,50 @@ export function CycleProvider({ children }: { children: ReactNode }) {
 
   const resetCycle = () => {
       if(currentCycle) {
-          setCurrentCycle(currentCycle);
+          // This should ideally reload from original source, but for now we just reset index
+          setCurrentPhaseIndex(0);
       }
   }
+
+  const updateCycle = useCallback((updates: Partial<Cycle>) => {
+    setCurrentCycleState(prev => prev ? { ...prev, ...updates } : null);
+  }, []);
+
+  const updatePhase = useCallback((phaseId: string, updates: Partial<Phase>) => {
+    setCurrentCycleState(prev => {
+      if (!prev) return null;
+      const newPhases = prev.phases.map(p => p.id === phaseId ? { ...p, ...updates } : p);
+      return { ...prev, phases: newPhases };
+    });
+  }, []);
+  
+  const addPhaseAfter = useCallback((currentPhaseId: string) => {
+    setCurrentCycleState(prev => {
+      if (!prev) return null;
+      const newPhase: Phase = {
+        id: `phase_${Math.random().toString(36).substr(2, 9)}`,
+        title: 'New Phase',
+        duration: 5,
+        description: 'A new phase.',
+        soundFile: null,
+        removable: true,
+      };
+      const currentIndex = prev.phases.findIndex(p => p.id === currentPhaseId);
+      const newPhases = [...prev.phases];
+      newPhases.splice(currentIndex + 1, 0, newPhase);
+      return { ...prev, phases: newPhases };
+    });
+  }, []);
+  
+  const deletePhase = useCallback((phaseId: string) => {
+    setCurrentCycleState(prev => {
+      if (!prev || prev.phases.length <= 1) return prev;
+      const newPhases = prev.phases.filter(p => p.id !== phaseId);
+      const newIndex = Math.min(currentPhaseIndex, newPhases.length - 1);
+      setCurrentPhaseIndex(newIndex);
+      return { ...prev, phases: newPhases };
+    });
+  }, [currentPhaseIndex]);
 
   const currentPhase = useMemo(() => {
     return currentCycle?.phases[currentPhaseIndex] || null;
@@ -152,6 +195,10 @@ export function CycleProvider({ children }: { children: ReactNode }) {
     setCurrentCycle,
     advancePhase,
     resetCycle,
+    updateCycle,
+    updatePhase,
+    addPhaseAfter,
+    deletePhase,
   };
 
   return (

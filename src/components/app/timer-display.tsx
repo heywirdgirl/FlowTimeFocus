@@ -2,11 +2,12 @@
 
 import { useTimer } from "@/contexts/timer-context";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
-import { useSettings } from "@/contexts/settings-context";
-import { Play, Pause, RotateCcw, SkipForward, Volume2, VolumeX } from "lucide-react";
+import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { useCycle } from "@/contexts/cycle-context";
+import { Play, Pause, RotateCcw, SkipForward, Edit, Plus, Trash2 } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { useState } from "react";
 
 const formatTime = (seconds: number) => {
   const mins = Math.floor(seconds / 60);
@@ -16,58 +17,156 @@ const formatTime = (seconds: number) => {
 
 export function TimerDisplay() {
   const { timeLeft, isActive, startPause, reset, skip } = useTimer();
-  const { settings, setSettings } = useSettings();
-  const { currentCycle, currentPhaseIndex } = useCycle();
-  
+  const { currentCycle, currentPhaseIndex, updateCycle, updatePhase, addPhaseAfter, deletePhase } = useCycle();
+
+  const [isEditingCycle, setIsEditingCycle] = useState(false);
+  const [isEditingPhase, setIsEditingPhase] = useState(false);
+
   const currentPhase = currentCycle?.phases[currentPhaseIndex];
   const totalPhases = currentCycle?.phases.length ?? 0;
+  const totalDuration = currentCycle?.phases.reduce((acc, p) => acc + p.duration, 0) ?? 0;
 
-  const totalDuration = currentPhase ? currentPhase.duration * 60 : 0;
-  const progress = totalDuration > 0 ? ((totalDuration - timeLeft) / totalDuration) * 100 : 0;
+  const progress = currentPhase ? ((currentPhase.duration * 60 - timeLeft) / (currentPhase.duration * 60)) * 100 : 0;
+  
+  if (!currentCycle || !currentPhase) {
+    return (
+      <Card className="w-full text-center border-2 shadow-lg p-8">
+        <p>Loading cycle...</p>
+      </Card>
+    );
+  }
 
-  const toggleSound = () => {
-    setSettings(s => ({ ...s, playSounds: !s.playSounds }));
+  const handleCycleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    updateCycle({ name: e.target.value });
+  };
+  
+  const handleCycleDescriptionChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    updateCycle({ description: e.target.value });
+  };
+
+  const handlePhaseTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    updatePhase(currentPhase.id, { title: e.target.value });
+  };
+
+  const handlePhaseDurationChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const duration = parseFloat(e.target.value);
+    if (!isNaN(duration)) {
+      updatePhase(currentPhase.id, { duration });
+    }
   };
 
   return (
-    <Card className="w-full text-center border-2 shadow-lg">
-      <CardHeader>
-         <CardTitle className="text-3xl font-headline tracking-wider text-muted-foreground">
-          {currentPhase?.title ?? "Ready?"}
-        </CardTitle>
-        <CardDescription>
-          {totalPhases > 0 && `Phase ${currentPhaseIndex + 1}/${totalPhases}`}
-        </CardDescription>
+    <Card className="w-full text-center border-2 shadow-lg relative">
+      <CardHeader className="pb-2">
+        {isEditingCycle ? (
+          <div className="flex flex-col gap-2">
+            <Input
+              value={currentCycle.name}
+              onChange={handleCycleNameChange}
+              className="text-3xl font-headline tracking-wider text-center"
+            />
+            <Textarea
+              value={currentCycle.description}
+              onChange={handleCycleDescriptionChange}
+              placeholder="Cycle description"
+              className="text-sm text-center"
+            />
+            <Button size="sm" onClick={() => setIsEditingCycle(false)}>Done</Button>
+          </div>
+        ) : (
+          <div className="flex items-center justify-center gap-2">
+            <h2 className="text-3xl font-headline tracking-wider">{currentCycle.name}</h2>
+            <Button variant="ghost" size="icon" onClick={() => setIsEditingCycle(true)}>
+              <Edit className="h-5 w-5" />
+            </Button>
+          </div>
+        )}
+        <p className="text-sm text-muted-foreground">{currentCycle.description}</p>
       </CardHeader>
-      <CardContent className="flex flex-col items-center justify-center">
-        <div className="relative font-mono text-8xl md:text-9xl font-bold tracking-tighter text-foreground tabular-nums mb-4">
-          {formatTime(timeLeft)}
+      
+      <CardContent className="flex flex-col items-center justify-center pt-4">
+        <div className="relative w-64 h-64 md:w-80 md:h-80">
+          <svg className="w-full h-full" viewBox="0 0 100 100">
+            <circle
+              className="text-gray-200 dark:text-gray-700"
+              strokeWidth="5"
+              stroke="currentColor"
+              fill="transparent"
+              r="45"
+              cx="50"
+              cy="50"
+            />
+            <circle
+              className="text-primary"
+              strokeWidth="5"
+              strokeDasharray="282.74"
+              strokeDashoffset={282.74 - (progress / 100) * 282.74}
+              strokeLinecap="round"
+              stroke="currentColor"
+              fill="transparent"
+              r="45"
+              cx="50"
+              cy="50"
+              style={{ transform: 'rotate(-90deg)', transformOrigin: '50% 50%', transition: 'stroke-dashoffset 1s linear' }}
+            />
+          </svg>
+          <div className="absolute inset-0 flex items-center justify-center">
+            <span className="font-mono text-5xl md:text-7xl font-bold tracking-tighter text-foreground tabular-nums">
+              {formatTime(timeLeft)}
+            </span>
+          </div>
         </div>
-        <Progress value={progress} className="w-full h-3" />
-        <div className="mt-4 text-center text-muted-foreground min-h-[40px] px-6">
-          <p>{currentPhase?.description}</p>
+
+        <div className="mt-6 text-center min-h-[60px] w-full">
+           {isEditingPhase ? (
+             <div className="flex flex-col gap-2 items-center">
+               <div className="flex gap-2">
+                <Input value={currentPhase.title} onChange={handlePhaseTitleChange} className="text-center"/>
+                <Input type="number" value={currentPhase.duration} onChange={handlePhaseDurationChange} className="w-20 text-center"/>
+               </div>
+               <Button size="sm" onClick={() => setIsEditingPhase(false)}>Done</Button>
+             </div>
+           ) : (
+             <div className="flex items-center justify-center gap-2">
+                <p className="text-xl text-muted-foreground">{currentPhase.title}</p>
+                <Button variant="ghost" size="icon" onClick={() => setIsEditingPhase(true)}>
+                    <Edit className="h-4 w-4" />
+                </Button>
+             </div>
+           )}
+           <p className="text-sm text-muted-foreground">{currentPhase.description}</p>
+        </div>
+         <div className="flex gap-2 mt-2">
+            <Button variant="outline" size="sm" onClick={() => addPhaseAfter(currentPhase.id)}>
+                <Plus className="mr-1 h-4 w-4" /> Add Phase
+            </Button>
+            {totalPhases > 1 && (
+                <Button variant="destructive" size="sm" onClick={() => deletePhase(currentPhase.id)}>
+                    <Trash2 className="mr-1 h-4 w-4" /> Delete Phase
+                </Button>
+            )}
         </div>
       </CardContent>
-      <CardFooter className="flex justify-center items-center gap-4">
-        <Button onClick={reset} variant="outline" size="icon" className="h-14 w-14 rounded-full">
-          <RotateCcw />
-          <span className="sr-only">Reset</span>
-        </Button>
-        <Button onClick={startPause} size="icon" className="h-20 w-20 rounded-full text-3xl shadow-lg">
-          {isActive ? <Pause className="h-10 w-10" /> : <Play className="h-10 w-10" />}
-          <span className="sr-only">{isActive ? "Pause" : "Start"}</span>
-        </Button>
-        <Button onClick={skip} variant="outline" size="icon" className="h-14 w-14 rounded-full">
-          <SkipForward />
-          <span className="sr-only">Skip</span>
-        </Button>
+
+      <CardFooter className="flex flex-col gap-4">
+        <div className="flex justify-center items-center gap-4">
+            <Button onClick={reset} variant="outline" size="icon" className="h-14 w-14 rounded-full">
+                <RotateCcw />
+                <span className="sr-only">Reset</span>
+            </Button>
+            <Button onClick={startPause} size="icon" className="h-20 w-20 rounded-full text-3xl shadow-lg">
+                {isActive ? <Pause className="h-10 w-10" /> : <Play className="h-10 w-10" />}
+                <span className="sr-only">{isActive ? "Pause" : "Start"}</span>
+            </Button>
+            <Button onClick={skip} variant="outline" size="icon" className="h-14 w-14 rounded-full">
+                <SkipForward />
+                <span className="sr-only">Skip</span>
+            </Button>
+        </div>
+        <div className="text-sm text-muted-foreground">
+            Phase {currentPhaseIndex + 1}/{totalPhases} | Total Cycle: {totalDuration}m
+        </div>
       </CardFooter>
-      <div className="absolute top-4 right-4">
-         <Button onClick={toggleSound} variant="ghost" size="icon">
-          {settings.playSounds ? <Volume2 /> : <VolumeX />}
-          <span className="sr-only">Toggle Sound</span>
-        </Button>
-      </div>
     </Card>
   );
 }
