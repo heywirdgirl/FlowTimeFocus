@@ -53,33 +53,45 @@ export const TimerProvider: FC<{ children: ReactNode }> = ({ children }) => {
 
   useEffect(() => {
     const initializeAudio = async () => {
-      if (isAudioInitialized.current) return;
-      const ToneModule = await import('tone');
-      ToneRef.current = ToneModule;
-      if (!synth.current) {
-        synth.current = new ToneModule.Synth().toDestination();
-      }
-      isAudioInitialized.current = true;
+        if (isAudioInitialized.current) return;
+        try {
+            const ToneModule = await import('tone');
+            ToneRef.current = ToneModule;
+            if (!synth.current) {
+                synth.current = new ToneModule.Synth().toDestination();
+                // Start the transport if it's not already started
+                if (ToneRef.current.Transport.state !== 'started') {
+                    await ToneRef.current.start();
+                    ToneRef.current.Transport.start();
+                }
+            }
+            isAudioInitialized.current = true;
+        } catch (error) {
+            console.error("Failed to initialize audio:", error);
+        }
     };
+    
     initializeAudio();
 
     return () => {
       if (synth.current) {
         synth.current.dispose();
         synth.current = null;
-        isAudioInitialized.current = false;
       }
+      isAudioInitialized.current = false;
     };
   }, []);
 
-  const playSound = useCallback((note: string) => {
+  const playSound = useCallback(() => {
     if (settings.playSounds && synth.current && ToneRef.current) {
-        const tone = ToneRef.current;
-        if (tone.context.state !== 'running') {
-            tone.context.resume();
-        }
-        // Schedule the sound to play at the current time in the audio context
-        synth.current.triggerAttackRelease(note, "8n", tone.now());
+      const tone = ToneRef.current;
+      if (tone.context.state !== 'running') {
+        tone.context.resume();
+      }
+      // Schedule the sound to play in the near future to avoid timing conflicts
+      tone.Transport.scheduleOnce(t => {
+        synth.current?.triggerAttackRelease("C5", "8n", t);
+      }, "+0.01");
     }
   }, [settings.playSounds]);
   
@@ -92,7 +104,7 @@ export const TimerProvider: FC<{ children: ReactNode }> = ({ children }) => {
       }]);
     }
 
-    playSound('C5');
+    playSound();
     
     const nextPhaseIndex = advancePhase();
 
