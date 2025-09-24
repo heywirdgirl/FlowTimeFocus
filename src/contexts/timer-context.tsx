@@ -47,22 +47,26 @@ export const TimerProvider: FC<{ children: ReactNode }> = ({ children }) => {
   const [timeLeft, setTimeLeft] = useState(getDuration());
 
   const synth = useRef<Tone.Synth | null>(null);
-  const ToneRef = useRef<typeof Tone | null>(null);
+  const ToneRef = useRef<typeof import('tone') | null>(null);
   const toneLoaded = useRef(false);
   const sessionsUntilLongRestRef = useRef(5);
 
   useEffect(() => {
     if (toneLoaded.current) return;
-    import('tone').then(Tone => {
-      ToneRef.current = Tone;
-      synth.current = new Tone.Synth().toDestination();
+    import('tone').then(ToneModule => {
+      ToneRef.current = ToneModule;
+      synth.current = new ToneModule.Synth().toDestination();
       toneLoaded.current = true;
     });
   }, []);
 
   const playSound = useCallback((note: string) => {
     if (settings.playSounds && synth.current && ToneRef.current) {
-      synth.current.triggerAttackRelease(note, "8n", ToneRef.current.now());
+        // Ensure the audio context is running
+        if (ToneRef.current.context.state !== 'running') {
+            ToneRef.current.context.resume();
+        }
+        synth.current.triggerAttackRelease(note, "8n", ToneRef.current.now());
     }
   }, [settings.playSounds]);
   
@@ -126,6 +130,9 @@ export const TimerProvider: FC<{ children: ReactNode }> = ({ children }) => {
   }, [currentPhaseIndex, currentCycle, getDuration]);
   
   const startPause = (sessionsUntilLongRest: number) => {
+    if (ToneRef.current && ToneRef.current.context.state !== 'running') {
+        ToneRef.current.context.resume();
+    }
     sessionsUntilLongRestRef.current = sessionsUntilLongRest;
     if (cyclesCompleted >= sessionsUntilLongRest && sessionsUntilLongRest > 0) {
       reset();
