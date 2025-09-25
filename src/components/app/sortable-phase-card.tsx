@@ -21,8 +21,10 @@ interface SortablePhaseCardProps {
 
 export function SortablePhaseCard({ id, index, remove }: SortablePhaseCardProps) {
   const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id });
-  const { control } = useFormContext(); // Gaining access to the form context
+  const { control, watch } = useFormContext(); // Gaining access to the form context
   const { audioLibrary } = useCycle();
+  const selectedSound = watch(`phases.${index}.soundFile`);
+
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -70,7 +72,19 @@ export function SortablePhaseCard({ id, index, remove }: SortablePhaseCardProps)
                     render={({ field }) => (
                         <FormItem>
                             <FormLabel>Sound</FormLabel>
-                             <Select onValueChange={(value) => field.onChange(value === 'null' ? null : { url: value, name: audioLibrary.find(a => a.url === value)?.name } )} >
+                             <Select 
+                                onValueChange={(value) => {
+                                    if (value === 'null') {
+                                        field.onChange(null);
+                                    } else {
+                                        const selectedAudio = audioLibrary.find(a => a.url === value);
+                                        if (selectedAudio) {
+                                            field.onChange({ url: selectedAudio.url, name: selectedAudio.name });
+                                        }
+                                    }
+                                }} 
+                                value={selectedSound?.url || 'null'}
+                            >
                                 <FormControl>
                                 <SelectTrigger>
                                     <SelectValue placeholder="Select a sound" />
