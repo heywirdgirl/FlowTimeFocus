@@ -47,25 +47,37 @@ export const TimerProvider: FC<{ children: ReactNode }> = ({ children }) => {
 
   const playSound = useCallback(() => {
     if (!settings.playSounds) return;
-    
-    // Use the phase-specific sound, or fallback to the first sound in the library
-    const fallbackSoundUrl = audioLibrary.length > 0 ? audioLibrary[0].url : null;
+
+    const fallbackSoundUrl = audioLibrary.length > 0 ? audioLibrary[0].url : "/sounds/sound1.wav";
     const soundUrl = currentPhase?.soundFile?.url || fallbackSoundUrl;
-    
+
     if (soundUrl) {
       if (soundRef.current) {
         soundRef.current.stop();
         soundRef.current.unload();
       }
+      
       const sound = new Howl({
         src: [soundUrl],
         html5: true,
+        volume: 0.8,
+        onload: () => {
+          console.log('Sound loaded successfully, playing...');
+          sound.play();
+        },
+        onplay: () => console.log('Sound playing!'),
         onerror: (id, error) => {
-            console.error("Howler error:", error);
-        }
+          console.error('Howler error:', error);
+          // Retry with HTML5 audio fallback
+          const fallbackAudio = new Audio(soundUrl);
+          fallbackAudio.volume = 0.8;
+          fallbackAudio.play().catch(e => console.error('Fallback play error:', e));
+        },
+        onend: () => console.log('Sound ended'),
       });
-      sound.play();
       soundRef.current = sound;
+    } else {
+        console.log('No sound URL available');
     }
   }, [settings.playSounds, currentPhase, audioLibrary]);
 
@@ -73,7 +85,13 @@ export const TimerProvider: FC<{ children: ReactNode }> = ({ children }) => {
   useEffect(() => {
     if (isActive) {
       intervalRef.current = setInterval(() => {
-        setTimeLeft(prev => prev - 1);
+        setTimeLeft(prev => {
+            if (prev <= 1) {
+                clearInterval(intervalRef.current!);
+                return 0;
+            }
+            return prev - 1
+        });
       }, 1000);
     } else {
       if (intervalRef.current) {
@@ -88,61 +106,72 @@ export const TimerProvider: FC<{ children: ReactNode }> = ({ children }) => {
     };
   }, [isActive]);
 
-  // Effect to handle phase completion when timer runs out
+
+  // Effect for when timer runs out
   useEffect(() => {
-    if (isActive && timeLeft <= 0) {
-      setIsActive(false); // Stop the timer
-      playSound();
+    if (timeLeft > 0) return;
+    if (!isActive) return;
 
-      setSessionPhaseRecords(prev => [...prev, {
-        title: currentPhase!.title,
-        duration: currentPhase!.duration,
-        completionStatus: 'completed'
-      }]);
-      
-      const nextPhaseIndex = advancePhase();
+    setIsActive(false);
+    console.log("Timer ended, playing sound...");
+    playSound();
 
-      if (nextPhaseIndex >= (currentCycle?.phases.length || 0)) {
-        const newCyclesCompleted = cyclesCompleted + 1;
-        setCyclesCompleted(newCyclesCompleted);
+    setSessionPhaseRecords(prev => [...prev, {
+      title: currentPhase!.title,
+      duration: currentPhase!.duration,
+      completionStatus: 'completed'
+    }]);
+    
+    const nextPhaseIndex = advancePhase();
 
-        logTraining({
-          cycleId: currentCycle!.id,
-          name: currentCycle!.name,
-          cycleCount: 1,
-          totalDuration: sessionPhaseRecords.reduce((acc, r) => acc + r.duration, 0) + (currentPhase?.duration ?? 0),
-          status: 'completed',
-          phaseRecords: [...sessionPhaseRecords, {
-            title: currentPhase!.title,
-            duration: currentPhase!.duration,
-            completionStatus: 'completed',
-          }]
-        });
+    if (nextPhaseIndex >= (currentCycle?.phases.length || 0)) {
+      const newCyclesCompleted = cyclesCompleted + 1;
+      setCyclesCompleted(newCyclesCompleted);
 
-        setSessionPhaseRecords([]);
-        setCurrentPhaseIndex(0);
+      logTraining({
+        cycleId: currentCycle!.id,
+        name: currentCycle!.name,
+        cycleCount: 1,
+        totalDuration: sessionPhaseRecords.reduce((acc, r) => acc + r.duration, 0) + (currentPhase?.duration ?? 0),
+        status: 'completed',
+        phaseRecords: [...sessionPhaseRecords, {
+          title: currentPhase!.title,
+          duration: currentPhase!.duration,
+          completionStatus: 'completed',
+        }]
+      });
 
-        if (sessionsUntilLongRestRef.current > 0 && newCyclesCompleted < sessionsUntilLongRestRef.current) {
-           setIsActive(true); // Automatically start next cycle
-        }
+      setSessionPhaseRecords([]);
+      setCurrentPhaseIndex(0);
+
+      if (sessionsUntilLongRestRef.current > 0 && newCyclesCompleted >= sessionsUntilLongRestRef.current) {
+         // Stop if we've completed all repeat cycles
+         setIsActive(false);
       } else {
-        setIsActive(true); // Automatically start next phase
+         setIsActive(true); // Automatically start next cycle
       }
+
+    } else {
+      setIsActive(true); // Automatically start next phase
     }
+
   }, [timeLeft]);
 
-
-  // Effect to reset time when phase or cycle changes
+  // Effect to reset time when phase or cycle changes *manually*
   useEffect(() => {
     setTimeLeft(getDuration());
-  }, [currentPhase, getDuration]);
+    if(isActive) {
+      setIsActive(false); // Stop timer on manual phase change to prevent issues
+    }
+  }, [currentPhase?.id, currentCycle?.id]);
 
   const reset = useCallback(() => {
     setIsActive(false);
     resetCycle();
     setCyclesCompleted(0);
     setSessionPhaseRecords([]);
-  }, [resetCycle]);
+    setTimeLeft(getDuration());
+  }, [resetCycle, getDuration]);
   
   const startPause = (sessionsUntilLongRest: number) => {
     sessionsUntilLongRestRef.current = sessionsUntilLongRest;
@@ -156,7 +185,9 @@ export const TimerProvider: FC<{ children: ReactNode }> = ({ children }) => {
   const skip = () => {
     if (!currentCycle) return;
     
-    setIsActive(false);
+    // Stop any active timer
+    setIsActive(false); 
+    console.log('Skipping phase, playing sound...');
     playSound();
     
     setSessionPhaseRecords(prev => [...prev, {
@@ -167,13 +198,16 @@ export const TimerProvider: FC<{ children: ReactNode }> = ({ children }) => {
 
     const nextPhaseIndex = advancePhase();
     if (nextPhaseIndex >= currentCycle.phases.length) {
-      setCyclesCompleted(prev => prev + 1);
+      const newCyclesCompleted = cyclesCompleted + 1;
+      setCyclesCompleted(newCyclesCompleted);
       setCurrentPhaseIndex(0);
-       if (sessionsUntilLongRestRef.current > 0 && cyclesCompleted + 1 < sessionsUntilLongRestRef.current) {
-           setIsActive(true);
-        }
+      if (sessionsUntilLongRestRef.current > 0 && newCyclesCompleted >= sessionsUntilLongRestRef.current) {
+        setIsActive(false); // Stop if we've hit the end
+      } else {
+        setIsActive(true); // Start next cycle
+      }
     } else {
-      setIsActive(true);
+      setIsActive(true); // Start next phase immediately
     }
   };
   
