@@ -30,7 +30,7 @@ export const useTimer = () => {
 
 export const TimerProvider: FC<{ children: ReactNode }> = ({ children }) => {
   const { settings } = useSettings();
-  const { currentCycle, currentPhase, advancePhase, resetCycle, logTraining, setCurrentPhaseIndex, audioLibrary } = useCycle();
+  const { currentCycle, currentPhaseIndex, currentPhase, advancePhase, resetCycle, logTraining, setCurrentPhaseIndex, audioLibrary } = useCycle();
   
   const [isActive, setIsActive] = useState(false);
   const [cyclesCompleted, setCyclesCompleted] = useState(0);
@@ -47,14 +47,20 @@ export const TimerProvider: FC<{ children: ReactNode }> = ({ children }) => {
 
   const playSound = useCallback(() => {
     if (!settings.playSounds) return;
+    
+    // First, try to get the sound from the current phase
+    let soundUrl = currentPhase?.soundFile?.url;
 
-    const fallbackSoundUrl = audioLibrary.length > 0 ? audioLibrary[0].url : "/sounds/sound1.wav";
-    const soundUrl = currentPhase?.soundFile?.url || fallbackSoundUrl;
-
+    // If not available, use the first sound in the library as a fallback
+    if (!soundUrl && audioLibrary.length > 0) {
+      soundUrl = audioLibrary[0].url;
+    }
+    
     if (soundUrl) {
       if (soundRef.current) {
         soundRef.current.stop();
         soundRef.current.unload();
+        soundRef.current = null;
       }
       
       const sound = new Howl({
@@ -68,8 +74,7 @@ export const TimerProvider: FC<{ children: ReactNode }> = ({ children }) => {
         onplay: () => console.log('Sound playing!'),
         onerror: (id, error) => {
           console.error('Howler error:', error);
-          // Retry with HTML5 audio fallback
-          const fallbackAudio = new Audio(soundUrl);
+          const fallbackAudio = new Audio(soundUrl!);
           fallbackAudio.volume = 0.8;
           fallbackAudio.play().catch(e => console.error('Fallback play error:', e));
         },
@@ -81,7 +86,6 @@ export const TimerProvider: FC<{ children: ReactNode }> = ({ children }) => {
     }
   }, [settings.playSounds, currentPhase, audioLibrary]);
 
-  // Effect to handle the countdown timer
   useEffect(() => {
     if (isActive) {
       intervalRef.current = setInterval(() => {
@@ -106,25 +110,30 @@ export const TimerProvider: FC<{ children: ReactNode }> = ({ children }) => {
     };
   }, [isActive]);
 
-
-  // Effect for when timer runs out
   useEffect(() => {
-    if (timeLeft > 0) return;
-    if (!isActive) return;
+    if (timeLeft > 0 || !isActive) return;
 
+    // This is the sequence that runs when a phase ends
+    // 1. Stop the timer temporarily
     setIsActive(false);
+
+    // 2. Play the sound
     console.log("Timer ended, playing sound...");
     playSound();
 
+    // 3. Record the completed phase
     setSessionPhaseRecords(prev => [...prev, {
       title: currentPhase!.title,
       duration: currentPhase!.duration,
       completionStatus: 'completed'
     }]);
     
+    // 4. Advance to the next phase
     const nextPhaseIndex = advancePhase();
 
+    // 5. Check if the cycle is over or continue
     if (nextPhaseIndex >= (currentCycle?.phases.length || 0)) {
+      // Cycle finished
       const newCyclesCompleted = cyclesCompleted + 1;
       setCyclesCompleted(newCyclesCompleted);
 
@@ -142,26 +151,27 @@ export const TimerProvider: FC<{ children: ReactNode }> = ({ children }) => {
       });
 
       setSessionPhaseRecords([]);
-      setCurrentPhaseIndex(0);
+      setCurrentPhaseIndex(0); // Reset for the next potential cycle run
 
+      // Stop if we have completed all the repeat cycles
       if (sessionsUntilLongRestRef.current > 0 && newCyclesCompleted >= sessionsUntilLongRestRef.current) {
-         // Stop if we've completed all repeat cycles
-         setIsActive(false);
+         setIsActive(false); 
       } else {
-         setIsActive(true); // Automatically start next cycle
+         setIsActive(true); // Automatically start the next cycle
       }
 
     } else {
-      setIsActive(true); // Automatically start next phase
+      setIsActive(true); // Automatically start the next phase
     }
 
   }, [timeLeft]);
 
-  // Effect to reset time when phase or cycle changes *manually*
   useEffect(() => {
     setTimeLeft(getDuration());
     if(isActive) {
-      setIsActive(false); // Stop timer on manual phase change to prevent issues
+      // Let the end-of-phase effect handle the transition.
+      // This stops the timer if the user manually clicks on a different phase button.
+      setIsActive(false); 
     }
   }, [currentPhase?.id, currentCycle?.id]);
 
@@ -170,9 +180,13 @@ export const TimerProvider: FC<{ children: ReactNode }> = ({ children }) => {
     resetCycle();
     setCyclesCompleted(0);
     setSessionPhaseRecords([]);
-    setTimeLeft(getDuration());
-  }, [resetCycle, getDuration]);
+    // getDuration will be based on the reset cycle's first phase
+  }, [resetCycle]);
   
+  useEffect(() => {
+      setTimeLeft(getDuration());
+  }, [getDuration, cyclesCompleted, currentPhaseIndex])
+
   const startPause = (sessionsUntilLongRest: number) => {
     sessionsUntilLongRestRef.current = sessionsUntilLongRest;
     if (cyclesCompleted >= sessionsUntilLongRest && sessionsUntilLongRest > 0) {
@@ -185,7 +199,6 @@ export const TimerProvider: FC<{ children: ReactNode }> = ({ children }) => {
   const skip = () => {
     if (!currentCycle) return;
     
-    // Stop any active timer
     setIsActive(false); 
     console.log('Skipping phase, playing sound...');
     playSound();
@@ -202,12 +215,12 @@ export const TimerProvider: FC<{ children: ReactNode }> = ({ children }) => {
       setCyclesCompleted(newCyclesCompleted);
       setCurrentPhaseIndex(0);
       if (sessionsUntilLongRestRef.current > 0 && newCyclesCompleted >= sessionsUntilLongRestRef.current) {
-        setIsActive(false); // Stop if we've hit the end
+        setIsActive(false); 
       } else {
-        setIsActive(true); // Start next cycle
+        setIsActive(true); 
       }
     } else {
-      setIsActive(true); // Start next phase immediately
+      setIsActive(true); 
     }
   };
   
