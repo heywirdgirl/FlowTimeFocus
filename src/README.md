@@ -12,6 +12,7 @@ This is a time management application built with Next.js and Firebase Studio, he
 │   │   ├── flows         # Main AI logic
 │   │   └── genkit.ts     # Genkit configuration
 │   ├── app               # Main Next.js routes and layouts
+│   │   ├── create        # Page for creating a new cycle
 │   │   ├── globals.css   # Global CSS
 │   │   ├── layout.tsx    # Root layout
 │   │   └── page.tsx      # Home page
@@ -19,7 +20,8 @@ This is a time management application built with Next.js and Firebase Studio, he
 │   │   ├── app           # Application-specific components
 │   │   └── ui            # UI components from ShadCN
 │   ├── contexts          # React context providers
-│   └── lib               # Utility functions and shared files
+│   ├── hooks             # Custom React hooks
+│   └── lib               # Utility functions, types, and shared files
 ├── package.json          # List of dependencies and scripts
 └── tailwind.config.ts    # Tailwind CSS configuration
 ```
@@ -38,7 +40,7 @@ Below is a list of the main libraries used in the project:
 - **Zod**: Schema validation library.
 - **Framer Motion**: Animation library for React.
 - **React Hook Form**: Form management library.
-- **Tone.js**: Framework for creating interactive music and sound in the browser.
+- **Howler.js**: Audio library for the modern web.
 
 ## Environment Variables
 

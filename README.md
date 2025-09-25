@@ -12,6 +12,7 @@
 │   │   ├── flows         # Logic AI chính
 │   │   └── genkit.ts     # Cấu hình Genkit
 │   ├── app               # Các tuyến đường và layout chính của Next.js
+│   │   ├── create        # Trang tạo chu trình mới
 │   │   ├── globals.css   # CSS toàn cục
 │   │   ├── layout.tsx    # Layout gốc
 │   │   └── page.tsx      # Trang chủ
@@ -19,7 +20,8 @@
 │   │   ├── app           # Các thành phần cụ thể của ứng dụng
 │   │   └── ui            # Các thành phần giao diện người dùng từ ShadCN
 │   ├── contexts          # Các context provider của React
-│   └── lib               # Các hàm tiện ích và tệp dùng chung
+│   ├── hooks             # Các React hook tùy chỉnh
+│   └── lib               # Các hàm tiện ích, kiểu dữ liệu và tệp dùng chung
 ├── package.json          # Danh sách các gói phụ thuộc và script
 └── tailwind.config.ts    # Cấu hình Tailwind CSS
 ```
@@ -38,7 +40,7 @@ Dưới đây là danh sách các thư viện chính được sử dụng trong 
 - **Zod**: Thư viện xác thực schema.
 - **Framer Motion**: Thư viện hoạt ảnh cho React.
 - **React Hook Form**: Thư viện quản lý biểu mẫu.
-- **Tone.js**: Framework để tạo nhạc và âm thanh tương tác trong trình duyệt.
+- **Howler.js**: Thư viện âm thanh cho web.
 
 ## Biến môi trường
 
