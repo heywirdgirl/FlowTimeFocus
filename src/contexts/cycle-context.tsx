@@ -4,19 +4,34 @@
 import { Cycle, Phase, TrainingHistory, AudioAsset } from "@/lib/types";
 import React, { createContext, useContext, useState, ReactNode, useMemo, useCallback } from "react";
 
+const mockAudioLibrary: AudioAsset[] = [
+    {
+        id: "audio_1",
+        name: "Gentle Bell",
+        url: "/sounds/gentle-bell.wav",
+        uploadedAt: "2025-09-22T23:00:00Z"
+    },
+    {
+        id: "audio_2",
+        name: "Singing Bowl",
+        url: "/sounds/singing-bowl.wav",
+        uploadedAt: "2025-09-22T23:00:00Z"
+    }
+]
+
 // Mock data based on your types
 const pomodoroCycle: Cycle = {
     id: "cycle_pomodoro",
     name: "Pomodoro Classic",
     phases: [
-      { id: "p1", title: "Focus", duration: 25, soundFile: { url: "/sounds/singing-bowl.wav", name: "Singing Bowl"}, removable: false },
-      { id: "p2", title: "Break", duration: 5, soundFile: { url: "/sounds/singing-bowl.wav", name: "Singing Bowl"}, removable: false },
-      { id: "p3", title: "Focus", duration: 25, soundFile: { url: "/sounds/singing-bowl.wav", name: "Singing Bowl"}, removable: false },
-      { id: "p4", title: "Break", duration: 5, soundFile: { url: "/sounds/singing-bowl.wav", name: "Singing Bowl"}, removable: false },
-      { id: "p5", title: "Focus", duration: 25, soundFile: { url: "/sounds/singing-bowl.wav", name: "Singing Bowl"}, removable: false },
-      { id: "p6", title: "Break", duration: 5, soundFile: { url: "/sounds/singing-bowl.wav", name: "Singing Bowl"}, removable: false },
-      { id: "p7", title: "Focus", duration: 25, soundFile: { url: "/sounds/singing-bowl.wav", name: "Singing Bowl"}, removable: false },
-      { id: "p8", title: "Long Break", duration: 15, soundFile: { url: "/sounds/singing-bowl.wav", name: "Singing Bowl"}, removable: false },
+      { id: "p1", title: "Focus", duration: 25, soundFile: { url: mockAudioLibrary[0].url, name: mockAudioLibrary[0].name}, removable: false },
+      { id: "p2", title: "Break", duration: 5, soundFile: { url: mockAudioLibrary[0].url, name: mockAudioLibrary[0].name}, removable: false },
+      { id: "p3", title: "Focus", duration: 25, soundFile: { url: mockAudioLibrary[0].url, name: mockAudioLibrary[0].name}, removable: false },
+      { id: "p4", title: "Break", duration: 5, soundFile: { url: mockAudioLibrary[0].url, name: mockAudioLibrary[0].name}, removable: false },
+      { id: "p5", title: "Focus", duration: 25, soundFile: { url: mockAudioLibrary[0].url, name: mockAudioLibrary[0].name}, removable: false },
+      { id: "p6", title: "Break", duration: 5, soundFile: { url: mockAudioLibrary[0].url, name: mockAudioLibrary[0].name}, removable: false },
+      { id: "p7", title: "Focus", duration: 25, soundFile: { url: mockAudioLibrary[0].url, name: mockAudioLibrary[0].name}, removable: false },
+      { id: "p8", title: "Long Break", duration: 15, soundFile: { url: mockAudioLibrary[1].url, name: mockAudioLibrary[1].name}, removable: false },
     ],
     isPublic: true,
     authorId: "user123",
@@ -34,19 +49,19 @@ const wimHofCycle: Cycle = {
       id: "phase_1",
       title: "Deep Breathing",
       duration: 1,
-      soundFile: { url: "/sounds/singing-bowl.wav", name: "Singing Bowl"},
+      soundFile: { url: mockAudioLibrary[0].url, name: mockAudioLibrary[0].name},
     },
     {
       id: "phase_2",
       title: "Breath Hold",
       duration: 1.5,
-      soundFile: { url: "/sounds/singing-bowl.wav", name: "Singing Bowl"},
+      soundFile: { url: mockAudioLibrary[1].url, name: mockAudioLibrary[1].name},
     },
     {
       id: "phase_3",
       title: "Recovery Breath",
       duration: 0.5,
-      soundFile: { url: "/sounds/singing-bowl.wav", name: "Singing Bowl"},
+      soundFile: { url: mockAudioLibrary[0].url, name: mockAudioLibrary[0].name},
     },
   ],
   isPublic: true,
@@ -73,21 +88,6 @@ const mockTrainingHistory: TrainingHistory[] = [
         { title: 'Breath Hold', duration: 1.5, completionStatus: 'completed' },
         { title: 'Recovery Breath', duration: 0.5, completionStatus: 'completed' },
       ]
-    }
-]
-
-const mockAudioLibrary: AudioAsset[] = [
-    {
-        id: "audio_1",
-        name: "Gentle Bell",
-        url: "/sounds/gentle-bell.wav",
-        uploadedAt: "2025-09-22T23:00:00Z"
-    },
-    {
-        id: "audio_2",
-        name: "Singing Bowl",
-        url: "/sounds/singing-bowl.wav",
-        uploadedAt: "2025-09-22T23:00:00Z"
     }
 ]
 
@@ -229,5 +229,3 @@ export function CycleProvider({ children }: { children: ReactNode }) {
     </CycleContext.Provider>
   );
 }
-
-    
