@@ -7,14 +7,14 @@ import React, { createContext, useContext, useState, ReactNode, useMemo, useCall
 const mockAudioLibrary: AudioAsset[] = [
     {
         id: "audio_1",
-        name: "Gentle Bell",
-        url: "/sounds/gentle-bell.wav",
+        name: "Sound 1",
+        url: "/sounds/sound1.wav",
         uploadedAt: "2025-09-22T23:00:00Z"
     },
     {
         id: "audio_2",
-        name: "Singing Bowl",
-        url: "/sounds/singing-bowl.wav",
+        name: "Sound 2",
+        url: "/sounds/sound2.wav",
         uploadedAt: "2025-09-22T23:00:00Z"
     }
 ]
@@ -133,13 +133,10 @@ export function CycleProvider({ children }: { children: ReactNode }) {
   };
 
   const advancePhase = useCallback(() => {
-    if (currentCycle) {
-      const nextPhaseIndex = currentPhaseIndex + 1;
-      setCurrentPhaseIndexState(nextPhaseIndex);
-      return nextPhaseIndex;
-    }
-    return 0;
-  }, [currentCycle, currentPhaseIndex]);
+      const nextIndex = currentPhaseIndex + 1;
+      setCurrentPhaseIndexState(nextIndex);
+      return nextIndex;
+  }, [currentPhaseIndex]);
   
   const setCurrentPhaseIndex = (index: number) => {
       if (currentCycle && index >= 0 && index < currentCycle.phases.length) {
@@ -195,14 +192,17 @@ export function CycleProvider({ children }: { children: ReactNode }) {
       if (!prev || prev.phases.length <= 1) return prev;
       const newPhases = prev.phases.filter(p => p.id !== phaseId);
       if (currentPhaseIndex >= newPhases.length) {
-          setCurrentPhaseIndexState(0);
+          setCurrentPhaseIndexState(newPhases.length - 1);
       }
       return { ...prev, phases: newPhases };
     });
   }, [currentPhaseIndex]);
 
   const currentPhase = useMemo(() => {
-    return currentCycle?.phases[currentPhaseIndex] || null;
+    if (!currentCycle) return null;
+    // Handle index out of bounds gracefully
+    const index = Math.min(currentPhaseIndex, currentCycle.phases.length -1);
+    return currentCycle.phases[index] || null;
   }, [currentCycle, currentPhaseIndex]);
 
   const value = {

@@ -30,7 +30,7 @@ export const useTimer = () => {
 
 export const TimerProvider: FC<{ children: ReactNode }> = ({ children }) => {
   const { settings } = useSettings();
-  const { currentCycle, currentPhase, currentPhaseIndex, advancePhase, resetCycle, logTraining, setCurrentPhaseIndex, audioLibrary } = useCycle();
+  const { currentCycle, currentPhase, advancePhase, resetCycle, logTraining, setCurrentPhaseIndex, audioLibrary } = useCycle();
   
   const [isActive, setIsActive] = useState(false);
   const [cyclesCompleted, setCyclesCompleted] = useState(0);
@@ -49,8 +49,8 @@ export const TimerProvider: FC<{ children: ReactNode }> = ({ children }) => {
     if (!settings.playSounds) return;
     
     // Use the phase-specific sound, or fallback to the first sound in the library
-    const fallbackSound = audioLibrary.length > 0 ? audioLibrary[0].url : null;
-    const soundUrl = currentPhase?.soundFile?.url || fallbackSound;
+    const fallbackSoundUrl = audioLibrary.length > 0 ? audioLibrary[0].url : null;
+    const soundUrl = currentPhase?.soundFile?.url || fallbackSoundUrl;
     
     if (soundUrl) {
       if (soundRef.current) {
@@ -69,14 +69,16 @@ export const TimerProvider: FC<{ children: ReactNode }> = ({ children }) => {
     }
   }, [settings.playSounds, currentPhase, audioLibrary]);
 
-  // Main timer tick effect
+  // Effect to handle the countdown timer
   useEffect(() => {
     if (isActive) {
       intervalRef.current = setInterval(() => {
         setTimeLeft(prev => prev - 1);
       }, 1000);
-    } else if (intervalRef.current) {
-      clearInterval(intervalRef.current);
+    } else {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
     }
 
     return () => {
@@ -86,10 +88,17 @@ export const TimerProvider: FC<{ children: ReactNode }> = ({ children }) => {
     };
   }, [isActive]);
 
-  // Effect to handle phase completion
+  // Effect to handle phase completion when timer runs out
   useEffect(() => {
     if (isActive && timeLeft <= 0) {
+      setIsActive(false); // Stop the timer
       playSound();
+
+      setSessionPhaseRecords(prev => [...prev, {
+        title: currentPhase!.title,
+        duration: currentPhase!.duration,
+        completionStatus: 'completed'
+      }]);
       
       const nextPhaseIndex = advancePhase();
 
@@ -113,45 +122,43 @@ export const TimerProvider: FC<{ children: ReactNode }> = ({ children }) => {
         setSessionPhaseRecords([]);
         setCurrentPhaseIndex(0);
 
-        if (sessionsUntilLongRestRef.current > 0 && newCyclesCompleted >= sessionsUntilLongRestRef.current) {
-          setIsActive(false); // Stop timer only when all repeated cycles are done
+        if (sessionsUntilLongRestRef.current > 0 && newCyclesCompleted < sessionsUntilLongRestRef.current) {
+           setIsActive(true); // Automatically start next cycle
         }
+      } else {
+        setIsActive(true); // Automatically start next phase
       }
     }
   }, [timeLeft]);
 
 
-  // Effect to reset time when phase changes
+  // Effect to reset time when phase or cycle changes
   useEffect(() => {
     setTimeLeft(getDuration());
   }, [currentPhase, getDuration]);
-
 
   const reset = useCallback(() => {
     setIsActive(false);
     resetCycle();
     setCyclesCompleted(0);
     setSessionPhaseRecords([]);
-    setTimeLeft(getDuration()); 
-  }, [resetCycle, getDuration]);
+  }, [resetCycle]);
   
   const startPause = (sessionsUntilLongRest: number) => {
     sessionsUntilLongRestRef.current = sessionsUntilLongRest;
     if (cyclesCompleted >= sessionsUntilLongRest && sessionsUntilLongRest > 0) {
       reset();
     } else {
-      setIsActive(!isActive);
+      setIsActive(prev => !prev);
     }
   };
 
   const skip = () => {
     if (!currentCycle) return;
     
-    // Stop the timer before doing anything
     setIsActive(false);
     playSound();
     
-    // Record skipped phase
     setSessionPhaseRecords(prev => [...prev, {
         title: currentPhase!.title,
         duration: currentPhase!.duration,
@@ -160,16 +167,14 @@ export const TimerProvider: FC<{ children: ReactNode }> = ({ children }) => {
 
     const nextPhaseIndex = advancePhase();
     if (nextPhaseIndex >= currentCycle.phases.length) {
-      // If skipping the last phase, handle cycle completion
       setCyclesCompleted(prev => prev + 1);
       setCurrentPhaseIndex(0);
+       if (sessionsUntilLongRestRef.current > 0 && cyclesCompleted + 1 < sessionsUntilLongRestRef.current) {
+           setIsActive(true);
+        }
+    } else {
+      setIsActive(true);
     }
-    
-    // Set a brief timeout to allow state to update before restarting timer
-    setTimeout(() => {
-        setTimeLeft(getDuration());
-        setIsActive(true);
-    }, 50);
   };
   
   const value = {
