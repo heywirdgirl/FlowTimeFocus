@@ -9,14 +9,14 @@ const pomodoroCycle: Cycle = {
     id: "cycle_pomodoro",
     name: "Pomodoro Classic",
     phases: [
-      { id: "p1", title: "Focus", duration: 25, soundFile: { url: "/sounds/singing-bowl.mp3", name: "singing-bowl.mp3"}, removable: false },
-      { id: "p2", title: "Break", duration: 5, soundFile: { url: "/sounds/singing-bowl.mp3", name: "singing-bowl.mp3"}, removable: false },
-      { id: "p3", title: "Focus", duration: 25, soundFile: { url: "/sounds/singing-bowl.mp3", name: "singing-bowl.mp3"}, removable: false },
-      { id: "p4", title: "Break", duration: 5, soundFile: { url: "/sounds/singing-bowl.mp3", name: "singing-bowl.mp3"}, removable: false },
-      { id: "p5", title: "Focus", duration: 25, soundFile: { url: "/sounds/singing-bowl.mp3", name: "singing-bowl.mp3"}, removable: false },
-      { id: "p6", title: "Break", duration: 5, soundFile: { url: "/sounds/singing-bowl.mp3", name: "singing-bowl.mp3"}, removable: false },
-      { id: "p7", title: "Focus", duration: 25, soundFile: { url: "/sounds/singing-bowl.mp3", name: "singing-bowl.mp3"}, removable: false },
-      { id: "p8", title: "Long Break", duration: 15, soundFile: { url: "/sounds/singing-bowl.mp3", name: "singing-bowl.mp3"}, removable: false },
+      { id: "p1", title: "Focus", duration: 25, soundFile: { url: "https://cdn.pixabay.com/audio/2022/03/15/audio_2b4b5a6c38.mp3", name: "Singing Bowl"}, removable: false },
+      { id: "p2", title: "Break", duration: 5, soundFile: { url: "https://cdn.pixabay.com/audio/2022/03/15/audio_2b4b5a6c38.mp3", name: "Singing Bowl"}, removable: false },
+      { id: "p3", title: "Focus", duration: 25, soundFile: { url: "https://cdn.pixabay.com/audio/2022/03/15/audio_2b4b5a6c38.mp3", name: "Singing Bowl"}, removable: false },
+      { id: "p4", title: "Break", duration: 5, soundFile: { url: "https://cdn.pixabay.com/audio/2022/03/15/audio_2b4b5a6c38.mp3", name: "Singing Bowl"}, removable: false },
+      { id: "p5", title: "Focus", duration: 25, soundFile: { url: "https://cdn.pixabay.com/audio/2022/03/15/audio_2b4b5a6c38.mp3", name: "Singing Bowl"}, removable: false },
+      { id: "p6", title: "Break", duration: 5, soundFile: { url: "https://cdn.pixabay.com/audio/2022/03/15/audio_2b4b5a6c38.mp3", name: "Singing Bowl"}, removable: false },
+      { id: "p7", title: "Focus", duration: 25, soundFile: { url: "https://cdn.pixabay.com/audio/2022/03/15/audio_2b4b5a6c38.mp3", name: "Singing Bowl"}, removable: false },
+      { id: "p8", title: "Long Break", duration: 15, soundFile: { url: "https://cdn.pixabay.com/audio/2022/03/15/audio_2b4b5a6c38.mp3", name: "Singing Bowl"}, removable: false },
     ],
     isPublic: true,
     authorId: "user123",
@@ -34,19 +34,19 @@ const wimHofCycle: Cycle = {
       id: "phase_1",
       title: "Deep Breathing",
       duration: 1,
-      soundFile: { url: "/sounds/singing-bowl.mp3", name: "singing-bowl.mp3"},
+      soundFile: { url: "https://cdn.pixabay.com/audio/2022/03/15/audio_2b4b5a6c38.mp3", name: "Singing Bowl"},
     },
     {
       id: "phase_2",
       title: "Breath Hold",
       duration: 1.5,
-      soundFile: { url: "/sounds/singing-bowl.mp3", name: "singing-bowl.mp3"},
+      soundFile: { url: "https://cdn.pixabay.com/audio/2022/03/15/audio_2b4b5a6c38.mp3", name: "Singing Bowl"},
     },
     {
       id: "phase_3",
       title: "Recovery Breath",
       duration: 0.5,
-      soundFile: { url: "/sounds/singing-bowl.mp3", name: "singing-bowl.mp3"},
+      soundFile: { url: "https://cdn.pixabay.com/audio/2022/03/15/audio_2b4b5a6c38.mp3", name: "Singing Bowl"},
     },
   ],
   isPublic: true,
@@ -79,14 +79,14 @@ const mockTrainingHistory: TrainingHistory[] = [
 const mockAudioLibrary: AudioAsset[] = [
     {
         id: "audio_1",
-        name: "rain.mp3",
-        url: "/sounds/rain.mp3",
+        name: "Gentle Bell",
+        url: "https://cdn.pixabay.com/audio/2022/10/17/audio_a0a2d2629b.mp3",
         uploadedAt: "2025-09-22T23:00:00Z"
     },
     {
         id: "audio_2",
-        name: "singing-bowl.mp3",
-        url: "/sounds/singing-bowl.mp3",
+        name: "Singing Bowl",
+        url: "https://cdn.pixabay.com/audio/2022/03/15/audio_2b4b5a6c38.mp3",
         uploadedAt: "2025-09-22T23:00:00Z"
     }
 ]
@@ -132,14 +132,14 @@ export function CycleProvider({ children }: { children: ReactNode }) {
     setCurrentPhaseIndexState(0);
   };
 
-  const advancePhase = () => {
+  const advancePhase = useCallback(() => {
     if (currentCycle) {
-      const nextPhaseIndex = (currentPhaseIndex + 1);
-       setCurrentPhaseIndexState(nextPhaseIndex);
-       return nextPhaseIndex;
+      const nextPhaseIndex = currentPhaseIndex + 1;
+      setCurrentPhaseIndexState(nextPhaseIndex);
+      return nextPhaseIndex;
     }
     return 0;
-  };
+  }, [currentCycle, currentPhaseIndex]);
   
   const setCurrentPhaseIndex = (index: number) => {
       if (currentCycle && index >= 0 && index < currentCycle.phases.length) {
@@ -194,7 +194,6 @@ export function CycleProvider({ children }: { children: ReactNode }) {
     setCurrentCycleState(prev => {
       if (!prev || prev.phases.length <= 1) return prev;
       const newPhases = prev.phases.filter(p => p.id !== phaseId);
-      const newIndex = Math.min(currentPhaseIndex, newPhases.length - 1);
       if (currentPhaseIndex >= newPhases.length) {
           setCurrentPhaseIndexState(0);
       }
@@ -230,3 +229,5 @@ export function CycleProvider({ children }: { children: ReactNode }) {
     </CycleContext.Provider>
   );
 }
+
+    
