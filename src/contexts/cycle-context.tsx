@@ -99,6 +99,8 @@ interface CycleContextType {
   currentPhase: Phase | null;
   trainingHistory: TrainingHistory[];
   audioLibrary: AudioAsset[];
+  endOfCycleSound: AudioAsset | null;
+  setEndOfCycleSound: (sound: AudioAsset | null) => void;
   setCurrentCycle: (cycle: Cycle) => void;
   setCurrentPhaseIndex: (index: number) => void;
   advancePhase: () => number;
@@ -126,6 +128,8 @@ export function CycleProvider({ children }: { children: ReactNode }) {
   const [currentPhaseIndex, setCurrentPhaseIndexState] = useState(0);
   const [trainingHistory, setTrainingHistory] = useState<TrainingHistory[]>(mockTrainingHistory);
   const [audioLibrary] = useState<AudioAsset[]>(mockAudioLibrary);
+  const [endOfCycleSound, setEndOfCycleSound] = useState<AudioAsset | null>(audioLibrary[0] || null);
+
 
   const setCurrentCycle = (cycle: Cycle) => {
     setCurrentCycleState(cycle);
@@ -212,6 +216,8 @@ export function CycleProvider({ children }: { children: ReactNode }) {
     currentPhase,
     trainingHistory,
     audioLibrary,
+    endOfCycleSound,
+    setEndOfCycleSound,
     setCurrentCycle,
     setCurrentPhaseIndex,
     advancePhase,
@@ -229,3 +235,5 @@ export function CycleProvider({ children }: { children: ReactNode }) {
     </CycleContext.Provider>
   );
 }
+
+    

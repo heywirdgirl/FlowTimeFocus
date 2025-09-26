@@ -12,6 +12,7 @@ import { cn } from "@/lib/utils";
 import type { Phase } from "@/lib/types";
 import { CycleProgressBar } from "./cycle-progress-bar";
 import { Label } from "../ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
 
 
 const formatTime = (seconds: number) => {
@@ -61,7 +62,7 @@ function PhaseEditor({ phase, onSave, onCancel, isNew }: { phase: Partial<Phase>
 
 export function TimerDisplay() {
   const { timeLeft, isActive, startPause, reset, skip } = useTimer();
-  const { currentCycle, currentPhaseIndex, updateCycle, updatePhase, addPhase, deletePhase, setCurrentPhaseIndex } = useCycle();
+  const { currentCycle, currentPhaseIndex, updateCycle, updatePhase, addPhase, deletePhase, setCurrentPhaseIndex, audioLibrary, endOfCycleSound, setEndOfCycleSound } = useCycle();
   
   const [isEditingCycle, setIsEditingCycle] = useState(false);
   const [editingPhaseId, setEditingPhaseId] = useState<string | null>(null);
@@ -95,6 +96,11 @@ export function TimerDisplay() {
   const handleAddPhase = (newPhaseData: Partial<Phase>) => {
     addPhase(newPhaseData);
     setIsAddingPhase(false);
+  }
+
+  const handleEndOfCycleSoundChange = (soundUrl: string) => {
+    const selectedSound = audioLibrary.find(s => s.url === soundUrl);
+    setEndOfCycleSound(selectedSound || null);
   }
 
   return (
@@ -236,6 +242,19 @@ export function TimerDisplay() {
                     min="1"
                 />
             </div>
+            <div className="flex items-center justify-between">
+              <Label htmlFor="endOfCycleSound" className="text-sm font-medium">End Sound</Label>
+              <Select onValueChange={handleEndOfCycleSoundChange} value={endOfCycleSound?.url}>
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="Select end sound" />
+                </SelectTrigger>
+                <SelectContent>
+                  {audioLibrary.map(audio => (
+                    <SelectItem key={audio.id} value={audio.url}>{audio.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
             <div className="text-sm text-muted-foreground pt-2">
                 Total duration: {totalDuration.toFixed(1)}m
             </div>
@@ -244,3 +263,5 @@ export function TimerDisplay() {
     </Card>
   );
 }
+
+    
