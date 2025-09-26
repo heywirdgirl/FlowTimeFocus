@@ -6,18 +6,55 @@ import React, { createContext, useContext, useState, ReactNode, useMemo, useCall
 
 const mockAudioLibrary: AudioAsset[] = [
     {
-        id: "audio_bowl",
-        name: "Singing Bowl",
-        url: "/sounds/singing-bowl.wav",
-        uploadedAt: "2025-09-22T23:00:00Z"
+        id: "audio_jump_03",
+        name: "Jump",
+        url: "/sounds/30_Jump_03.wav",
+        uploadedAt: "2025-09-26T17:58:00Z"
     },
     {
-        id: "audio_bell",
-        name: "Gentle Bell",
-        url: "/sounds/gentle-bell.wav",
-        uploadedAt: "2025-09-22T23:00:00Z"
+        id: "audio_arcade_jump",
+        name: "Arcade Jump",
+        url: "/sounds/arcade-game-jump.wav",
+        uploadedAt: "2025-09-26T17:58:00Z"
+    },
+    {
+        id: "audio_ball_tap",
+        name: "Ball Tap",
+        url: "/sounds/ball-tap.wav",
+        uploadedAt: "2025-09-26T17:58:00Z"
+    },
+    {
+        id: "audio_fast_sweep",
+        name: "Fast Sweep",
+        url: "/sounds/fast-small-sweep.wav",
+        uploadedAt: "2025-09-26T17:58:00Z"
+    },
+    {
+        id: "audio_sword_smash",
+        name: "Sword Smash",
+        url: "/sounds/heavy-sword-smashes-metal.wav",
+        uploadedAt: "2025-09-26T17:58:00Z"
+    },
+    {
+        id: "audio_instant_win",
+        name: "Instant Win",
+        url: "/sounds/instant-win.wav",
+        uploadedAt: "2025-09-26T17:58:00Z"
+    },
+    {
+        id: "audio_vinyl_scratch",
+        name: "Vinyl Scratch",
+        url: "/sounds/vinyl-stop-fast-scratch.wav",
+        uploadedAt: "2025-09-26T17:58:00Z"
+    },
+    {
+        id: "audio_winning_notification",
+        name: "Winning Notification",
+        url: "/sounds/winning-notification.wav",
+        uploadedAt: "2025-09-26T17:58:00Z"
     }
-]
+];
+
 
 // Mock data based on your types
 const pomodoroCycle: Cycle = {
@@ -31,7 +68,7 @@ const pomodoroCycle: Cycle = {
       { id: "p5", title: "Focus", duration: 25, soundFile: { url: mockAudioLibrary[0].url, name: mockAudioLibrary[0].name}, removable: false },
       { id: "p6", title: "Break", duration: 5, soundFile: { url: mockAudioLibrary[1].url, name: mockAudioLibrary[1].name}, removable: false },
       { id: "p7", title: "Focus", duration: 25, soundFile: { url: mockAudioLibrary[0].url, name: mockAudioLibrary[0].name}, removable: false },
-      { id: "p8", title: "Long Break", duration: 15, soundFile: { url: mockAudioLibrary[1].url, name: mockAudioLibrary[1].name}, removable: false },
+      { id: "p8", title: "Long Break", duration: 15, soundFile: { url: mockAudioLibrary[7].url, name: mockAudioLibrary[7].name}, removable: false },
     ],
     isPublic: true,
     authorId: "user123",
@@ -49,19 +86,19 @@ const wimHofCycle: Cycle = {
       id: "phase_1",
       title: "Deep Breathing",
       duration: 1,
-      soundFile: { url: mockAudioLibrary[0].url, name: mockAudioLibrary[0].name},
+      soundFile: { url: mockAudioLibrary[2].url, name: mockAudioLibrary[2].name},
     },
     {
       id: "phase_2",
       title: "Breath Hold",
       duration: 1.5,
-      soundFile: { url: mockAudioLibrary[1].url, name: mockAudioLibrary[1].name},
+      soundFile: { url: mockAudioLibrary[3].url, name: mockAudioLibrary[3].name},
     },
     {
       id: "phase_3",
       title: "Recovery Breath",
       duration: 0.5,
-      soundFile: { url: mockAudioLibrary[0].url, name: mockAudioLibrary[0].name},
+      soundFile: { url: mockAudioLibrary[4].url, name: mockAudioLibrary[4].name},
     },
   ],
   isPublic: true,
@@ -128,7 +165,7 @@ export function CycleProvider({ children }: { children: ReactNode }) {
   const [currentPhaseIndex, setCurrentPhaseIndexState] = useState(0);
   const [trainingHistory, setTrainingHistory] = useState<TrainingHistory[]>(mockTrainingHistory);
   const [audioLibrary] = useState<AudioAsset[]>(mockAudioLibrary);
-  const [endOfCycleSound, setEndOfCycleSound] = useState<AudioAsset | null>(audioLibrary[0] || null);
+  const [endOfCycleSound, setEndOfCycleSound] = useState<AudioAsset | null>(audioLibrary[7] || null);
 
 
   const setCurrentCycle = (cycle: Cycle) => {
@@ -235,5 +272,3 @@ export function CycleProvider({ children }: { children: ReactNode }) {
     </CycleContext.Provider>
   );
 }
-
-    
