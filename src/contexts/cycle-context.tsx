@@ -6,15 +6,15 @@ import React, { createContext, useContext, useState, ReactNode, useMemo, useCall
 
 const mockAudioLibrary: AudioAsset[] = [
     {
-        id: "audio_1",
-        name: "Sound 1",
-        url: "/sounds/sound1.wav",
+        id: "audio_bowl",
+        name: "Singing Bowl",
+        url: "/sounds/singing-bowl.wav",
         uploadedAt: "2025-09-22T23:00:00Z"
     },
     {
-        id: "audio_2",
-        name: "Sound 2",
-        url: "/sounds/sound2.wav",
+        id: "audio_bell",
+        name: "Gentle Bell",
+        url: "/sounds/gentle-bell.wav",
         uploadedAt: "2025-09-22T23:00:00Z"
     }
 ]
@@ -25,11 +25,11 @@ const pomodoroCycle: Cycle = {
     name: "Pomodoro Classic",
     phases: [
       { id: "p1", title: "Focus", duration: 25, soundFile: { url: mockAudioLibrary[0].url, name: mockAudioLibrary[0].name}, removable: false },
-      { id: "p2", title: "Break", duration: 5, soundFile: { url: mockAudioLibrary[0].url, name: mockAudioLibrary[0].name}, removable: false },
+      { id: "p2", title: "Break", duration: 5, soundFile: { url: mockAudioLibrary[1].url, name: mockAudioLibrary[1].name}, removable: false },
       { id: "p3", title: "Focus", duration: 25, soundFile: { url: mockAudioLibrary[0].url, name: mockAudioLibrary[0].name}, removable: false },
-      { id: "p4", title: "Break", duration: 5, soundFile: { url: mockAudioLibrary[0].url, name: mockAudioLibrary[0].name}, removable: false },
+      { id: "p4", title: "Break", duration: 5, soundFile: { url: mockAudioLibrary[1].url, name: mockAudioLibrary[1].name}, removable: false },
       { id: "p5", title: "Focus", duration: 25, soundFile: { url: mockAudioLibrary[0].url, name: mockAudioLibrary[0].name}, removable: false },
-      { id: "p6", title: "Break", duration: 5, soundFile: { url: mockAudioLibrary[0].url, name: mockAudioLibrary[0].name}, removable: false },
+      { id: "p6", title: "Break", duration: 5, soundFile: { url: mockAudioLibrary[1].url, name: mockAudioLibrary[1].name}, removable: false },
       { id: "p7", title: "Focus", duration: 25, soundFile: { url: mockAudioLibrary[0].url, name: mockAudioLibrary[0].name}, removable: false },
       { id: "p8", title: "Long Break", duration: 15, soundFile: { url: mockAudioLibrary[1].url, name: mockAudioLibrary[1].name}, removable: false },
     ],
@@ -175,7 +175,7 @@ export function CycleProvider({ children }: { children: ReactNode }) {
         if (!prev) return null;
         if (!newPhaseData.title || newPhaseData.duration === undefined) return prev;
         const newPhase: Phase = {
-            id: `phase_${Math.random().toString(36).substr(2, 9)}`,
+            id: `phase_${'Math.random().toString(36).substr(2, 9)'}`,
             title: newPhaseData.title,
             duration: newPhaseData.duration,
             soundFile: null,
