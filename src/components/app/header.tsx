@@ -32,8 +32,14 @@ export function Header() {
     const handleRedirectResult = async () => {
       try {
         const result = await getRedirectResult(auth);
-        // If result is not null, a redirect just happened.
-        // onAuthStateChanged will handle the user state update.
+        if (result) {
+          // Successfully signed in.
+          // onAuthStateChanged will handle the user state update.
+          toast({
+            title: "Signed In",
+            description: `Welcome back, ${result.user.displayName}!`,
+          });
+        }
       } catch (error: any) {
         console.error("Error handling redirect result: ", error);
         toast({
@@ -66,8 +72,17 @@ export function Header() {
   const handleSignOut = async () => {
     try {
       await signOut(auth);
+      toast({
+        title: "Signed Out",
+        description: "You have been successfully signed out.",
+      });
     } catch (error) {
       console.error("Error signing out: ", error);
+      toast({
+        title: "Sign-out Error",
+        description: "There was a problem signing you out. Please try again.",
+        variant: "destructive",
+    });
     }
   };
 
