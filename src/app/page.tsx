@@ -1,3 +1,4 @@
+import { AuthProvider } from '@/contexts/auth-context';
 import { CycleProvider } from '@/contexts/cycle-context';
 import { SettingsProvider } from '@/contexts/settings-context';
 import { TimerProvider } from '@/contexts/timer-context';
@@ -8,7 +9,9 @@ export default function Home() {
     <SettingsProvider>
       <CycleProvider>
         <TimerProvider>
-          <Homepage />
+          <AuthProvider>
+            <Homepage />
+          </AuthProvider>
         </TimerProvider>
       </CycleProvider>
     </SettingsProvider>
