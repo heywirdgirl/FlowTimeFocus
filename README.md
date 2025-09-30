@@ -1,55 +1,79 @@
-# FlowTime Focus
 
-Đây là một ứng dụng quản lý thời gian được xây dựng bằng Next.js và Firebase Studio, giúp bạn tập trung vào công việc và nghỉ ngơi một cách hiệu quả.
+# Flow Time App
 
-## Cây thư mục
+This is a Next.js application designed for time management, likely implementing a "flow time" or Pomodoro-like technique.
+
+## Project Structure
 
 ```
 .
-├── .env                  # Tệp chứa các biến môi trường
+├── components.json
+├── docs
+│   └── blueprint.md
+├── firestore.rules
+├── next-env.d.ts
+├── next.config.ts
+├── package.json
+├── postcss.config.mjs
+├── public
+│   └── sounds
+├── README.md
 ├── src
-│   ├── ai                # Các tệp liên quan đến AI với Genkit
-│   │   ├── flows         # Logic AI chính
-│   │   └── genkit.ts     # Cấu hình Genkit
-│   ├── app               # Các tuyến đường và layout chính của Next.js
-│   │   ├── create        # Trang tạo chu trình mới
-│   │   ├── globals.css   # CSS toàn cục
-│   │   ├── layout.tsx    # Layout gốc
-│   │   └── page.tsx      # Trang chủ
-│   ├── components        # Các thành phần React
-│   │   ├── app           # Các thành phần cụ thể của ứng dụng
-│   │   └── ui            # Các thành phần giao diện người dùng từ ShadCN
-│   ├── contexts          # Các context provider của React
-│   ├── hooks             # Các React hook tùy chỉnh
-│   └── lib               # Các hàm tiện ích, kiểu dữ liệu và tệp dùng chung
-├── package.json          # Danh sách các gói phụ thuộc và script
-└── tailwind.config.ts    # Cấu hình Tailwind CSS
+│   ├── ai
+│   │   ├── dev.ts
+│   │   ├── flows
+│   │   │   └── smart-session-recommendation.ts
+│   │   └── genkit.ts
+│   ├── app
+│   │   ├── create
+│   │   │   └── page.tsx
+│   │   ├── favicon.ico
+│   │   ├── globals.css
+│   │   ├── layout.tsx
+│   │   └── page.tsx
+│   ├── components
+│   │   ├── app
+│   │   └── ui
+│   ├── contexts
+│   │   ├── cycle-context.tsx
+│   │   ├── settings-context.tsx
+│   │   └── timer-context.tsx
+│   ├── hooks
+│   │   ├── use-mobile.tsx
+│   │   └── use-toast.ts
+│   └── lib
+│       ├── firebase.ts
+│       ├── placeholder-images.json
+│       ├── placeholder-images.ts
+│       ├── types.ts
+│       └── utils.ts
+├── tailwind.config.ts
+└── tsconfig.json
 ```
 
-## Các thư viện đã cài đặt
+## Main File Functionalities
 
-Dưới đây là danh sách các thư viện chính được sử dụng trong dự án:
+### `src/app/page.tsx`
 
-- **Next.js**: Framework React để xây dựng ứng dụng web.
-- **React**: Thư viện JavaScript để xây dựng giao diện người dùng.
-- **TypeScript**: Ngôn ngữ lập trình dựa trên JavaScript với kiểu tĩnh.
-- **Tailwind CSS**: Framework CSS tiện ích để tạo kiểu nhanh chóng.
-- **ShadCN/UI**: Bộ sưu tập các thành phần giao diện người dùng có thể tái sử dụng.
-- **Genkit**: Toolkit để xây dựng các tính năng AI.
-- **Lucide React**: Thư viện biểu tượng.
-- **Zod**: Thư viện xác thực schema.
-- **Framer Motion**: Thư viện hoạt ảnh cho React.
-- **React Hook Form**: Thư viện quản lý biểu mẫu.
-- **Howler.js**: Thư viện âm thanh cho web.
+This is the main entry point for the application's UI. It sets up the core context providers (`SettingsProvider`, `CycleProvider`, `TimerProvider`) and renders the `Homepage` component.
 
-## Biến môi trường
+### `src/components/app/homepage.tsx`
 
-Để chạy ứng dụng, bạn cần tạo một tệp `.env` ở thư mục gốc của dự án và điền vào các biến sau. Hiện tại, chưa có biến môi trường nào được yêu cầu.
+This component likely renders the main user interface for the application, including the timer display, cycle information, and task management.
 
-```bash
-# Không có biến môi trường nào được yêu cầu vào lúc này.
-```
+### `src/contexts/`
 
-## Bắt đầu
+-   **`cycle-context.tsx`**: Manages the state related to cycles or phases of a work session.
+-   **`settings-context.tsx`**: Manages user-configurable settings for the application.
+-   **`timer-context.tsx`**: Manages the state and logic for the timer.
 
-Để bắt đầu, hãy xem qua `src/app/page.tsx`.
+### `src/components/ui/`
+
+This directory contains reusable UI components used throughout the application, such as buttons, dialogs, and cards, built with Shadcn UI.
+
+### `src/ai/`
+
+This directory contains files related to AI functionalities.
+- **`genkit.ts`**: Seems to be the main configuration file for Genkit.
+- **`flows/smart-session-recommendation.ts`**: This file likely contains the logic for a Genkit flow that provides smart session recommendations.
+- **`dev.ts`**: This file is likely used for development and testing of the AI flows.

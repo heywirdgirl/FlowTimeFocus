@@ -1,16 +1,18 @@
 
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm, useFieldArray, FormProvider } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Cycle, Phase } from "@/lib/types";
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent } from "@dnd-kit/core";
 import { SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from "@dnd-kit/sortable";
-import { collection, addDoc } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import { collection, addDoc, doc, getDoc, setDoc, updateDoc, arrayUnion } from "firebase/firestore";
+import { db, auth } from "@/lib/firebase";
+import { onAuthStateChanged, User } from "firebase/auth";
 import { useToast } from "@/hooks/use-toast";
+import { v4 as uuidv4 } from "uuid";
 
 
 import { Button } from "@/components/ui/button";
@@ -47,7 +49,16 @@ const defaultPhase: Omit<Phase, 'id'> = {
 
 export function CreateCycleForm() {
   const [isSaving, setIsSaving] = useState(false);
+  const [user, setUser] = useState<User | null>(null);
   const { toast } = useToast();
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
+    });
+    return () => unsubscribe();
+  }, []);
+
   const form = useForm<CycleFormData>({
     resolver: zodResolver(cycleSchema),
     defaultValues: {
@@ -80,25 +91,75 @@ export function CreateCycleForm() {
 
   const onSubmit = async (data: CycleFormData) => {
     setIsSaving(true);
-    try {
-      const cycleData: Omit<Cycle, 'id'> = {
-        ...data,
-        authorId: "user_placeholder", // Replace with actual user ID from auth
-        authorName: "User Placeholder", // Replace with actual user name
-        likes: 0,
-        shares: 0,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        version: 1,
-      };
-
-      const docRef = await addDoc(collection(db, 'cycleTemplates'), cycleData);
-      console.log("Document written with ID: ", docRef.id);
-      
+    if (!user) {
       toast({
-        title: "Cycle Saved Successfully!",
-        description: `Your new cycle "${data.name}" has been saved.`,
+        title: "Not Authenticated",
+        description: "You must be logged in to save a cycle.",
+        variant: "destructive",
       });
+      setIsSaving(false);
+      return;
+    }
+
+    try {
+      if (data.isPublic) {
+        // Save as a public template
+        const cycleData: Omit<Cycle, 'id'> = {
+          ...data,
+          authorId: user.uid,
+          authorName: user.displayName || "Anonymous",
+          likes: 0,
+          shares: 0,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          version: 1,
+        };
+
+        const docRef = await addDoc(collection(db, 'cycleTemplates'), cycleData);
+        toast({
+          title: "Public Cycle Saved!",
+          description: `Your new cycle "${data.name}" has been saved publicly. ID: ${docRef.id}`
+        });
+
+      } else {
+        // Save as a private cycle to the user's profile
+        const userProfileRef = doc(db, 'users', user.uid);
+
+        const newCycle: Cycle = {
+          id: uuidv4(),
+          ...data,
+          authorId: user.uid,
+          authorName: user.displayName || "Anonymous",
+          likes: 0,
+          shares: 0,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          version: 1,
+        };
+
+        const userProfileSnap = await getDoc(userProfileRef);
+        if (userProfileSnap.exists()) {
+          await updateDoc(userProfileRef, {
+            privateCycles: arrayUnion(newCycle)
+          });
+        } else {
+          const newUserProfile = {
+            userId: user.uid,
+            email: user.email,
+            displayName: user.displayName,
+            privateCycles: [newCycle],
+            trainingHistory: [],
+            audioLibrary: [],
+            createdAt: new Date().toISOString(),
+          };
+          await setDoc(userProfileRef, newUserProfile);
+        }
+
+        toast({
+          title: "Private Cycle Saved!",
+          description: `Your new cycle "${data.name}" has been saved to your profile.`
+        });
+      }
 
       form.reset();
 
@@ -188,11 +249,12 @@ export function CreateCycleForm() {
                 </div>
                 <div className="flex gap-2">
                     <Button type="button" variant="secondary">Preview Timer</Button>
-                    <Button type="submit" disabled={isSaving}>
+                    <Button type="submit" disabled={isSaving || !user}>
                       {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                       Save Cycle
                     </Button>
                 </div>
+                 {!user && <p className="text-sm text-destructive">Please log in to save your cycle.</p>}
             </CardContent>
         </Card>
       </form>
