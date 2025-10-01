@@ -8,12 +8,12 @@ import { CycleList } from "./cycle-list";
 import { Footer } from "./footer";
 import { cn } from "@/lib/utils";
 import { useCycle } from "@/contexts/cycle-context";
+import { Button } from "../ui/button";
 
 export function Homepage() {
   const { isActive } = useTimer();
-  const { currentPhase } = useCycle();
+  const { currentPhase, saveCurrentCycle } = useCycle();
 
-  // A simple way to determine session type for background color
   const sessionTypeClass = () => {
     if (!isActive) return 'bg-background';
     if (!currentPhase) return 'bg-background';
@@ -25,7 +25,7 @@ export function Homepage() {
     if (title.includes('rest') || title.includes('break')) {
       return 'bg-session-rest-bg dark:bg-session-rest-bg-dark';
     }
-    // Default for other phases like 'breathing', 'hold', etc.
+    
     return 'bg-accent/20';
   };
 
@@ -40,6 +40,9 @@ export function Homepage() {
             <div className="w-full">
               <CycleList />
             </div>
+        </div>
+        <div className="flex justify-center mt-8">
+          <Button onClick={saveCurrentCycle}>Save Cycle</Button>
         </div>
       </main>
       <Footer />
