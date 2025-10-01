@@ -2,7 +2,10 @@
 "use client";
 
 import { Cycle, Phase, TrainingHistory, AudioAsset } from "@/lib/types";
-import React, { createContext, useContext, useState, ReactNode, useMemo, useCallback } from "react";
+import React, { createContext, useContext, useState, ReactNode, useMemo, useCallback, useEffect } from "react";
+import { getFirestore, doc, setDoc, addDoc, collection, onSnapshot, query } from "firebase/firestore";
+import { AuthContext } from "./auth-context";
+import { db } from "@/lib/firebase";
 
 const mockAudioLibrary: AudioAsset[] = [
     {
@@ -147,6 +150,7 @@ interface CycleContextType {
   addPhase: (newPhaseData: Partial<Phase>) => void;
   deletePhase: (phaseId: string) => void;
   logTraining: (log: Omit<TrainingHistory, 'completedAt' | 'startTime' | 'endTime'>) => void;
+  saveCurrentCycle: () => void;
 }
 
 const CycleContext = createContext<CycleContextType | undefined>(undefined);
@@ -160,6 +164,7 @@ export function useCycle() {
 }
 
 export function CycleProvider({ children }: { children: ReactNode }) {
+  const user = useContext(AuthContext);
   const [privateCycles, setPrivateCycles] = useState<Cycle[]>([pomodoroCycle, wimHofCycle]);
   const [currentCycle, setCurrentCycleState] = useState<Cycle | null>(privateCycles[0] || null);
   const [currentPhaseIndex, setCurrentPhaseIndexState] = useState(0);
@@ -167,6 +172,22 @@ export function CycleProvider({ children }: { children: ReactNode }) {
   const [audioLibrary] = useState<AudioAsset[]>(mockAudioLibrary);
   const [endOfCycleSound, setEndOfCycleSound] = useState<AudioAsset | null>(audioLibrary[7] || null);
 
+
+  useEffect(() => {
+    if (user) {
+      const q = query(collection(db, `users/${user.uid}/privateCycles`));
+      const unsubscribe = onSnapshot(q, (querySnapshot) => {
+        const cycles: Cycle[] = [];
+        querySnapshot.forEach((doc) => {
+          cycles.push({ id: doc.id, ...doc.data() } as Cycle);
+        });
+        setPrivateCycles(cycles);
+      });
+      return () => unsubscribe();
+    } else {
+      setPrivateCycles([pomodoroCycle, wimHofCycle]);
+    }
+  }, [user]);
 
   const setCurrentCycle = (cycle: Cycle) => {
     setCurrentCycleState(cycle);
@@ -239,9 +260,37 @@ export function CycleProvider({ children }: { children: ReactNode }) {
     });
   }, [currentPhaseIndex]);
 
+  const saveCurrentCycle = useCallback(async () => {
+    if (!user || !currentCycle) {
+      console.log("User not signed in or no current cycle to save.");
+      return;
+    }
+
+    try {
+        const cycleToSave = { ...currentCycle };
+        
+        if (cycleToSave.id.startsWith('cycle_template_')) {
+            delete cycleToSave.id; 
+        }
+
+        cycleToSave.authorId = user.uid;
+        cycleToSave.isPublic = false; 
+
+        if (cycleToSave.id && !cycleToSave.id.startsWith('cycle_template_')) {
+            const cycleRef = doc(db, `users/${user.uid}/privateCycles`, cycleToSave.id);
+            await setDoc(cycleRef, cycleToSave, { merge: true });
+        } else {
+            const privateCyclesCol = collection(db, `users/${user.uid}/privateCycles`);
+            const docRef = await addDoc(privateCyclesCol, cycleToSave);
+            setCurrentCycleState(prev => prev ? { ...prev, id: docRef.id } : null);
+        }
+    } catch (error) {
+        console.error("Error saving cycle: ", error);
+    }
+  }, [user, currentCycle]);
+
   const currentPhase = useMemo(() => {
     if (!currentCycle) return null;
-    // Handle index out of bounds gracefully
     const index = Math.min(currentPhaseIndex, currentCycle.phases.length -1);
     return currentCycle.phases[index] || null;
   }, [currentCycle, currentPhaseIndex]);
@@ -264,6 +313,7 @@ export function CycleProvider({ children }: { children: ReactNode }) {
     addPhase,
     deletePhase,
     logTraining,
+    saveCurrentCycle,
   };
 
   return (

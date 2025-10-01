@@ -3,8 +3,7 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useCycle } from "@/contexts/cycle-context";
-import { Play, Plus } from "lucide-react";
-import Link from "next/link";
+import { Play } from "lucide-react";
 import { ScrollArea } from "../ui/scroll-area";
 
 export function CycleList() {
@@ -38,12 +37,6 @@ export function CycleList() {
                         ))}
                     </div>
                 </ScrollArea>
-                 <Link href="/create" passHref>
-                    <Button variant="outline" className="w-full">
-                        <Plus className="mr-2 h-4 w-4" />
-                        Create New Cycle
-                    </Button>
-                </Link>
                 <Button variant="outline" className="w-full">
                     Explore More Templates
                 </Button>
