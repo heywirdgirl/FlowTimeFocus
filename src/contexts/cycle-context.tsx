@@ -6,6 +6,7 @@ import React, { createContext, useContext, useState, ReactNode, useMemo, useCall
 import { getFirestore, doc, setDoc, addDoc, collection, onSnapshot, query, deleteDoc } from "firebase/firestore";
 import { AuthContext } from "./auth-context";
 import { db } from "@/lib/firebase";
+import { useToast } from "@/hooks/use-toast";
 
 const mockAudioLibrary: AudioAsset[] = [
     {
@@ -181,6 +182,7 @@ export function useCycle() {
 
 export function CycleProvider({ children }: { children: ReactNode }) {
   const { user, loading: authLoading } = useContext(AuthContext);
+  const { toast } = useToast();
   
   const [privateCycles, setPrivateCycles] = useState<Cycle[]>([]);
   const [currentCycle, setCurrentCycleState] = useState<Cycle | null>(null);
@@ -332,21 +334,24 @@ export function CycleProvider({ children }: { children: ReactNode }) {
 
   const saveCycleChanges = useCallback(async () => {
     if (!user || !currentCycle || currentCycle.id.startsWith('cycle_template_')) {
+      toast({ title: "Error", description: "Cannot save template or no user.", variant: "destructive" });
       return;
     }
-
+  
     try {
-        const cycleToSave = { ...currentCycle };
-        cycleToSave.authorId = user.uid;
-        cycleToSave.isPublic = false;
-
-        const cycleRef = doc(db, `users/${user.uid}/privateCycles`, cycleToSave.id);
-        await setDoc(cycleRef, cycleToSave, { merge: true });
-
+      const cycleToSave = { ...currentCycle, updatedAt: new Date().toISOString() };
+      cycleToSave.authorId = user.uid;
+      cycleToSave.isPublic = false;
+  
+      const cycleRef = doc(db, `users/${user.uid}/privateCycles`, cycleToSave.id);
+      await setDoc(cycleRef, cycleToSave, { merge: true });
+  
+      toast({ title: "Saved", description: "Cycle changes saved successfully!" });
     } catch (error) {
-        console.error("Error saving cycle changes: ", error);
+      console.error("Error saving cycle changes: ", error);
+      toast({ title: "Error", description: "Save failed. Please try again.", variant: "destructive" });
     }
-  }, [user, currentCycle]);
+  }, [user, currentCycle, toast]);
 
   const createNewCycle = useCallback(async () => {
     if (!user || !currentCycle) {
