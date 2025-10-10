@@ -3,7 +3,7 @@
 
 import { Cycle, Phase, TrainingHistory, AudioAsset } from "@/lib/types";
 import React, { createContext, useContext, useState, ReactNode, useMemo, useCallback, useEffect } from "react";
-import { getFirestore, doc, setDoc, addDoc, collection, onSnapshot, query } from "firebase/firestore";
+import { getFirestore, doc, setDoc, addDoc, collection, onSnapshot, query, deleteDoc } from "firebase/firestore";
 import { AuthContext } from "./auth-context";
 import { db } from "@/lib/firebase";
 
@@ -113,6 +113,19 @@ const wimHofCycle: Cycle = {
   updatedAt: "2025-09-22T23:00:00Z",
 };
 
+const defaultCycle: Cycle = {
+    id: "cycle_default_empty",
+    name: "Select a cycle",
+    phases: [],
+    isPublic: false,
+    authorId: "system",
+    authorName: "System",
+    likes: 0,
+    shares: 0,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+};
+
 const mockTrainingHistory: TrainingHistory[] = [
     {
       cycleId: "cycle_template_wimhof",
@@ -150,6 +163,7 @@ interface CycleContextType {
   updatePhase: (phaseId: string, updates: Partial<Phase>) => void;
   addPhase: (newPhaseData: Partial<Phase>) => void;
   deletePhase: (phaseId: string) => void;
+  deleteCycle: (cycleId: string) => void;
   logTraining: (log: Omit<TrainingHistory, 'completedAt' | 'startTime' | 'endTime'>) => void;
   saveCycleChanges: () => void;
   createNewCycle: () => void;
@@ -290,6 +304,32 @@ export function CycleProvider({ children }: { children: ReactNode }) {
     });
   }, [currentPhaseIndex]);
 
+  const deleteCycle = useCallback(async (cycleId: string) => {
+    if (user) {
+        try {
+            if (!cycleId.startsWith("cycle_template_")) {
+                const cycleRef = doc(db, `users/${user.uid}/privateCycles`, cycleId);
+                await deleteDoc(cycleRef);
+            }
+        } catch (error) {
+            console.error("Error deleting cycle from Firestore: ", error);
+        }
+    }
+
+    const updatedCycles = privateCycles.filter(c => c.id !== cycleId);
+    setPrivateCycles(updatedCycles);
+
+    if (currentCycle?.id === cycleId) {
+        const newCurrent = updatedCycles.find(c => c.id !== cycleId) || defaultCycle;
+        setCurrentCycleState(newCurrent);
+        setCurrentPhaseIndexState(0);
+        
+        if (updatedCycles.length === 0) {
+            setPrivateCycles([defaultCycle]);
+        }
+    }
+  }, [user, currentCycle, privateCycles]);
+
   const saveCycleChanges = useCallback(async () => {
     if (!user || !currentCycle || currentCycle.id.startsWith('cycle_template_')) {
       return;
@@ -358,6 +398,7 @@ export function CycleProvider({ children }: { children: ReactNode }) {
     updatePhase,
     addPhase,
     deletePhase,
+    deleteCycle,
     logTraining,
     saveCycleChanges,
     createNewCycle,
