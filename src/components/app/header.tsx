@@ -30,7 +30,7 @@ export function Header() {
   const [isEmailAuthOpen, setIsEmailAuthOpen] = useState(false);
   const [emailAuthMode, setEmailAuthMode] = useState<'signIn' | 'signUp'>('signIn');
   const auth = getAuth();
-  const user = useContext(AuthContext);
+  const { user } = useContext(AuthContext);
 
   const handleGoogleSignIn = async () => {
     const provider = new GoogleAuthProvider();
