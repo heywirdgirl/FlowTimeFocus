@@ -176,16 +176,18 @@ export function CycleProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (user) {
+      console.log("User UID:", user.uid);  // Check UID đúng
       const q = query(collection(db, `users/${user.uid}/privateCycles`));
       const unsubscribe = onSnapshot(q, (querySnapshot) => {
-        const cycles: Cycle[] = [];
-        querySnapshot.forEach((doc) => {
-          cycles.push({ id: doc.id, ...doc.data() } as Cycle);
-        });
+        const cycles = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Cycle));
+        console.log("Loaded private cycles:", cycles.length, cycles);  // Log số lượng và data
         setPrivateCycles(cycles);
+      }, (error) => {
+        console.error("Snapshot error:", error);  // Log lỗi query
       });
       return () => unsubscribe();
     } else {
+      console.log("Guest mode, using mock");
       setPrivateCycles([pomodoroCycle, wimHofCycle]);
     }
   }, [user]);
