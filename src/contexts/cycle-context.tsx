@@ -150,7 +150,8 @@ interface CycleContextType {
   addPhase: (newPhaseData: Partial<Phase>) => void;
   deletePhase: (phaseId: string) => void;
   logTraining: (log: Omit<TrainingHistory, 'completedAt' | 'startTime' | 'endTime'>) => void;
-  saveCurrentCycle: () => void;
+  saveCycleChanges: () => void;
+  createNewCycle: () => void;
 }
 
 const CycleContext = createContext<CycleContextType | undefined>(undefined);
@@ -260,32 +261,49 @@ export function CycleProvider({ children }: { children: ReactNode }) {
     });
   }, [currentPhaseIndex]);
 
-  const saveCurrentCycle = useCallback(async () => {
-    if (!user || !currentCycle) {
-      console.log("User not signed in or no current cycle to save.");
+  const saveCycleChanges = useCallback(async () => {
+    if (!user || !currentCycle || currentCycle.id.startsWith('cycle_template_')) {
+      console.log("User not signed in, no current cycle, or cycle is a template.");
       return;
     }
 
     try {
         const cycleToSave = { ...currentCycle };
-        
-        if (cycleToSave.id.startsWith('cycle_template_')) {
-            delete cycleToSave.id; 
-        }
-
         cycleToSave.authorId = user.uid;
-        cycleToSave.isPublic = false; 
+        cycleToSave.isPublic = false;
 
-        if (cycleToSave.id && !cycleToSave.id.startsWith('cycle_template_')) {
-            const cycleRef = doc(db, `users/${user.uid}/privateCycles`, cycleToSave.id);
-            await setDoc(cycleRef, cycleToSave, { merge: true });
-        } else {
-            const privateCyclesCol = collection(db, `users/${user.uid}/privateCycles`);
-            const docRef = await addDoc(privateCyclesCol, cycleToSave);
-            setCurrentCycleState(prev => prev ? { ...prev, id: docRef.id } : null);
-        }
+        const cycleRef = doc(db, `users/${user.uid}/privateCycles`, cycleToSave.id);
+        await setDoc(cycleRef, cycleToSave, { merge: true });
+
     } catch (error) {
-        console.error("Error saving cycle: ", error);
+        console.error("Error saving cycle changes: ", error);
+    }
+  }, [user, currentCycle]);
+
+  const createNewCycle = useCallback(async () => {
+    if (!user || !currentCycle) {
+      console.log("User not signed in or no current cycle to create from.");
+      return;
+    }
+
+    try {
+        const { id, ...cycleData } = currentCycle; // Destructure to remove original id
+
+        const newCycleData = {
+            ...cycleData,
+            authorId: user.uid,
+            isPublic: false,
+            name: `${currentCycle.name} (copy)` // Add suffix to indicate it's a copy
+        };
+
+        const privateCyclesCol = collection(db, `users/${user.uid}/privateCycles`);
+        const docRef = await addDoc(privateCyclesCol, newCycleData);
+
+        // Set the new cycle as the current one
+        setCurrentCycleState({ ...newCycleData, id: docRef.id });
+
+    } catch (error) {
+        console.error("Error creating new cycle: ", error);
     }
   }, [user, currentCycle]);
 
@@ -313,7 +331,8 @@ export function CycleProvider({ children }: { children: ReactNode }) {
     addPhase,
     deletePhase,
     logTraining,
-    saveCurrentCycle,
+    saveCycleChanges,
+    createNewCycle,
   };
 
   return (

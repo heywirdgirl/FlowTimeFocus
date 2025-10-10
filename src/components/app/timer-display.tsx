@@ -5,7 +5,7 @@ import { useTimer } from "@/contexts/timer-context";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { useCycle } from "@/contexts/cycle-context";
-import { Play, Pause, RotateCcw, SkipForward, Edit, Plus, Trash2 } from "lucide-react";
+import { Play, Pause, RotateCcw, SkipForward, Edit, Plus, Trash2, Save, Copy } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
@@ -62,7 +62,20 @@ function PhaseEditor({ phase, onSave, onCancel, isNew }: { phase: Partial<Phase>
 
 export function TimerDisplay() {
   const { timeLeft, isActive, startPause, reset, skip } = useTimer();
-  const { currentCycle, currentPhaseIndex, updateCycle, updatePhase, addPhase, deletePhase, setCurrentPhaseIndex, audioLibrary, endOfCycleSound, setEndOfCycleSound } = useCycle();
+  const { 
+    currentCycle, 
+    currentPhaseIndex, 
+    updateCycle, 
+    updatePhase, 
+    addPhase, 
+    deletePhase, 
+    setCurrentPhaseIndex, 
+    audioLibrary, 
+    endOfCycleSound, 
+    setEndOfCycleSound, 
+    saveCycleChanges, 
+    createNewCycle 
+  } = useCycle();
   
   const [isEditingCycle, setIsEditingCycle] = useState(false);
   const [editingPhaseId, setEditingPhaseId] = useState<string | null>(null);
@@ -102,6 +115,8 @@ export function TimerDisplay() {
     const selectedSound = audioLibrary.find(s => s.url === soundUrl);
     setEndOfCycleSound(selectedSound || null);
   }
+
+  const isTemplate = currentCycle.id.startsWith("cycle_template_");
 
   return (
     <Card className="w-full text-center border-2 shadow-lg relative">
@@ -258,6 +273,16 @@ export function TimerDisplay() {
             <div className="text-sm text-muted-foreground pt-2">
                 Total duration: {totalDuration.toFixed(1)}m
             </div>
+        </div>
+        <div className="flex items-center justify-center gap-2 pt-4 border-t w-full max-w-sm mx-auto">
+            <Button onClick={createNewCycle} size="sm" variant="outline" className="w-full">
+                <Copy className="mr-2 h-4 w-4" />
+                New Cycle
+            </Button>
+            <Button onClick={saveCycleChanges} size="sm" variant="outline" disabled={isTemplate} className="w-full">
+                <Save className="mr-2 h-4 w-4" />
+                {isTemplate ? 'Template' : 'Save Changes'}
+            </Button>
         </div>
       </CardFooter>
     </Card>
