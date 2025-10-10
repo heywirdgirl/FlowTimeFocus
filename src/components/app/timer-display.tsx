@@ -77,6 +77,7 @@ export function TimerDisplay() {
     createNewCycle 
   } = useCycle();
   
+  const [isDirty, setIsDirty] = useState(false);
   const [isEditingCycle, setIsEditingCycle] = useState(false);
   const [editingPhaseId, setEditingPhaseId] = useState<string | null>(null);
   const [isAddingPhase, setIsAddingPhase] = useState(false);
@@ -99,16 +100,29 @@ export function TimerDisplay() {
 
   const handleCycleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     updateCycle({ name: e.target.value });
+    setIsDirty(true);
   };
   
   const handleSavePhase = (phaseId: string, updates: Partial<Phase>) => {
       updatePhase(phaseId, updates);
       setEditingPhaseId(null);
+      setIsDirty(true);
   }
 
   const handleAddPhase = (newPhaseData: Partial<Phase>) => {
     addPhase(newPhaseData);
     setIsAddingPhase(false);
+    setIsDirty(true);
+  }
+
+  const handleDeletePhase = (phaseId: string) => {
+    deletePhase(phaseId);
+    setIsDirty(true);
+  }
+
+  const handleSaveChanges = async () => {
+    await saveCycleChanges();
+    setIsDirty(false);
   }
 
   const handleEndOfCycleSoundChange = (soundUrl: string) => {
@@ -213,7 +227,7 @@ export function TimerDisplay() {
                               <Edit className="h-4 w-4" />
                           </Button>
                           {totalPhases > 1 && (
-                            <Button variant="ghost" size="icon" onClick={() => deletePhase(phase.id)} title="Delete Phase" className="text-destructive hover:text-destructive">
+                            <Button variant="ghost" size="icon" onClick={() => handleDeletePhase(phase.id)} title="Delete Phase" className="text-destructive hover:text-destructive">
                                 <Trash2 className="h-4 w-4" />
                             </Button>
                           )}
@@ -279,7 +293,7 @@ export function TimerDisplay() {
                 <Copy className="mr-2 h-4 w-4" />
                 New Cycle
             </Button>
-            <Button onClick={saveCycleChanges} size="sm" variant="outline" disabled={isTemplate} className="w-full">
+            <Button onClick={handleSaveChanges} size="sm" variant="outline" disabled={isTemplate || !isDirty} className="w-full">
                 <Save className="mr-2 h-4 w-4" />
                 {isTemplate ? 'Template' : 'Save Changes'}
             </Button>
