@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -19,13 +19,22 @@ import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from "fire
 interface EmailAuthDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  mode?: 'signIn' | 'signUp';
 }
 
-export function EmailAuthDialog({ open, onOpenChange }: EmailAuthDialogProps) {
+export function EmailAuthDialog({ open, onOpenChange, mode = 'signIn' }: EmailAuthDialogProps) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [isSignUp, setIsSignUp] = useState(false);
+  const [isSignUp, setIsSignUp] = useState(mode === 'signUp');
   const { toast } = useToast();
+
+  useEffect(() => {
+    if (open) {
+      setIsSignUp(mode === 'signUp');
+      setEmail('');
+      setPassword('');
+    }
+  }, [open, mode]);
 
   const handleEmailAuth = async () => {
     if (!email || !password) {

@@ -2,7 +2,7 @@
 
 import { useState, useContext } from "react";
 import Link from "next/link";
-import { CircleUser, Cog, Menu, LogOut } from "lucide-react";
+import { CircleUser, Cog, Menu, LogOut, Mail } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -28,6 +28,7 @@ import { toast } from "@/hooks/use-toast";
 export function Header() {
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [isEmailAuthOpen, setIsEmailAuthOpen] = useState(false);
+  const [emailAuthMode, setEmailAuthMode] = useState<'signIn' | 'signUp'>('signIn');
   const auth = getAuth();
   const user = useContext(AuthContext);
 
@@ -55,6 +56,11 @@ export function Header() {
         variant: "destructive",
       });
     }
+  };
+
+  const openEmailAuthDialog = (mode: 'signIn' | 'signUp') => {
+    setEmailAuthMode(mode);
+    setIsEmailAuthOpen(true);
   };
 
   return (
@@ -167,8 +173,13 @@ export function Header() {
                 <DropdownMenuItem onSelect={handleGoogleSignIn}>
                   Sign in with Google
                 </DropdownMenuItem>
-                <DropdownMenuItem onSelect={() => setIsEmailAuthOpen(true)}>
+                <DropdownMenuItem onSelect={() => openEmailAuthDialog('signIn')}>
+                  <Mail className="mr-2 h-4 w-4" />
                   <span>Email Login</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onSelect={() => openEmailAuthDialog('signUp')}>
+                  <Mail className="mr-2 h-4 w-4" />
+                  <span>Email Sign Up</span>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -180,7 +191,11 @@ export function Header() {
         </div>
       </header>
       <SettingsSheet open={isSheetOpen} onOpenChange={setIsSheetOpen} />
-      <EmailAuthDialog open={isEmailAuthOpen} onOpenChange={setIsEmailAuthOpen} />
+      <EmailAuthDialog
+        open={isEmailAuthOpen}
+        onOpenChange={setIsEmailAuthOpen}
+        mode={emailAuthMode}
+      />
     </>
   );
 }
