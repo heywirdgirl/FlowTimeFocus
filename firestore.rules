@@ -8,11 +8,6 @@ service cloud.firestore {
       // Chỉ owner đọc/ghi document chính (UserProfile)
       allow read, write: if request.auth != null && request.auth.uid == userId;
       
-      // Subcollection: privateCycles (Cycle[])
-      match /privateCycles/{cycleId} {
-        allow read, write: if request.auth != null && request.auth.uid == userId;
-      }
-      
       // Subcollection: trainingHistory (TrainingHistory[])
       match /trainingHistory/{historyId} {
         allow read, write: if request.auth != null && request.auth.uid == userId;
