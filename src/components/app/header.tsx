@@ -171,7 +171,7 @@ export function Header() {
                 <DropdownMenuLabel>Guest</DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onSelect={handleGoogleSignIn}>
-                  Sign in with Google
+                  Continue with Google
                 </DropdownMenuItem>
                 <DropdownMenuItem onSelect={() => openEmailAuthDialog('signIn')}>
                   <Mail className="mr-2 h-4 w-4" />
