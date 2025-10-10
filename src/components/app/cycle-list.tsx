@@ -3,15 +3,28 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useCycle } from "@/contexts/cycle-context";
-import { Play } from "lucide-react";
+import { useTimer } from "@/contexts/timer-context";
+import { Play, Trash } from "lucide-react";
 import { ScrollArea } from "../ui/scroll-area";
 
 export function CycleList() {
-    const { privateCycles, setCurrentCycle, trainingHistory } = useCycle();
+    const { privateCycles, setCurrentCycle, trainingHistory, deleteCycle, currentCycle } = useCycle();
+    const { isActive, reset } = useTimer();
 
     const totalTimeToday = trainingHistory
         .filter(h => new Date(h.completedAt).toDateString() === new Date().toDateString())
         .reduce((acc, h) => acc + h.totalDuration, 0);
+
+    const handleDelete = (cycleId: string) => {
+        if (isActive && currentCycle?.id === cycleId) {
+            if (window.confirm("This cycle is currently running. Are you sure you want to delete it? The timer will be reset to the default cycle.")) {
+                deleteCycle(cycleId);
+                reset();
+            }
+        } else {
+            deleteCycle(cycleId);
+        }
+    };
 
     return (
         <Card className="w-full">
@@ -29,10 +42,16 @@ export function CycleList() {
                                 <div>
                                     <p className="font-semibold">{cycle.name}</p>
                                 </div>
-                                <Button size="icon" variant="ghost" onClick={() => setCurrentCycle(cycle)}>
-                                    <Play className="h-5 w-5" />
-                                    <span className="sr-only">Run {cycle.name}</span>
-                                </Button>
+                                <div className="flex items-center">
+                                    <Button size="icon" variant="ghost" onClick={() => setCurrentCycle(cycle)}>
+                                        <Play className="h-5 w-5" />
+                                        <span className="sr-only">Run {cycle.name}</span>
+                                    </Button>
+                                    <Button size="icon" variant="ghost" onClick={() => handleDelete(cycle.id)}>
+                                        <Trash className="h-5 w-5 text-red-500" />
+                                        <span className="sr-only">Delete {cycle.name}</span>
+                                    </Button>
+                                </div>
                             </Card>
                         ))}
                     </div>
