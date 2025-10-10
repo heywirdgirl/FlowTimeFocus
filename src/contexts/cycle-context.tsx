@@ -357,26 +357,27 @@ export function CycleProvider({ children }: { children: ReactNode }) {
     if (!user || !currentCycle) {
       return;
     }
-
+  
     try {
-        const { id, ...cycleData } = currentCycle;
-
-        const newCycleData = {
-            ...cycleData,
-            authorId: user.uid,
-            isPublic: false,
-            name: `${currentCycle.name} (copy)`
-        };
-
-        const privateCyclesCol = collection(db, `users/${user.uid}/privateCycles`);
-        const docRef = await addDoc(privateCyclesCol, newCycleData);
-
-        setCurrentCycleState({ ...newCycleData, id: docRef.id });
-
+      const { id, ...cycleData } = currentCycle;
+  
+      const newCycleData = {
+        ...cycleData,
+        name: currentCycle.name,
+        authorId: user.uid,
+        isPublic: false,
+      };
+  
+      const privateCyclesCol = collection(db, `users/${user.uid}/privateCycles`);
+      const docRef = await addDoc(privateCyclesCol, newCycleData);
+      setCurrentCycleState({ ...newCycleData, id: docRef.id });
+  
+      toast({ title: "Created", description: `New cycle "${newCycleData.name}" saved! You can rename it anytime.` });
     } catch (error) {
-        console.error("Error creating new cycle: ", error);
+      console.error("Error creating new cycle: ", error);
+      toast({ title: "Error", description: "Failed to create cycle.", variant: "destructive" });
     }
-  }, [user, currentCycle]);
+  }, [user, currentCycle, toast]);
 
 
   const currentPhase = useMemo(() => {
