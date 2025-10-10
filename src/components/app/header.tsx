@@ -175,11 +175,11 @@ export function Header() {
                 </DropdownMenuItem>
                 <DropdownMenuItem onSelect={() => openEmailAuthDialog('signIn')}>
                   <Mail className="mr-2 h-4 w-4" />
-                  <span>Email Login</span>
+                  <span>Sign In with Email</span>
                 </DropdownMenuItem>
                 <DropdownMenuItem onSelect={() => openEmailAuthDialog('signUp')}>
                   <Mail className="mr-2 h-4 w-4" />
-                  <span>Email Sign Up</span>
+                  <span>Sign Up with Email</span>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

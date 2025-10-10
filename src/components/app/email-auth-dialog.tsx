@@ -104,9 +104,6 @@ export function EmailAuthDialog({ open, onOpenChange, mode = 'signIn' }: EmailAu
           </div>
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={() => setIsSignUp(!isSignUp)}>
-            {isSignUp ? "Switch to Sign In" : "Switch to Sign Up"}
-          </Button>
           <Button onClick={handleEmailAuth}>{isSignUp ? "Sign Up" : "Sign In"}</Button>
         </DialogFooter>
       </DialogContent>
