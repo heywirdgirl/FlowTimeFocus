@@ -140,6 +140,7 @@ interface CycleContextType {
   trainingHistory: TrainingHistory[];
   audioLibrary: AudioAsset[];
   endOfCycleSound: AudioAsset | null;
+  isLoading: boolean;
   setEndOfCycleSound: (sound: AudioAsset | null) => void;
   setCurrentCycle: (cycle: Cycle) => void;
   setCurrentPhaseIndex: (index: number) => void;
@@ -165,32 +166,58 @@ export function useCycle() {
 }
 
 export function CycleProvider({ children }: { children: ReactNode }) {
-  const user = useContext(AuthContext);
-  const [privateCycles, setPrivateCycles] = useState<Cycle[]>([pomodoroCycle, wimHofCycle]);
-  const [currentCycle, setCurrentCycleState] = useState<Cycle | null>(privateCycles[0] || null);
+  const { user, loading: authLoading } = useContext(AuthContext);
+  
+  const [privateCycles, setPrivateCycles] = useState<Cycle[]>([]);
+  const [currentCycle, setCurrentCycleState] = useState<Cycle | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
   const [currentPhaseIndex, setCurrentPhaseIndexState] = useState(0);
   const [trainingHistory, setTrainingHistory] = useState<TrainingHistory[]>(mockTrainingHistory);
   const [audioLibrary] = useState<AudioAsset[]>(mockAudioLibrary);
   const [endOfCycleSound, setEndOfCycleSound] = useState<AudioAsset | null>(audioLibrary[7] || null);
 
-
   useEffect(() => {
-    if (user) {
-      console.log("User UID:", user.uid);  // Check UID đúng
-      const q = query(collection(db, `users/${user.uid}/privateCycles`));
-      const unsubscribe = onSnapshot(q, (querySnapshot) => {
-        const cycles = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Cycle));
-        console.log("Loaded private cycles:", cycles.length, cycles);  // Log số lượng và data
-        setPrivateCycles(cycles);
-      }, (error) => {
-        console.error("Snapshot error:", error);  // Log lỗi query
-      });
-      return () => unsubscribe();
-    } else {
-      console.log("Guest mode, using mock");
-      setPrivateCycles([pomodoroCycle, wimHofCycle]);
+    if (authLoading) {
+      setIsLoading(true);
+      return;
     }
-  }, [user]);
+
+    if (!user) {
+      const mockData = [pomodoroCycle, wimHofCycle];
+      setPrivateCycles(mockData);
+      if (!currentCycle) {
+        setCurrentCycleState(mockData[0] || null);
+      }
+      setIsLoading(false);
+      return;
+    }
+
+    const q = query(collection(db, `users/${user.uid}/privateCycles`));
+    const unsubscribe = onSnapshot(q, (querySnapshot) => {
+      const cyclesFromDb = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Cycle));
+      
+      if (cyclesFromDb.length > 0) {
+        setPrivateCycles(cyclesFromDb);
+        setCurrentCycleState(prev => 
+            prev && cyclesFromDb.some(c => c.id === prev.id) ? prev : cyclesFromDb[0]
+        );
+      } else {
+        const mockData = [pomodoroCycle, wimHofCycle];
+        setPrivateCycles(mockData);
+        setCurrentCycleState(mockData[0] || null);
+      }
+      setIsLoading(false);
+    }, (error) => {
+      console.error("Error fetching private cycles:", error);
+      const mockData = [pomodoroCycle, wimHofCycle];
+      setPrivateCycles(mockData);
+      setCurrentCycleState(mockData[0] || null);
+      setIsLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, [user, authLoading, currentCycle]);
 
   const setCurrentCycle = (cycle: Cycle) => {
     setCurrentCycleState(cycle);
@@ -240,7 +267,7 @@ export function CycleProvider({ children }: { children: ReactNode }) {
         if (!prev) return null;
         if (!newPhaseData.title || newPhaseData.duration === undefined) return prev;
         const newPhase: Phase = {
-            id: `phase_${'Math.random().toString(36).substr(2, 9)'}`,
+            id: `phase_${Math.random().toString(36).substr(2, 9)}`,
             title: newPhaseData.title,
             duration: newPhaseData.duration,
             soundFile: null,
@@ -265,7 +292,6 @@ export function CycleProvider({ children }: { children: ReactNode }) {
 
   const saveCycleChanges = useCallback(async () => {
     if (!user || !currentCycle || currentCycle.id.startsWith('cycle_template_')) {
-      console.log("User not signed in, no current cycle, or cycle is a template.");
       return;
     }
 
@@ -284,30 +310,29 @@ export function CycleProvider({ children }: { children: ReactNode }) {
 
   const createNewCycle = useCallback(async () => {
     if (!user || !currentCycle) {
-      console.log("User not signed in or no current cycle to create from.");
       return;
     }
 
     try {
-        const { id, ...cycleData } = currentCycle; // Destructure to remove original id
+        const { id, ...cycleData } = currentCycle;
 
         const newCycleData = {
             ...cycleData,
             authorId: user.uid,
             isPublic: false,
-            name: `${currentCycle.name} (copy)` // Add suffix to indicate it's a copy
+            name: `${currentCycle.name} (copy)`
         };
 
         const privateCyclesCol = collection(db, `users/${user.uid}/privateCycles`);
         const docRef = await addDoc(privateCyclesCol, newCycleData);
 
-        // Set the new cycle as the current one
         setCurrentCycleState({ ...newCycleData, id: docRef.id });
 
     } catch (error) {
         console.error("Error creating new cycle: ", error);
     }
   }, [user, currentCycle]);
+
 
   const currentPhase = useMemo(() => {
     if (!currentCycle) return null;
@@ -323,6 +348,7 @@ export function CycleProvider({ children }: { children: ReactNode }) {
     trainingHistory,
     audioLibrary,
     endOfCycleSound,
+    isLoading,
     setEndOfCycleSound,
     setCurrentCycle,
     setCurrentPhaseIndex,
