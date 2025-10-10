@@ -8,11 +8,10 @@ import { CycleList } from "./cycle-list";
 import { Footer } from "./footer";
 import { cn } from "@/lib/utils";
 import { useCycle } from "@/contexts/cycle-context";
-import { Button } from "../ui/button";
 
 export function Homepage() {
   const { isActive } = useTimer();
-  const { currentPhase, saveCurrentCycle } = useCycle();
+  const { currentPhase } = useCycle();
 
   const sessionTypeClass = () => {
     if (!isActive) return 'bg-background';
@@ -40,9 +39,6 @@ export function Homepage() {
             <div className="w-full">
               <CycleList />
             </div>
-        </div>
-        <div className="flex justify-center mt-8">
-          <Button onClick={saveCurrentCycle}>Save Cycle</Button>
         </div>
       </main>
       <Footer />
