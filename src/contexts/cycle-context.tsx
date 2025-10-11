@@ -10,45 +10,9 @@ import { useToast } from "@/hooks/use-toast";
 
 const mockAudioLibrary: AudioAsset[] = [
     {
-        id: "audio_jump_03",
-        name: "Jump",
-        url: "/sounds/30_Jump_03.wav",
-        uploadedAt: "2025-09-26T17:58:00Z"
-    },
-    {
-        id: "audio_arcade_jump",
-        name: "Arcade Jump",
-        url: "/sounds/arcade-game-jump.wav",
-        uploadedAt: "2025-09-26T17:58:00Z"
-    },
-    {
-        id: "audio_ball_tap",
-        name: "Ball Tap",
-        url: "/sounds/ball-tap.wav",
-        uploadedAt: "2025-09-26T17:58:00Z"
-    },
-    {
-        id: "audio_fast_sweep",
-        name: "Fast Sweep",
-        url: "/sounds/fast-small-sweep.wav",
-        uploadedAt: "2025-09-26T17:58:00Z"
-    },
-    {
-        id: "audio_sword_smash",
-        name: "Sword Smash",
-        url: "/sounds/heavy-sword-smashes-metal.wav",
-        uploadedAt: "2025-09-26T17:58:00Z"
-    },
-    {
         id: "audio_instant_win",
         name: "Instant Win",
         url: "/sounds/instant-win.wav",
-        uploadedAt: "2025-09-26T17:58:00Z"
-    },
-    {
-        id: "audio_vinyl_scratch",
-        name: "Vinyl Scratch",
-        url: "/sounds/vinyl-stop-fast-scratch.wav",
         uploadedAt: "2025-09-26T17:58:00Z"
     },
     {
