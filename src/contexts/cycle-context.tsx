@@ -30,13 +30,13 @@ const pomodoroCycle: Cycle = {
     name: "Pomodoro Classic",
     phases: [
       { id: "p1", title: "Focus", duration: 25, soundFile: { url: mockAudioLibrary[0].url, name: mockAudioLibrary[0].name}, removable: false },
-      { id: "p2", title: "Break", duration: 5, soundFile: { url: mockAudioLibrary[1].url, name: mockAudioLibrary[1].name}, removable: false },
+      { id: "p2", title: "Break", duration: 5, soundFile: { url: mockAudioLibrary[0].url, name: mockAudioLibrary[0].name}, removable: false },
       { id: "p3", title: "Focus", duration: 25, soundFile: { url: mockAudioLibrary[0].url, name: mockAudioLibrary[0].name}, removable: false },
-      { id: "p4", title: "Break", duration: 5, soundFile: { url: mockAudioLibrary[1].url, name: mockAudioLibrary[1].name}, removable: false },
+      { id: "p4", title: "Break", duration: 5, soundFile: { url: mockAudioLibrary[0].url, name: mockAudioLibrary[0].name}, removable: false },
       { id: "p5", title: "Focus", duration: 25, soundFile: { url: mockAudioLibrary[0].url, name: mockAudioLibrary[0].name}, removable: false },
-      { id: "p6", title: "Break", duration: 5, soundFile: { url: mockAudioLibrary[1].url, name: mockAudioLibrary[1].name}, removable: false },
+      { id: "p6", title: "Break", duration: 5, soundFile: { url: mockAudioLibrary[0].url, name: mockAudioLibrary[0].name}, removable: false },
       { id: "p7", title: "Focus", duration: 25, soundFile: { url: mockAudioLibrary[0].url, name: mockAudioLibrary[0].name}, removable: false },
-      { id: "p8", title: "Long Break", duration: 15, soundFile: { url: mockAudioLibrary[7].url, name: mockAudioLibrary[7].name}, removable: false },
+      { id: "p8", title: "Long Break", duration: 15, soundFile: { url: mockAudioLibrary[1].url, name: mockAudioLibrary[1].name}, removable: false },
     ],
     isPublic: true,
     authorId: "user123",
@@ -54,19 +54,19 @@ const wimHofCycle: Cycle = {
       id: "phase_1",
       title: "Deep Breathing",
       duration: 1,
-      soundFile: { url: mockAudioLibrary[2].url, name: mockAudioLibrary[2].name},
+      soundFile: { url: mockAudioLibrary[0].url, name: mockAudioLibrary[0].name},
     },
     {
       id: "phase_2",
       title: "Breath Hold",
       duration: 1.5,
-      soundFile: { url: mockAudioLibrary[3].url, name: mockAudioLibrary[3].name},
+      soundFile: { url: mockAudioLibrary[0].url, name: mockAudioLibrary[0].name},
     },
     {
       id: "phase_3",
       title: "Recovery Breath",
       duration: 0.5,
-      soundFile: { url: mockAudioLibrary[4].url, name: mockAudioLibrary[4].name},
+      soundFile: { url: mockAudioLibrary[1].url, name: mockAudioLibrary[1].name},
     },
   ],
   isPublic: true,
@@ -155,7 +155,7 @@ export function CycleProvider({ children }: { children: ReactNode }) {
   const [currentPhaseIndex, setCurrentPhaseIndexState] = useState(0);
   const [trainingHistory, setTrainingHistory] = useState<TrainingHistory[]>(mockTrainingHistory);
   const [audioLibrary] = useState<AudioAsset[]>(mockAudioLibrary);
-  const [endOfCycleSound, setEndOfCycleSound] = useState<AudioAsset | null>(audioLibrary[7] || null);
+  const [endOfCycleSound, setEndOfCycleSound] = useState<AudioAsset | null>(audioLibrary[1] || null);
 
   useEffect(() => {
     if (authLoading) {
