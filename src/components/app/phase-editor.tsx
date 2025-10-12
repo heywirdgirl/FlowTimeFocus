@@ -5,16 +5,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Upload, Loader2 } from "lucide-react"; // Thêm icon
+import { Loader2 } from "lucide-react"; // Thêm icon
 import { getAuth, User } from "firebase/auth";
-import { supabaseClient } from "@/lib/supabase";
-
-interface Phase {
-  id?: string;
-  title: string;
-  duration: number;
-  guidedAudio?: { url: string; type: "ambient" | "guided" };
-}
+import { supabasePublic } from "@/lib/supabase";
+import type { Phase, AudioAsset } from "@/lib/types";
 
 function PhaseEditor({
   phase,
@@ -27,13 +21,13 @@ function PhaseEditor({
   onSave: (p: Partial<Phase>) => void;
   onCancel: () => void;
   isNew?: boolean;
-  audioLibrary: { id: string; url: string; name: string }[];
+  audioLibrary: AudioAsset[];
 }) {
   const [title, setTitle] = useState(phase?.title || "");
   const [duration, setDuration] = useState(String(phase?.duration || ""));
-  const [guidedAudioUrl, setGuidedAudioUrl] = useState(phase?.guidedAudio?.url || "");
+  const [guidedAudioUrl, setGuidedAudioUrl] = useState(phase?.soundFile?.url || "");
   const [guidedAudioType, setGuidedAudioType] = useState<"ambient" | "guided">(
-    phase?.guidedAudio?.type || "ambient"
+    (phase?.soundFile?.type as "ambient" | "guided") || "ambient"
   );
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [user, setUser] = useState<User | null>(null);
@@ -68,11 +62,11 @@ function PhaseEditor({
     if (uploadedFile && user) {
       const fileName = `user_${user.uid}/${Date.now()}_${uploadedFile.name}`;
       console.log('Uploading file:', fileName, 'with UID:', user.uid); // Debug
-      const { data, error: uploadError } = await supabaseClient.storage
+      const { data, error: uploadError } = await supabasePublic.storage
         .from('sounds')
         .upload(fileName, uploadedFile, {
           contentType: uploadedFile.type || 'audio/mpeg',
-          metadata: { firebase_uid: user.uid }
+          upsert: false,
         });
 
       if (uploadError) {
@@ -83,13 +77,14 @@ function PhaseEditor({
       }
 
       console.log('Upload success:', data); // Debug
-      const { data: { publicUrl } } = supabaseClient.storage.from('sounds').getPublicUrl(fileName);
-      updates.guidedAudio = { url: publicUrl, type: guidedAudioType };
+      const { data: { publicUrl } } = supabasePublic.storage.from('sounds').getPublicUrl(fileName);
+      updates.soundFile = { url: publicUrl, name: uploadedFile.name, type: guidedAudioType };
       console.log('New URL:', publicUrl); // Debug
     } else if (guidedAudioUrl) {
-      updates.guidedAudio = { url: guidedAudioUrl, type: guidedAudioType };
+      const selected = audioLibrary.find(a => a.url === guidedAudioUrl);
+      updates.soundFile = { url: guidedAudioUrl, name: selected?.name, type: guidedAudioType };
     } else {
-      updates.guidedAudio = undefined;
+      updates.soundFile = null;
     }
 
     console.log('Final updates:', updates); // Debug
