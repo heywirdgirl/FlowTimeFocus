@@ -1,79 +1,111 @@
-
 # Flow Time App
 
-This is a Next.js application designed for time management, likely implementing a "flow time" or Pomodoro-like technique.
+Đây là một ứng dụng giúp bạn tập trung làm việc theo chu kỳ, tương tự như phương pháp Pomodoro. Bạn có thể tạo ra các chu kỳ làm việc (Cycles) bao gồm nhiều phiên (Phases) với thời gian và âm thanh tùy chỉnh.
 
-## Project Structure
+## Cấu trúc thư mục
 
 ```
 .
+├── README.md
 ├── components.json
-├── docs
-│   └── blueprint.md
+├── firebase.json
+├── firestore.indexes.json
 ├── firestore.rules
-├── next-env.d.ts
 ├── next.config.ts
+├── package-lock.json
 ├── package.json
 ├── postcss.config.mjs
+├── tailwind.config.ts
+├── tsconfig.json
+├── .idx
+│   ├── dev.nix
+│   ├── icon.png
+│   └── mcp.json
+├── docs
+│   └── blueprint.md
 ├── public
 │   └── sounds
-├── README.md
-├── src
-│   ├── ai
-│   │   ├── dev.ts
-│   │   ├── flows
-│   │   │   └── smart-session-recommendation.ts
-│   │   └── genkit.ts
-│   ├── app
-│   │   ├── create
-│   │   │   └── page.tsx
-│   │   ├── favicon.ico
-│   │   ├── globals.css
-│   │   ├── layout.tsx
-│   │   └── page.tsx
-│   ├── components
-│   │   ├── app
-│   │   └── ui
-│   ├── contexts
-│   │   ├── cycle-context.tsx
-│   │   ├── settings-context.tsx
-│   │   └── timer-context.tsx
-│   ├── hooks
-│   │   ├── use-mobile.tsx
-│   │   └── use-toast.ts
-│   └── lib
-│       ├── firebase.ts
-│       ├── placeholder-images.json
-│       ├── placeholder-images.ts
-│       ├── types.ts
-│       └── utils.ts
-├── tailwind.config.ts
-└── tsconfig.json
+│       ├── instant-win.wav
+│       └── winning-notification.wav
+└── src
+    ├── ai
+    │   ├── dev.ts
+    │   ├── genkit.ts
+    │   └── flows
+    │       └── smart-session-recommendation.ts
+    ├── app
+    │   ├── favicon.ico
+    │   ├── globals.css
+    │   ├── layout.tsx
+    │   ├── page.tsx
+    │   └── firestore-test
+    │       └── page.tsx
+    ├── components
+    │   ├── app
+    │   │   ├── cycle-list.tsx
+    │   │   ├── cycle-progress-bar.tsx
+    │   │   ├── email-auth-dialog.tsx
+    │   │   ├── flow-time-app.tsx
+    │   │   ├── footer.tsx
+    │   │   ├── header.tsx
+    │   │   ├── homepage.tsx
+    │   │   ├── settings-sheet.tsx
+    │   │   ├── sortable-phase-card.tsx
+    │   │   ├── task-manager.tsx
+    │   │   ├── theme-toggle.tsx
+    │   │   └── timer-display.tsx
+    │   └── ui
+    │       ├── accordion.tsx
+    │       ├── alert-dialog.tsx
+    │       ... (các components UI khác)
+    ├── contexts
+    │   ├── auth-context.tsx
+    │   ├── cycle-context.tsx
+    │   ├── settings-context.tsx
+    │   └── timer-context.tsx
+    ├── hooks
+    │   ├── use-mobile.tsx
+    │   └── use-toast.ts
+    └── lib
+        ├── firebase.ts
+        ├── mock-data.ts
+        ├── placeholder-images.json
+        ├── placeholder-images.ts
+        ├── types.ts
+        └── utils.ts
 ```
 
-## Main File Functionalities
+## Các tính năng cốt lõi
 
-### `src/app/page.tsx`
+Ứng dụng được xây dựng dựa trên các khái niệm chính sau:
 
-This is the main entry point for the application's UI. It sets up the core context providers (`SettingsProvider`, `CycleProvider`, `TimerProvider`) and renders the `Homepage` component.
+*   **`Phase` (Phiên):** Đây là một khoảng thời gian tập trung hoặc nghỉ ngơi. Mỗi `Phase` có:
+    *   `id`: Mã định danh duy nhất.
+    *   `title`: Tên của phiên (ví dụ: "Làm việc sâu", "Nghỉ ngắn").
+    *   `duration`: Thời lượng của phiên (tính bằng phút).
+    *   `soundFile`: Âm thanh được phát khi kết thúc phiên.
 
-### `src/components/app/homepage.tsx`
+*   **`Cycle` (Chu kỳ):** Đây là một chuỗi các `Phase` được sắp xếp theo một thứ tự nhất định. Một `Cycle` đại diện cho một quy trình làm việc hoàn chỉnh.
+    *   `id`: Mã định danh duy nhất.
+    *   `name`: Tên của chu kỳ (ví dụ: "Chu kỳ Pomodoro buổi sáng").
+    *   `phases`: Một mảng các `Phase` tạo nên chu kỳ.
+    *   `isPublic`: Cho biết chu kỳ này là công khai hay riêng tư.
+    *   `authorId`, `authorName`: Thông tin về người tạo chu kỳ.
 
-This component likely renders the main user interface for the application, including the timer display, cycle information, and task management.
+*   **`TrainingHistory` (Lịch sử luyện tập):** Ghi lại lịch sử hoàn thành các `Cycle` của người dùng, giúp theo dõi hiệu suất và sự tiến bộ.
+    *   `cycleId`: ID của chu kỳ đã thực hiện.
+    *   `startTime`, `endTime`: Thời gian bắt đầu và kết thúc.
+    *   `status`: Trạng thái hoàn thành ("completed" hoặc "interrupted").
 
-### `src/contexts/`
+*   **`UserProfile` (Hồ sơ người dùng):** Lưu trữ thông tin của người dùng, bao gồm:
+    *   `privateCycles`: Các chu kỳ riêng tư do người dùng tạo.
+    *   `trainingHistory`: Lịch sử luyện tập của người dùng.
+    *   `audioLibrary`: Thư viện âm thanh cá nhân.
 
--   **`cycle-context.tsx`**: Manages the state related to cycles or phases of a work session.
--   **`settings-context.tsx`**: Manages user-configurable settings for the application.
--   **`timer-context.tsx`**: Manages the state and logic for the timer.
+Các file quan trọng:
 
-### `src/components/ui/`
-
-This directory contains reusable UI components used throughout the application, such as buttons, dialogs, and cards, built with Shadcn UI.
-
-### `src/ai/`
-
-This directory contains files related to AI functionalities.
-- **`genkit.ts`**: Seems to be the main configuration file for Genkit.
-- **`flows/smart-session-recommendation.ts`**: This file likely contains the logic for a Genkit flow that provides smart session recommendations.
-- **`dev.ts`**: This file is likely used for development and testing of the AI flows.
+*   `src/app/page.tsx`: Component chính render giao diện người dùng của ứng dụng.
+*   `src/lib/types.ts`: Định nghĩa các kiểu dữ liệu cốt lõi (`Phase`, `Cycle`, `UserProfile`, v.v.).
+*   `src/contexts/*.tsx`: Quản lý trạng thái toàn cục của ứng dụng, ví dụ như thông tin xác thực người dùng (`auth-context`), chu kỳ hiện tại (`cycle-context`), và bộ đếm thời gian (`timer-context`).
+*   `src/lib/firebase.ts`: Cấu hình và khởi tạo kết nối đến Firebase.
+*   `src/components/app/flow-time-app.tsx`: Component chính bao bọc toàn bộ logic và giao diện của ứng dụng hẹn giờ.
