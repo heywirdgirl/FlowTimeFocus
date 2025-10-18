@@ -1,4 +1,3 @@
-
 "use client";
 
 import { Cycle, Phase, TrainingHistory, AudioAsset } from "@/lib/types";
@@ -7,14 +6,14 @@ import { getFirestore, doc, setDoc, addDoc, collection, onSnapshot, query, delet
 import { AuthContext } from "./auth-context";
 import { db } from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
-import { mockAudioLibrary, pomodoroCycle, wimHofCycle, defaultCycle, mockTrainingHistory } from "@/lib/mock-data";
+import { pomodoroCycle, wimHofCycle, defaultCycle } from "@/lib/mock-data";
 
 interface CycleContextType {
   privateCycles: Cycle[];
+  allCycles: Cycle[];  // 🔥 Public + Private
   currentCycle: Cycle | null;
   currentPhaseIndex: number;
   currentPhase: Phase | null;
-  trainingHistory: TrainingHistory[];
   audioLibrary: AudioAsset[];
   endOfCycleSound: AudioAsset | null;
   isLoading: boolean;
@@ -28,7 +27,7 @@ interface CycleContextType {
   addPhase: (newPhaseData: Partial<Phase>) => void;
   deletePhase: (phaseId: string) => void;
   deleteCycle: (cycleId: string) => void;
-  logTraining: (log: Omit<TrainingHistory, 'completedAt' | 'startTime' | 'endTime'>) => void;
+  logTraining: () => void;  // 🔥 AUTO add vào currentCycle.trainingHistory
   saveCycleChanges: () => void;
   createNewCycle: () => void;
 }
@@ -47,15 +46,15 @@ export function CycleProvider({ children }: { children: ReactNode }) {
   const { user, loading: authLoading } = useContext(AuthContext);
   const { toast } = useToast();
   
+  const [allCycles, setAllCycles] = useState<Cycle[]>([]);  // 🔥 Public + Private
   const [privateCycles, setPrivateCycles] = useState<Cycle[]>([]);
   const [currentCycle, setCurrentCycleState] = useState<Cycle | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-
   const [currentPhaseIndex, setCurrentPhaseIndexState] = useState(0);
-  const [trainingHistory, setTrainingHistory] = useState<TrainingHistory[]>(mockTrainingHistory);
-  const [audioLibrary] = useState<AudioAsset[]>(mockAudioLibrary);
-  const [endOfCycleSound, setEndOfCycleSound] = useState<AudioAsset | null>(audioLibrary[1] || null);
+  const [audioLibrary] = useState<AudioAsset[]>([]);  // 🔥 Load từ audio/ collection
+  const [endOfCycleSound, setEndOfCycleSound] = useState<AudioAsset | null>(null);
 
+  // 🔥 LOAD ALL CYCLES (Public + Private)
   useEffect(() => {
     if (authLoading) {
       setIsLoading(true);
@@ -63,40 +62,106 @@ export function CycleProvider({ children }: { children: ReactNode }) {
     }
 
     if (!user) {
-      const mockData = [pomodoroCycle, wimHofCycle];
-      setPrivateCycles(mockData);
-      if (!currentCycle) {
-        setCurrentCycleState(mockData[0] || null);
-      }
-      setIsLoading(false);
-      return;
+      // Guest: Chỉ public cycles
+      const q = query(collection(db, 'cycle'), 
+        where('isPublic', '==', true));
+      const unsubscribe = onSnapshot(q, (snapshot) => {
+        const publicCycles = snapshot.docs.map(doc => ({ 
+          id: doc.id, ...doc.data() 
+        } as Cycle));
+        setAllCycles(publicCycles);
+        setPrivateCycles([]);
+        setCurrentCycleState(defaultCycle);
+        setIsLoading(false);
+      });
+      return unsubscribe;
     }
 
-    const q = query(collection(db, `users/${user.uid}/privateCycles`));
-    const unsubscribe = onSnapshot(q, (querySnapshot) => {
-      const cyclesFromDb = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Cycle));
-      
-      if (cyclesFromDb.length > 0) {
-        setPrivateCycles(cyclesFromDb);
-        setCurrentCycleState(prev => 
-            prev && cyclesFromDb.some(c => c.id === prev.id) ? prev : cyclesFromDb[0]
-        );
-      } else {
-        const mockData = [pomodoroCycle, wimHofCycle];
-        setPrivateCycles(mockData);
-        setCurrentCycleState(mockData[0] || null);
-      }
-      setIsLoading(false);
-    }, (error) => {
-      console.error("Error fetching private cycles:", error);
-      const mockData = [pomodoroCycle, wimHofCycle];
-      setPrivateCycles(mockData);
-      setCurrentCycleState(mockData[0] || null);
-      setIsLoading(false);
+    // Auth user: Public + Private
+    const publicQ = query(collection(db, 'cycle'), 
+      where('isPublic', '==', true));
+    const privateQ = query(collection(db, 'cycle'), 
+      where('authorId', '==', user.uid));
+
+    const unsubPublic = onSnapshot(publicQ, (snapshot) => {
+      const publicCycles = snapshot.docs.map(doc => ({ 
+        id: doc.id, ...doc.data() 
+      } as Cycle));
+      updateCycles(publicCycles, true);
     });
 
-    return () => unsubscribe();
+    const unsubPrivate = onSnapshot(privateQ, (snapshot) => {
+      const privateCyclesData = snapshot.docs.map(doc => ({ 
+        id: doc.id, ...doc.data() 
+      } as Cycle));
+      setPrivateCycles(privateCyclesData);
+      updateCycles(privateCyclesData, false);
+    });
+
+    // 🔥 Load audio library
+    const audioQ = query(collection(db, 'audio'), 
+      where('authorId', '==', user.uid));
+    onSnapshot(audioQ, (snapshot) => {
+      const audioData = snapshot.docs.map(doc => ({ 
+        id: doc.id, ...doc.data() 
+      } as AudioAsset));
+      setEndOfCycleSound(audioData[0] || null);
+    });
+
+    function updateCycles(newCycles: Cycle[], isPublic: boolean) {
+      setAllCycles(prev => {
+        const existing = prev.filter(c => c.isPublic !== isPublic);
+        const merged = [...existing, ...newCycles];
+        // Set default nếu chưa có currentCycle
+        if (!currentCycle && merged.length > 0) {
+          setCurrentCycleState(merged[0]);
+        }
+        setIsLoading(false);
+        return merged;
+      });
+    }
+
+    return () => {
+      unsubPublic();
+      unsubPrivate();
+    };
   }, [user, authLoading, currentCycle]);
+
+  // 🔥 LOG TRAINING - ADD VÀO CURRENT CYCLE
+  const logTraining = useCallback(() => {
+    if (!currentCycle) return;
+    
+    const totalDuration = currentCycle.phases.reduce(
+      (sum, p) => sum + p.duration, 0
+    );
+    
+    const newHistory: TrainingHistory = {
+      id: `hist_${Date.now()}`,
+      cycleId: currentCycle.id,
+      name: currentCycle.name,
+      startTime: new Date().toISOString(),
+      endTime: new Date().toISOString(),
+      totalDuration,
+      cycleCount: 1,
+      completedAt: new Date().toISOString(),
+      status: 'completed'
+    };
+
+    const updatedCycle = {
+      ...currentCycle,
+      trainingHistory: [...currentCycle.trainingHistory, newHistory],
+      updatedAt: new Date().toISOString()
+    };
+
+    // Update local + Firestore
+    setCurrentCycleState(updatedCycle);
+    if (user) {
+      const cycleRef = doc(db, 'cycle', updatedCycle.id);
+      setDoc(cycleRef, updatedCycle, { merge: true });
+    }
+    
+    toast({ title: "🎉 Completed!", description: `${totalDuration}m session logged!` });
+  }, [currentCycle, user, toast]);
 
   const setCurrentCycle = (cycle: Cycle) => {
     setCurrentCycleState(cycle);
@@ -104,30 +169,20 @@ export function CycleProvider({ children }: { children: ReactNode }) {
   };
 
   const advancePhase = useCallback(() => {
-      const nextIndex = currentPhaseIndex + 1;
-      setCurrentPhaseIndexState(nextIndex);
-      return nextIndex;
+    const nextIndex = currentPhaseIndex + 1;
+    setCurrentPhaseIndexState(nextIndex);
+    return nextIndex;
   }, [currentPhaseIndex]);
   
   const setCurrentPhaseIndex = (index: number) => {
-      if (currentCycle && index >= 0 && index < currentCycle.phases.length) {
-          setCurrentPhaseIndexState(index);
-      }
-  }
+    if (currentCycle && index >= 0 && index < currentCycle.phases.length) {
+      setCurrentPhaseIndexState(index);
+    }
+  };
 
   const resetCycle = () => {
-      setCurrentPhaseIndexState(0);
-  }
-
-  const logTraining = useCallback((log: Omit<TrainingHistory, 'completedAt' | 'startTime' | 'endTime'>) => {
-    const newLog: TrainingHistory = {
-      ...log,
-      startTime: new Date().toISOString(),
-      endTime: new Date().toISOString(),
-      completedAt: new Date().toISOString(),
-    }
-    setTrainingHistory(prev => [newLog, ...prev]);
-  }, []);
+    setCurrentPhaseIndexState(0);
+  };
 
   const updateCycle = useCallback((updates: Partial<Cycle>) => {
     setCurrentCycleState(prev => prev ? { ...prev, ...updates } : null);
@@ -136,125 +191,112 @@ export function CycleProvider({ children }: { children: ReactNode }) {
   const updatePhase = useCallback((phaseId: string, updates: Partial<Phase>) => {
     setCurrentCycleState(prev => {
       if (!prev) return null;
-      const newPhases = prev.phases.map(p => p.id === phaseId ? { ...p, ...updates } : p);
+      const newPhases = prev.phases.map(p => 
+        p.id === phaseId ? { ...p, ...updates } : p
+      );
       return { ...prev, phases: newPhases };
     });
   }, []);
-  
+
   const addPhase = useCallback((newPhaseData: Partial<Phase>) => {
     setCurrentCycleState(prev => {
-        if (!prev) return null;
-        if (!newPhaseData.title || newPhaseData.duration === undefined) return prev;
-        const newPhase: Phase = {
-            id: `phase_${Math.random().toString(36).substr(2, 9)}`,
-            title: newPhaseData.title,
-            duration: newPhaseData.duration,
-            soundFile: null,
-            removable: true,
-            ...newPhaseData,
-        };
-        const newPhases = [...prev.phases, newPhase];
-        return { ...prev, phases: newPhases };
+      if (!prev) return null;
+      if (!newPhaseData.title || newPhaseData.duration === undefined) return prev;
+      const newPhase: Phase = {
+        id: `phase_${Math.random().toString(36).substr(2, 9)}`,
+        title: newPhaseData.title,
+        duration: newPhaseData.duration,
+        soundFile: null,
+        removable: true,
+        ...newPhaseData,
+      };
+      return { ...prev, phases: [...prev.phases, newPhase] };
     });
-}, []);
-  
+  }, []);
+
   const deletePhase = useCallback((phaseId: string) => {
     setCurrentCycleState(prev => {
       if (!prev || prev.phases.length <= 1) return prev;
       const newPhases = prev.phases.filter(p => p.id !== phaseId);
       if (currentPhaseIndex >= newPhases.length) {
-          setCurrentPhaseIndexState(newPhases.length - 1);
+        setCurrentPhaseIndexState(newPhases.length - 1);
       }
       return { ...prev, phases: newPhases };
     });
   }, [currentPhaseIndex]);
 
   const deleteCycle = useCallback(async (cycleId: string) => {
-    if (user) {
-        try {
-            if (!cycleId.startsWith("cycle_template_")) {
-                const cycleRef = doc(db, `users/${user.uid}/privateCycles`, cycleId);
-                await deleteDoc(cycleRef);
-            }
-        } catch (error) {
-            console.error("Error deleting cycle from Firestore: ", error);
-        }
+    if (user && !cycleId.startsWith("cycle_template_")) {
+      await deleteDoc(doc(db, 'cycle', cycleId));
     }
-
-    const updatedCycles = privateCycles.filter(c => c.id !== cycleId);
-    setPrivateCycles(updatedCycles);
-
+    setAllCycles(prev => prev.filter(c => c.id !== cycleId));
+    setPrivateCycles(prev => prev.filter(c => c.id !== cycleId));
+    
     if (currentCycle?.id === cycleId) {
-        const newCurrent = updatedCycles.find(c => c.id !== cycleId) || defaultCycle;
-        setCurrentCycleState(newCurrent);
-        setCurrentPhaseIndexState(0);
-        
-        if (updatedCycles.length === 0) {
-            setPrivateCycles([defaultCycle]);
-        }
+      const newCurrent = allCycles.find(c => c.id !== cycleId) || defaultCycle;
+      setCurrentCycleState(newCurrent);
+      setCurrentPhaseIndexState(0);
     }
-  }, [user, currentCycle, privateCycles]);
+  }, [user, currentCycle, allCycles]);
 
   const saveCycleChanges = useCallback(async () => {
     if (!user || !currentCycle || currentCycle.id.startsWith('cycle_template_')) {
-      toast({ title: "Error", description: "Cannot save template or no user.", variant: "destructive" });
+      toast({ title: "Error", description: "Cannot save template.", variant: "destructive" });
       return;
     }
   
     try {
-      const cycleToSave = { ...currentCycle, updatedAt: new Date().toISOString() };
-      cycleToSave.authorId = user.uid;
-      cycleToSave.isPublic = false;
-  
-      const cycleRef = doc(db, `users/${user.uid}/privateCycles`, cycleToSave.id);
+      const cycleToSave = { 
+        ...currentCycle, 
+        updatedAt: new Date().toISOString(),
+        authorId: user.uid,
+        isPublic: false
+      };
+      const cycleRef = doc(db, 'cycle', cycleToSave.id);
       await setDoc(cycleRef, cycleToSave, { merge: true });
-  
-      toast({ title: "Saved", description: "Cycle changes saved successfully!" });
+      toast({ title: "Saved", description: "Cycle updated!" });
     } catch (error) {
-      console.error("Error saving cycle changes: ", error);
-      toast({ title: "Error", description: "Save failed. Please try again.", variant: "destructive" });
+      toast({ title: "Error", description: "Save failed.", variant: "destructive" });
     }
   }, [user, currentCycle, toast]);
 
   const createNewCycle = useCallback(async () => {
-    if (!user || !currentCycle) {
-      return;
-    }
-  
+    if (!user || !currentCycle) return;
+    
     try {
       const { id, ...cycleData } = currentCycle;
-  
       const newCycleData = {
         ...cycleData,
-        name: currentCycle.name,
+        id: `cycle_${Date.now()}`,
         authorId: user.uid,
         isPublic: false,
+        trainingHistory: []
       };
-  
-      const privateCyclesCol = collection(db, `users/${user.uid}/privateCycles`);
-      const docRef = await addDoc(privateCyclesCol, newCycleData);
-      setCurrentCycleState({ ...newCycleData, id: docRef.id });
-  
-      toast({ title: "Created", description: `New cycle "${newCycleData.name}" saved! You can rename it anytime.` });
+      
+      const docRef = await addDoc(collection(db, 'cycle'), newCycleData);
+      const savedCycle = { ...newCycleData, id: docRef.id };
+      setCurrentCycleState(savedCycle);
+      setPrivateCycles(prev => [...prev, savedCycle]);
+      setAllCycles(prev => [...prev, savedCycle]);
+      
+      toast({ title: "Created", description: `New cycle "${newCycleData.name}" saved!` });
     } catch (error) {
-      console.error("Error creating new cycle: ", error);
       toast({ title: "Error", description: "Failed to create cycle.", variant: "destructive" });
     }
   }, [user, currentCycle, toast]);
 
-
   const currentPhase = useMemo(() => {
     if (!currentCycle) return null;
-    const index = Math.min(currentPhaseIndex, currentCycle.phases.length -1);
+    const index = Math.min(currentPhaseIndex, currentCycle.phases.length - 1);
     return currentCycle.phases[index] || null;
   }, [currentCycle, currentPhaseIndex]);
 
   const value = {
     privateCycles,
+    allCycles,  // 🔥 NEW!
     currentCycle,
     currentPhaseIndex,
     currentPhase,
-    trainingHistory,
     audioLibrary,
     endOfCycleSound,
     isLoading,
@@ -268,14 +310,14 @@ export function CycleProvider({ children }: { children: ReactNode }) {
     addPhase,
     deletePhase,
     deleteCycle,
-    logTraining,
+    logTraining,  // 🔥 AUTO saves to cycle.trainingHistory
     saveCycleChanges,
     createNewCycle,
   };
 
   return (
     <CycleContext.Provider value={value}>
-        {children}
+      {children}
     </CycleContext.Provider>
   );
 }
