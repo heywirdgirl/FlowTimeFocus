@@ -1,5 +1,5 @@
-// src/lib/mock-data.ts - FINAL VERSION (Oct 18, 2025)
-import { Cycle, Phase, AudioAsset } from "@/lib/types";
+// src/lib/mock-data.ts - FINAL VERSION (Oct 19, 2025) - DAL COMPATIBLE
+import { Cycle, Phase, AudioAsset, TrainingHistory } from "@/lib/types";
 
 export const mockAudioLibrary: AudioAsset[] = [
     {
@@ -16,7 +16,49 @@ export const mockAudioLibrary: AudioAsset[] = [
     }
 ];
 
-// 🔥 POMODORO CLASSIC - 8 PHASES + 1 HISTORY
+// 🔥 MOCK TRAINING HISTORY - RIÊNG BIỆT (CHO history-dal.ts)
+export const mockTrainingHistory: TrainingHistory[] = [
+    {
+        id: "hist1",
+        cycleId: "cycle_pomodoro",
+        name: "Pomodoro Classic",
+        startTime: "2025-09-26T09:00:00Z",
+        endTime: "2025-09-26T11:15:00Z",
+        totalDuration: 135,  // 2h15m = 8 phases
+        cycleCount: 1,
+        completedAt: "2025-09-26T11:15:00Z",
+        status: 'completed',
+        userId: "user123",
+        notes: "Great focus today!"
+    },
+    {
+        id: "hist2",
+        cycleId: "cycle_template_wimhof",
+        name: "Wim Hof Morning", 
+        startTime: "2025-09-26T08:00:00Z",
+        endTime: "2025-09-26T08:03:00Z",
+        totalDuration: 3,    // 1 + 1.5 + 0.5 = 3m
+        cycleCount: 1,
+        completedAt: "2025-09-26T08:03:00Z",
+        status: 'completed',
+        userId: "user123"
+    },
+    {
+        id: "hist3",
+        cycleId: "cycle_pomodoro",
+        name: "Pomodoro Classic",
+        startTime: "2025-09-25T14:30:00Z",
+        endTime: "2025-09-25T16:45:00Z",
+        totalDuration: 135,
+        cycleCount: 1,
+        completedAt: "2025-09-25T16:45:00Z",
+        status: 'interrupted',
+        userId: "user123",
+        notes: "Got distracted by email"
+    }
+];
+
+// 🔥 POMODORO CLASSIC - 8 PHASES - XÓA trainingHistory!
 export const pomodoroCycle: Cycle = {
     id: "cycle_pomodoro",
     name: "Pomodoro Classic",
@@ -108,24 +150,11 @@ export const pomodoroCycle: Cycle = {
     likes: 150, 
     shares: 30,
     createdAt: "2025-09-23T10:00:00Z",
-    updatedAt: "2025-09-23T10:00:00Z",
-    // 🔥 TRAINING HISTORY TRONG CYCLE - KHÔNG CÓ phaseRecords!
-    trainingHistory: [
-        {
-            id: "hist1",
-            cycleId: "cycle_pomodoro",
-            name: "Pomodoro Classic",
-            startTime: "2025-09-26T09:00:00Z",
-            endTime: "2025-09-26T11:15:00Z",
-            totalDuration: 135,  // 2h15m = 8 phases
-            cycleCount: 1,
-            completedAt: new Date().toISOString(),
-            status: 'completed'
-        }
-    ]
+    updatedAt: "2025-09-23T10:00:00Z"
+    // 🔥 XÓA trainingHistory - BÂY GIỜ RIÊNG!
 };
 
-// 🔥 WIM HOF MORNING - 3 PHASES + 1 HISTORY  
+// 🔥 WIM HOF MORNING - 3 PHASES - XÓA trainingHistory!
 export const wimHofCycle: Cycle = {
     id: "cycle_template_wimhof",
     name: "Wim Hof Morning",
@@ -138,6 +167,7 @@ export const wimHofCycle: Cycle = {
                 url: mockAudioLibrary[0].url, 
                 name: mockAudioLibrary[0].name 
             },
+            removable: false
         },
         {
             id: "phase_2",
@@ -147,6 +177,7 @@ export const wimHofCycle: Cycle = {
                 url: mockAudioLibrary[0].url, 
                 name: mockAudioLibrary[0].name 
             },
+            removable: false
         },
         {
             id: "phase_3",
@@ -156,6 +187,7 @@ export const wimHofCycle: Cycle = {
                 url: mockAudioLibrary[1].url, 
                 name: mockAudioLibrary[1].name 
             },
+            removable: false
         },
     ],
     isPublic: true,
@@ -164,21 +196,8 @@ export const wimHofCycle: Cycle = {
     likes: 1337,
     shares: 42,
     createdAt: "2025-09-22T23:00:00Z",
-    updatedAt: "2025-09-22T23:00:00Z",
-    // 🔥 TRAINING HISTORY TRONG CYCLE - KHÔNG CÓ phaseRecords!
-    trainingHistory: [
-        {
-            id: "hist2",
-            cycleId: "cycle_template_wimhof",
-            name: "Wim Hof Morning", 
-            startTime: "2025-09-22T08:00:00Z",
-            endTime: "2025-09-22T08:03:00Z",
-            totalDuration: 3,    // 1 + 1.5 + 0.5 = 3m
-            cycleCount: 1,
-            completedAt: new Date().toISOString(),
-            status: 'completed'
-        }
-    ]
+    updatedAt: "2025-09-22T23:00:00Z"
+    // 🔥 XÓA trainingHistory - BÂY GIỜ RIÊNG!
 };
 
 // 🔥 DEFAULT CYCLE = WIM HOF CLONE! (3 PHASES READY)
@@ -192,21 +211,27 @@ export const defaultCycle: Cycle = {
     likes: 0,
     shares: 0,
     createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-    trainingHistory: []  // 🔥 Rỗng - Chờ user hoàn thành
+    updatedAt: new Date().toISOString()
+    // 🔥 KHÔNG CÓ trainingHistory
 };
 
-// 🔥 EXPORT TẤT CẢ
-// export {
-//     mockAudioLibrary,
-//     pomodoroCycle,
-//     wimHofCycle,
-//     defaultCycle
-// };
+// 🔥 MOCK USER PROFILE
+export const mockUserProfile = {
+    userId: "user123",
+    email: "user@example.com",
+    displayName: "John Doe",
+    privateCycles: ["cycle_default_wimhof"],
+    audioLibrary: mockAudioLibrary,
+    createdAt: new Date().toISOString(),
+    lastLogin: new Date().toISOString()
+};
 
+// 🔥 DEFAULT EXPORT
 export default {
     mockAudioLibrary,
     pomodoroCycle,
     wimHofCycle,
-    defaultCycle
+    defaultCycle,
+    mockTrainingHistory, // 🔥 THÊM MỚI
+    mockUserProfile       // 🔥 THÊM MỚI
 };

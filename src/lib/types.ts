@@ -1,4 +1,4 @@
-// src/lib/types.ts - FINAL VERSION (Oct 18, 2025)
+// src/lib/types.ts - FINAL VERSION (Oct 19, 2025) - TRAININGHISTORY RIÊNG!
 
 // 🔥 CORE - KHÔNG THAY ĐỔI
 export interface Phase {
@@ -9,7 +9,7 @@ export interface Phase {
   removable?: boolean;
 }
 
-// 🔥 CYCLE - THÊM trainingHistory!
+// 🔥 CYCLE - XÓA trainingHistory!
 export interface Cycle {
   id: string;
   name: string;
@@ -22,13 +22,12 @@ export interface Cycle {
   createdAt: string;
   updatedAt: string;
   version?: number;
-  // 🔥 THÊM NÀY - TrainingHistory TRONG Cycle!
-  trainingHistory: TrainingHistory[];
+  // 🔥 XÓA trainingHistory - BÂY GIỜ LÀ COLLECTION RIÊNG!
 }
 
-// 🔥 TRAINING HISTORY - XÓA phaseRecords!
+// 🔥 TRAINING HISTORY - RIÊNG BIỆT - KHÔNG THUỘC CYCLE
 export interface TrainingHistory {
-  id: string;  // 🔥 THÊM id
+  id: string;
   cycleId: string;
   name: string;
   startTime: string;
@@ -36,9 +35,10 @@ export interface TrainingHistory {
   totalDuration: number; // in minutes
   cycleCount: number;
   completedAt: string;
-  status: "completed" | "interrupted"; // 🔥 BẮT BUỘC
+  status: "completed" | "interrupted";
   notes?: string;
-  // 🔥 XÓA phaseRecords!
+  userId: string; // 🔥 THÊM - để query theo user
+  // 🔥 COLLECTION RIÊNG: trainingHistories/{id}
 }
 
 // 🔥 AUDIO - GIỮ NGUYÊN
@@ -52,23 +52,23 @@ export interface AudioAsset {
     isPublic?: boolean;
 }
 
-// 🔥 USERPROFILE - XÓA trainingHistory (vì đã trong Cycle!)
+// 🔥 USERPROFILE - XÓA trainingHistory HOÀN TOÀN
 export interface UserProfile {
   userId: string;
   email: string;
   displayName?: string;
-  privateCycles: Cycle[]; // Đã có trainingHistory trong mỗi Cycle
-  // 🔥 XÓA trainingHistory!
+  privateCycles: string[]; // 🔥 ĐỔI THÀNH ARRAY CYCLE IDs (không phải full objects)
   audioLibrary: AudioAsset[];
   createdAt: string;
   lastLogin?: string;
+  // 🔥 XÓA trainingHistory - BÂY GIỜ LÀ COLLECTION RIÊNG!
 }
 
-// 🔥 TEMPLATES - GIỮ NGUYÊN (KHÔNG DÙNG CHO MOCK)
+// 🔥 TEMPLATES - GIỮ NGUYÊN
 export interface PhaseTemplate {
   id: string;
   title: string;
-  duration: number; // in minutes
+  duration: number;
   soundFile: { url: string; name?: string; type?: string } | null;
   isPublic: boolean;
   createdBy: string;
@@ -80,10 +80,7 @@ export interface CycleTemplate extends Omit<Cycle, 'isPublic' | 'authorId' | 'au
   isOfficial?: boolean;
 }
 
-// 🔥 XÓA HOÀN TOÀN - KHÔNG CẦN NỮA
-// export interface PhaseRecord { ... } // 🔥 XÓA!
-
-// 🔥 EXPORTS CHO MOCK DATA
+// 🔥 EXPORTS
 export type { 
   Phase, 
   Cycle, 
