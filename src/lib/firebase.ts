@@ -1,11 +1,15 @@
-// src/lib/firebase.ts - FINAL VERSION (Oct 19, 2025)
+// src/lib/firebase.ts - FIXED VERSION (Oct 19, 2025) - NO DUPLICATES!
 import { initializeApp, getApps, getApp } from "firebase/app";
 import { 
   getFirestore, 
   collection, 
   doc, 
   query, 
-  where 
+  where,
+  Firestore,
+  CollectionReference,
+  DocumentReference,
+  Query
 } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
 import { getAuth } from "firebase/auth";
@@ -20,25 +24,21 @@ const firebaseConfig = {
 
 // Initialize Firebase
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
-export const db = getFirestore(app);
+
+// 🔥 SINGLE EXPORTS - NO DUPLICATES!
+export const db: Firestore = getFirestore(app);
 export const storage = getStorage(app);
 export const auth = getAuth(app);
+export { app };
 
-// 🔥 HELPER FUNCTIONS CHO COLLECTIONS MỚI
-// Cycles collection
-export const cyclesCollection = collection(db, 'cycles');
-
-// TrainingHistories collection RIÊNG
-export const trainingHistoriesCollection = collection(db, 'trainingHistories');
-
-// Users collection
+// 🔥 COLLECTION REFERENCES
+export const cyclesCollection: CollectionReference = collection(db, 'cycles');
+export const trainingHistoriesCollection: CollectionReference = collection(db, 'trainingHistories');
 export const usersCollection = collection(db, 'users');
 
-// 🔥 USER DOCUMENT HELPER
-export const getUserDoc = (userId: string) => doc(db, 'users', userId);
+// 🔥 DOCUMENT REFERENCES
+export const getUserDoc = (userId: string): DocumentReference => doc(db, 'users', userId);
 
-// 🔥 TRAINING HISTORY QUERY HELPER
-export const getUserTrainingHistoriesQuery = (userId: string) => 
+// 🔥 QUERY HELPERS
+export const getUserTrainingHistoriesQuery = (userId: string): Query => 
   query(trainingHistoriesCollection, where('userId', '==', userId));
-
-export { app, db, storage, auth };
