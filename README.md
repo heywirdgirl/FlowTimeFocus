@@ -1,4 +1,4 @@
-# Flow Time App
+# Flow Time App hgj
 
 Đây là một ứng dụng giúp bạn tập trung làm việc theo chu kỳ, tương tự như phương pháp Pomodoro. Bạn có thể tạo ra các chu kỳ làm việc (Cycles) bao gồm nhiều phiên (Phases) với thời gian và âm thanh tùy chỉnh.
 
