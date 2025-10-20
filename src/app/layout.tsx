@@ -3,11 +3,19 @@ import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
 import { AuthProvider } from '@/contexts/auth-context';
 import { CycleProvider } from '@/contexts/cycle-context';
+import { HistoryProvider } from '@/contexts/history-context';
 
 export const metadata: Metadata = {
   title: 'FlowTime Focus',
   description: 'A simple, visually clean app to help manage work and rest intervals.',
 };
+
+function CycleBridge({ children }: { children: React.ReactNode }) {
+  const { currentCycle } = useCycle(); // Safe here - inside CycleProvider
+  return <HistoryProvider currentCycle={currentCycle}>{children}</HistoryProvider>;
+}
+
+
 
 export default function RootLayout({
   children,
@@ -24,7 +32,9 @@ export default function RootLayout({
       <body className="font-body antialiased">
         <AuthProvider>
           <CycleProvider>
-            {children}
+            <CycleBridge>
+              {children}
+            </CycleBridge>
           </CycleProvider>
         </AuthProvider>
         <Toaster />
