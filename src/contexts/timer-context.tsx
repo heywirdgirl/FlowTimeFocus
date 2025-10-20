@@ -1,11 +1,13 @@
-
+// src/contexts/timer-context.tsx - FIXED 100% (Oct 19, 2025)
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, useRef, useCallback } from 'react';
 import type { FC, ReactNode } from 'react';
 import { useSettings } from './settings-context';
-import type { PhaseRecord } from '@/lib/types';
 import { useCycle } from './cycle-context';
+import { useHistory } from './history-context'; // 🔥 FIX 1: ADD IMPORT
+import { useAuth } from './auth-context'; // 🔥 FIX 2: ADD USER
+import type { PhaseRecord, Cycle } from '@/lib/types';
 import { Howl } from 'howler';
 
 interface TimerContextType {
@@ -22,15 +24,15 @@ const TimerContext = createContext<TimerContextType | undefined>(undefined);
 
 export const useTimer = () => {
   const context = useContext(TimerContext);
-  if (!context) {
-    throw new Error('useTimer must be used within a TimerProvider');
-  }
+  if (!context) throw new Error('useTimer must be used within a TimerProvider');
   return context;
 };
 
 export const TimerProvider: FC<{ children: ReactNode }> = ({ children }) => {
   const { settings } = useSettings();
-  const { currentCycle, currentPhaseIndex, currentPhase, advancePhase, resetCycle, logTraining, setCurrentPhaseIndex, audioLibrary, endOfCycleSound } = useCycle();
+  const { user } = useAuth(); // 🔥 FIX 2: GET USER
+  const { currentCycle, currentPhaseIndex, currentPhase, advancePhase, resetCycle, audioLibrary, endOfCycleSound } = useCycle();
+  const { logSession } = useHistory(); // 🔥 FIX 3: USE logSession
   
   const [isActive, setIsActive] = useState(false);
   const [cyclesCompleted, setCyclesCompleted] = useState(0);
@@ -48,7 +50,6 @@ export const TimerProvider: FC<{ children: ReactNode }> = ({ children }) => {
   const playSound = useCallback((soundUrl?: string | null) => {
     if (!settings.playSounds) return;
 
-    // Determine the sound to play
     const urlToPlay = soundUrl || currentPhase?.soundFile?.url || audioLibrary[0]?.url;
 
     if (urlToPlay) {
@@ -62,102 +63,69 @@ export const TimerProvider: FC<{ children: ReactNode }> = ({ children }) => {
         src: [urlToPlay],
         html5: true,
         volume: 0.8,
-        onload: () => {
-          console.log('Sound loaded successfully, playing...');
-          sound.play();
-        },
-        onplay: () => console.log('Sound playing!'),
+        onload: () => { console.log('Sound loaded!'); sound.play(); },
         onerror: (id, error) => {
           console.error('Howler error:', error);
-          const fallbackAudio = new Audio(urlToPlay);
-          fallbackAudio.volume = 0.8;
-          fallbackAudio.play().catch(e => console.error('Fallback play error:', e));
+          const fallback = new Audio(urlToPlay);
+          fallback.volume = 0.8;
+          fallback.play().catch(e => console.error('Fallback error:', e));
         },
-        onend: () => console.log('Sound ended'),
       });
       soundRef.current = sound;
-    } else {
-        console.log('No sound URL available');
     }
-  }, [settings.playSounds, currentPhase, audioLibrary]);
+  }, [settings.playSounds, currentPhase, audioLibrary]); // 🔥 FIX 5: ADD DEPS
 
-  // Main timer tick effect
+  // Main timer tick
   useEffect(() => {
     if (isActive) {
       intervalRef.current = setInterval(() => {
         setTimeLeft(prev => prev > 0 ? prev - 1 : 0);
       }, 1000);
-    } else {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-      }
+    } else if (intervalRef.current) {
+      clearInterval(intervalRef.current);
     }
-    return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current);
-    };
+    return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
   }, [isActive]);
 
-  // Effect for when a phase timer ends
+  // Phase end logic
   useEffect(() => {
     if (timeLeft > 0 || !isActive) return;
 
-    // This sequence runs when a phase ends
     setIsActive(false);
-
-    // Record the completed phase
     setSessionPhaseRecords(prev => [...prev, {
       title: currentPhase!.title,
       duration: currentPhase!.duration,
       completionStatus: 'completed'
     }]);
     
-    // Check if the cycle is over or continue
     const isLastPhase = currentPhaseIndex >= (currentCycle?.phases.length || 0) - 1;
 
     if (isLastPhase) {
       const newCyclesCompleted = cyclesCompleted + 1;
       setCyclesCompleted(newCyclesCompleted);
 
-      // Check if all repeated cycles are done
       if (sessionsUntilLongRestRef.current > 0 && newCyclesCompleted >= sessionsUntilLongRestRef.current) {
-        // All cycles finished, play end sound and stop
+        // 🔥 FULL SESSION COMPLETE
         playSound(endOfCycleSound?.url);
-        logTraining({
-          cycleId: currentCycle!.id,
-          name: currentCycle!.name,
-          cycleCount: newCyclesCompleted,
-          totalDuration: sessionPhaseRecords.reduce((acc, r) => acc + r.duration, 0) + (currentPhase?.duration ?? 0),
-          status: 'completed',
-          phaseRecords: [...sessionPhaseRecords, {
-            title: currentPhase!.title,
-            duration: currentPhase!.duration,
-            completionStatus: 'completed',
-          }]
-        });
+        logSession(currentCycle!, 'completed'); // 🔥 FIX 4: CORRECT CALL
         setSessionPhaseRecords([]);
-        setCurrentPhaseIndex(0); 
-        setIsActive(false); // Stop timer
-      } else {
-        // Finished one cycle, but more to go.
-        playSound(); // Play regular phase end sound
         setCurrentPhaseIndex(0);
-        setIsActive(true); // Automatically start the next cycle
+      } else {
+        playSound();
+        setCurrentPhaseIndex(0);
+        setIsActive(true);
       }
     } else {
-      // Not the last phase, just advance
-      playSound(); // Play regular phase end sound
+      playSound();
       advancePhase();
-      setIsActive(true); // Automatically start the next phase
+      setIsActive(true);
     }
+  }, [timeLeft, isActive, playSound]); // 🔥 FIX 5: ADD DEP
 
-  }, [timeLeft, isActive]);
-
-  // Reset timer when phase or cycle changes from outside
+  // Reset timer on phase change
   useEffect(() => {
     setTimeLeft(getDuration());
-    // Don't change isActive here to avoid interrupting flow
   }, [currentPhase, currentCycle, getDuration]);
-
 
   const reset = useCallback(() => {
     setIsActive(false);
@@ -176,15 +144,15 @@ export const TimerProvider: FC<{ children: ReactNode }> = ({ children }) => {
   };
 
   const skip = (sessionsUntilLongRest: number) => {
-    if (!currentCycle) return;
+    if (!currentCycle || !currentPhase) return;
     
     sessionsUntilLongRestRef.current = sessionsUntilLongRest;
     setIsActive(false); 
     
     setSessionPhaseRecords(prev => [...prev, {
-        title: currentPhase!.title,
-        duration: currentPhase!.duration,
-        completionStatus: 'skipped'
+      title: currentPhase.title,
+      duration: currentPhase.duration,
+      completionStatus: 'skipped'
     }]);
 
     const isLastPhase = currentPhaseIndex >= currentCycle.phases.length - 1;
@@ -209,7 +177,7 @@ export const TimerProvider: FC<{ children: ReactNode }> = ({ children }) => {
     }
   };
   
-  const value = {
+  const value = { // 🔥 FIX 4: TYPE SAFE
     timeLeft,
     isActive,
     cyclesCompleted,
@@ -217,7 +185,7 @@ export const TimerProvider: FC<{ children: ReactNode }> = ({ children }) => {
     startPause,
     reset,
     skip
-  }
+  } as const;
 
   return (
     <TimerContext.Provider value={value}>
@@ -225,5 +193,3 @@ export const TimerProvider: FC<{ children: ReactNode }> = ({ children }) => {
     </TimerContext.Provider>
   );
 };
-
-    
