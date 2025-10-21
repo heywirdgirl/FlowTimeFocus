@@ -1,15 +1,13 @@
-
+// src/contexts/cycle-context.tsx - NEW DATA STRUCTURE (Oct 21, 2025)
 "use client";
 
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { useAuth } from './auth-context';
-import { Cycle, Phase, SoundFile } from '@/lib/types';
-import { getAllCycles, createCycle, deleteCycle as deleteCycleDAL } from '@/dal';
-import defaultData from '@/lib/mock-data';
+import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { useAuth } from "./auth-context";
+import { Cycle, Phase, SoundFile } from "@/lib/types";
+import { getCycles, createCycle, deleteCycle } from "@/dal";
+import defaultData from "@/lib/mock-data";
 
-// CORRECTED: Import individual cycles and create an array
-const { pomodoroCycle, wimHofCycle, defaultCycle, mockAudioLibrary } = defaultData;
-const mockCycles = [pomodoroCycle, wimHofCycle];
+const { mockCycles, audioLibrary } = defaultData;
 
 interface CycleContextType {
   allCycles: Cycle[];
@@ -21,6 +19,7 @@ interface CycleContextType {
   setCurrentPhaseIndex: (index: number) => void;
   advancePhase: () => number;
   resetCycle: () => void;
+  logTraining: (data: any) => void;
   deleteCycle: (cycleId: string) => Promise<void>;
   audioLibrary: SoundFile[];
   endOfCycleSound: SoundFile | null;
@@ -30,7 +29,7 @@ const CycleContext = createContext<CycleContextType | undefined>(undefined);
 
 export function useCycle() {
   const context = useContext(CycleContext);
-  if (!context) throw new Error('useCycle must be used within CycleProvider');
+  if (!context) throw new Error("useCycle must be used within CycleProvider");
   return context;
 }
 
@@ -38,33 +37,33 @@ export function CycleProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
   const [allCycles, setAllCycles] = useState<Cycle[]>(mockCycles);
   const [privateCycles, setPrivateCycles] = useState<Cycle[]>([]);
-  // SIMPLIFIED: Initialize with a default cycle
-  const [currentCycle, setCurrentCycle] = useState<Cycle | null>(defaultCycle);
+  const [currentCycle, setCurrentCycle] = useState<Cycle | null>(null);
   const [currentPhaseIndex, setCurrentPhaseIndex] = useState(0);
 
+  // Load cycles
   useEffect(() => {
     const loadCycles = async () => {
-      if (!user) {
+      try {
+        // 🔥 NEW: Pass userId to getCycles
+        const cycles = await getCycles(user?.uid);
+        const privateCycles = user ? cycles.filter(c => c.userId === user.uid && !c.isPublic) : [];
+        setAllCycles([...mockCycles, ...cycles.filter(c => c.isPublic || c.userId === user?.uid)]);
+        setPrivateCycles(privateCycles);
+      } catch (error) {
+        console.error("Failed to load cycles", error);
         setAllCycles(mockCycles);
         setPrivateCycles([]);
-        return;
-      }
-      try {
-        const cycles = await getAllCycles();
-        setAllCycles([...mockCycles, ...cycles]);
-        setPrivateCycles(cycles.filter((c) => !c.isPublic));
-      } catch (error) {
-        console.error('Failed to load cycles', error);
       }
     };
     loadCycles();
   }, [user]);
 
+  // Set initial cycle
   useEffect(() => {
-    // When the current cycle changes, reset the phase index
-    setCurrentPhaseIndex(0);
-  }, [currentCycle]);
-
+    if (allCycles.length > 0 && !currentCycle) {
+      setCurrentCycle(allCycles[0]);
+    }
+  }, [allCycles]);
 
   const advancePhase = () => {
     if (!currentCycle) return 0;
@@ -77,16 +76,20 @@ export function CycleProvider({ children }: { children: ReactNode }) {
     setCurrentPhaseIndex(0);
   };
 
+  const logTraining = async (data: any) => {
+    // Placeholder for logging to history (handled by history-context)
+  };
+
   const deleteCycle = async (cycleId: string) => {
     try {
-      await deleteCycleDAL(cycleId);
-      setAllCycles((prev) => prev.filter((c) => c.id !== cycleId));
-      setPrivateCycles((prev) => prev.filter((c) => c.id !== cycleId));
+      await deleteCycle(cycleId, user?.uid); // 🔥 NEW: Pass userId
+      setAllCycles(prev => prev.filter(c => c.id !== cycleId));
+      setPrivateCycles(prev => prev.filter(c => c.id !== cycleId));
       if (currentCycle?.id === cycleId) {
         setCurrentCycle(allCycles[0] || null);
       }
-    } catch (error) { 
-      console.error('Failed to delete cycle', error);
+    } catch (error) {
+      console.error("Failed to delete cycle", error);
     }
   };
 
@@ -100,9 +103,10 @@ export function CycleProvider({ children }: { children: ReactNode }) {
     setCurrentPhaseIndex,
     advancePhase,
     resetCycle,
+    logTraining,
     deleteCycle,
-    audioLibrary: mockAudioLibrary,
-    endOfCycleSound: mockAudioLibrary.length > 0 ? mockAudioLibrary[0] : null,
+    audioLibrary,
+    endOfCycleSound: audioLibrary[0] || null,
   };
 
   return <CycleContext.Provider value={value}>{children}</CycleContext.Provider>;
