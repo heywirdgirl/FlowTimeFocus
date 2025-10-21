@@ -3216,6 +3216,7 @@ var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$b
 var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/components/ui/card.tsx [app-client] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$contexts$2f$cycle$2d$context$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/contexts/cycle-context.tsx [app-client] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$contexts$2f$timer$2d$context$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/contexts/timer-context.tsx [app-client] (ecmascript)");
+var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$contexts$2f$history$2d$context$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/contexts/history-context.tsx [app-client] (ecmascript)"); // 🔥 FIX 1: ADD IMPORT!
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$play$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__Play$3e$__ = __turbopack_context__.i("[project]/node_modules/lucide-react/dist/esm/icons/play.js [app-client] (ecmascript) <export default as Play>");
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$trash$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__Trash$3e$__ = __turbopack_context__.i("[project]/node_modules/lucide-react/dist/esm/icons/trash.js [app-client] (ecmascript) <export default as Trash>");
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$clock$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__Clock$3e$__ = __turbopack_context__.i("[project]/node_modules/lucide-react/dist/esm/icons/clock.js [app-client] (ecmascript) <export default as Clock>");
@@ -3230,15 +3231,22 @@ var _s = __turbopack_context__.k.signature();
 ;
 ;
 ;
+;
 function CycleList() {
     _s();
     const { privateCycles, allCycles, setCurrentCycle, deleteCycle, currentCycle } = (0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$contexts$2f$cycle$2d$context$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useCycle"])();
     const { isActive, reset } = (0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$contexts$2f$timer$2d$context$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useTimer"])();
-    // 🔥 FIX: TÍNH TOTAL TIME TODAY TỪ ALL CYCLES' TRAINING HISTORY
-    const totalTimeToday = allCycles.flatMap((cycle)=>cycle.trainingHistory) // 🔥 FLAT ALL histories
-    .filter((h)=>new Date(h.completedAt).toDateString() === new Date().toDateString()).reduce((acc, h)=>acc + h.totalDuration, 0);
-    // 🔥 GET RECENT COMPLETED CYCLES (last 3)
-    const recentCycles = allCycles.filter((cycle)=>cycle.trainingHistory.length > 0).sort((a, b)=>new Date(b.trainingHistory[0].completedAt).getTime() - new Date(a.trainingHistory[0].completedAt).getTime()).slice(0, 3);
+    const { trainingHistory } = (0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$contexts$2f$history$2d$context$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useHistory"])(); // 🔥 FIX 2: GET HISTORY!
+    // 🔥 FIX 3: TOTAL TIME TODAY FROM HISTORY CONTEXT
+    const totalTimeToday = trainingHistory.filter((h)=>new Date(h.completedAt).toDateString() === new Date().toDateString()).reduce((acc, h)=>acc + h.totalDuration, 0);
+    // 🔥 FIX 4: HELPER - COUNT SESSIONS PER CYCLE
+    const getHistoryCount = (cycleId)=>trainingHistory.filter((h)=>h.cycleId === cycleId).length;
+    // 🔥 FIX 5: RECENT CYCLES FROM HISTORY
+    const recentCycles = allCycles.filter((cycle)=>getHistoryCount(cycle.id) > 0).sort((a, b)=>{
+        const lastA = trainingHistory.filter((h)=>h.cycleId === a.id)[0]?.completedAt;
+        const lastB = trainingHistory.filter((h)=>h.cycleId === b.id)[0]?.completedAt;
+        return new Date(lastB || 0).getTime() - new Date(lastA || 0).getTime();
+    }).slice(0, 3);
     const handleDelete = (cycleId)=>{
         if (isActive && currentCycle?.id === cycleId) {
             if (window.confirm("This cycle is currently running. Are you sure you want to delete it? The timer will be reset to the default cycle.")) {
@@ -3252,7 +3260,6 @@ function CycleList() {
         }
     };
     const handleExploreTemplates = ()=>{
-        // 🔥 TODO: Navigate to public templates page
         console.log("Explore public templates");
     };
     return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Card"], {
@@ -3268,20 +3275,20 @@ function CycleList() {
                                     children: "Your Cycles"
                                 }, void 0, false, {
                                     fileName: "[project]/src/components/app/cycle-list.tsx",
-                                    lineNumber: 58,
+                                    lineNumber: 63,
                                     columnNumber: 25
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["CardDescription"], {
                                     children: totalTimeToday > 0 ? `${totalTimeToday}m practiced today.` : "Select a cycle to begin."
                                 }, void 0, false, {
                                     fileName: "[project]/src/components/app/cycle-list.tsx",
-                                    lineNumber: 59,
+                                    lineNumber: 64,
                                     columnNumber: 25
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/src/components/app/cycle-list.tsx",
-                            lineNumber: 57,
+                            lineNumber: 62,
                             columnNumber: 21
                         }, this),
                         totalTimeToday > 0 && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -3291,7 +3298,7 @@ function CycleList() {
                                     className: "h-4 w-4"
                                 }, void 0, false, {
                                     fileName: "[project]/src/components/app/cycle-list.tsx",
-                                    lineNumber: 68,
+                                    lineNumber: 73,
                                     columnNumber: 29
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -3301,24 +3308,24 @@ function CycleList() {
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/src/components/app/cycle-list.tsx",
-                                    lineNumber: 69,
+                                    lineNumber: 74,
                                     columnNumber: 29
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/src/components/app/cycle-list.tsx",
-                            lineNumber: 67,
+                            lineNumber: 72,
                             columnNumber: 25
                         }, this)
                     ]
                 }, void 0, true, {
                     fileName: "[project]/src/components/app/cycle-list.tsx",
-                    lineNumber: 56,
+                    lineNumber: 61,
                     columnNumber: 17
                 }, this)
             }, void 0, false, {
                 fileName: "[project]/src/components/app/cycle-list.tsx",
-                lineNumber: 55,
+                lineNumber: 60,
                 columnNumber: 13
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["CardContent"], {
@@ -3334,21 +3341,23 @@ function CycleList() {
                                         className: "h-4 w-4"
                                     }, void 0, false, {
                                         fileName: "[project]/src/components/app/cycle-list.tsx",
-                                        lineNumber: 79,
+                                        lineNumber: 84,
                                         columnNumber: 29
                                     }, this),
                                     "Recent"
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/src/components/app/cycle-list.tsx",
-                                lineNumber: 78,
+                                lineNumber: 83,
                                 columnNumber: 25
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$scroll$2d$area$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["ScrollArea"], {
                                 className: "h-24",
                                 children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                                     className: "space-y-2 pr-4",
-                                    children: recentCycles.map((cycle)=>/*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Card"], {
+                                    children: recentCycles.map((cycle)=>{
+                                        const lastSession = trainingHistory.filter((h)=>h.cycleId === cycle.id)[0];
+                                        return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Card"], {
                                             className: "flex items-center justify-between p-3",
                                             children: [
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -3359,27 +3368,27 @@ function CycleList() {
                                                             children: cycle.name
                                                         }, void 0, false, {
                                                             fileName: "[project]/src/components/app/cycle-list.tsx",
-                                                            lineNumber: 87,
-                                                            columnNumber: 45
+                                                            lineNumber: 94,
+                                                            columnNumber: 49
                                                         }, this),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
                                                             className: "text-xs text-muted-foreground",
                                                             children: [
-                                                                cycle.trainingHistory[0].totalDuration,
+                                                                lastSession?.totalDuration || 0,
                                                                 "m • ",
                                                                 cycle.phases.length,
                                                                 " phases"
                                                             ]
                                                         }, void 0, true, {
                                                             fileName: "[project]/src/components/app/cycle-list.tsx",
-                                                            lineNumber: 88,
-                                                            columnNumber: 45
+                                                            lineNumber: 95,
+                                                            columnNumber: 49
                                                         }, this)
                                                     ]
                                                 }, void 0, true, {
                                                     fileName: "[project]/src/components/app/cycle-list.tsx",
-                                                    lineNumber: 86,
-                                                    columnNumber: 41
+                                                    lineNumber: 93,
+                                                    columnNumber: 45
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                                                     className: "flex items-center gap-1",
@@ -3392,8 +3401,8 @@ function CycleList() {
                                                                 className: "h-5 w-5"
                                                             }, void 0, false, {
                                                                 fileName: "[project]/src/components/app/cycle-list.tsx",
-                                                                lineNumber: 98,
-                                                                columnNumber: 49
+                                                                lineNumber: 105,
+                                                                columnNumber: 53
                                                             }, this),
                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
                                                                 className: "sr-only",
@@ -3403,40 +3412,41 @@ function CycleList() {
                                                                 ]
                                                             }, void 0, true, {
                                                                 fileName: "[project]/src/components/app/cycle-list.tsx",
-                                                                lineNumber: 99,
-                                                                columnNumber: 49
+                                                                lineNumber: 106,
+                                                                columnNumber: 53
                                                             }, this)
                                                         ]
                                                     }, void 0, true, {
                                                         fileName: "[project]/src/components/app/cycle-list.tsx",
-                                                        lineNumber: 93,
-                                                        columnNumber: 45
+                                                        lineNumber: 100,
+                                                        columnNumber: 49
                                                     }, this)
                                                 }, void 0, false, {
                                                     fileName: "[project]/src/components/app/cycle-list.tsx",
-                                                    lineNumber: 92,
-                                                    columnNumber: 41
+                                                    lineNumber: 99,
+                                                    columnNumber: 45
                                                 }, this)
                                             ]
                                         }, cycle.id, true, {
                                             fileName: "[project]/src/components/app/cycle-list.tsx",
-                                            lineNumber: 85,
-                                            columnNumber: 37
-                                        }, this))
+                                            lineNumber: 92,
+                                            columnNumber: 41
+                                        }, this);
+                                    })
                                 }, void 0, false, {
                                     fileName: "[project]/src/components/app/cycle-list.tsx",
-                                    lineNumber: 83,
+                                    lineNumber: 88,
                                     columnNumber: 29
                                 }, this)
                             }, void 0, false, {
                                 fileName: "[project]/src/components/app/cycle-list.tsx",
-                                lineNumber: 82,
+                                lineNumber: 87,
                                 columnNumber: 25
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/src/components/app/cycle-list.tsx",
-                        lineNumber: 77,
+                        lineNumber: 82,
                         columnNumber: 21
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -3451,7 +3461,7 @@ function CycleList() {
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/src/components/app/cycle-list.tsx",
-                                lineNumber: 111,
+                                lineNumber: 119,
                                 columnNumber: 21
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$scroll$2d$area$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["ScrollArea"], {
@@ -3469,7 +3479,7 @@ function CycleList() {
                                                             children: cycle.name
                                                         }, void 0, false, {
                                                             fileName: "[project]/src/components/app/cycle-list.tsx",
-                                                            lineNumber: 120,
+                                                            lineNumber: 128,
                                                             columnNumber: 45
                                                         }, this),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -3477,18 +3487,18 @@ function CycleList() {
                                                             children: [
                                                                 cycle.phases.length,
                                                                 " phases • ",
-                                                                cycle.trainingHistory.length,
-                                                                " sessions"
+                                                                getHistoryCount(cycle.id),
+                                                                " sessions "
                                                             ]
                                                         }, void 0, true, {
                                                             fileName: "[project]/src/components/app/cycle-list.tsx",
-                                                            lineNumber: 121,
+                                                            lineNumber: 129,
                                                             columnNumber: 45
                                                         }, this)
                                                     ]
                                                 }, void 0, true, {
                                                     fileName: "[project]/src/components/app/cycle-list.tsx",
-                                                    lineNumber: 119,
+                                                    lineNumber: 127,
                                                     columnNumber: 41
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -3503,42 +3513,13 @@ function CycleList() {
                                                                     className: "h-5 w-5"
                                                                 }, void 0, false, {
                                                                     fileName: "[project]/src/components/app/cycle-list.tsx",
-                                                                    lineNumber: 131,
-                                                                    columnNumber: 49
-                                                                }, this),
-                                                                /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
-                                                                    className: "sr-only",
-                                                                    children: [
-                                                                        "Run ",
-                                                                        cycle.name
-                                                                    ]
-                                                                }, void 0, true, {
-                                                                    fileName: "[project]/src/components/app/cycle-list.tsx",
-                                                                    lineNumber: 132,
-                                                                    columnNumber: 49
-                                                                }, this)
-                                                            ]
-                                                        }, void 0, true, {
-                                                            fileName: "[project]/src/components/app/cycle-list.tsx",
-                                                            lineNumber: 126,
-                                                            columnNumber: 45
-                                                        }, this),
-                                                        /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Button"], {
-                                                            size: "icon",
-                                                            variant: "ghost",
-                                                            onClick: ()=>handleDelete(cycle.id),
-                                                            children: [
-                                                                /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$trash$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__Trash$3e$__["Trash"], {
-                                                                    className: "h-5 w-5 text-red-500"
-                                                                }, void 0, false, {
-                                                                    fileName: "[project]/src/components/app/cycle-list.tsx",
                                                                     lineNumber: 139,
                                                                     columnNumber: 49
                                                                 }, this),
                                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
                                                                     className: "sr-only",
                                                                     children: [
-                                                                        "Delete ",
+                                                                        "Run ",
                                                                         cycle.name
                                                                     ]
                                                                 }, void 0, true, {
@@ -3551,40 +3532,69 @@ function CycleList() {
                                                             fileName: "[project]/src/components/app/cycle-list.tsx",
                                                             lineNumber: 134,
                                                             columnNumber: 45
+                                                        }, this),
+                                                        /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Button"], {
+                                                            size: "icon",
+                                                            variant: "ghost",
+                                                            onClick: ()=>handleDelete(cycle.id),
+                                                            children: [
+                                                                /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$trash$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__Trash$3e$__["Trash"], {
+                                                                    className: "h-5 w-5 text-red-500"
+                                                                }, void 0, false, {
+                                                                    fileName: "[project]/src/components/app/cycle-list.tsx",
+                                                                    lineNumber: 147,
+                                                                    columnNumber: 49
+                                                                }, this),
+                                                                /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
+                                                                    className: "sr-only",
+                                                                    children: [
+                                                                        "Delete ",
+                                                                        cycle.name
+                                                                    ]
+                                                                }, void 0, true, {
+                                                                    fileName: "[project]/src/components/app/cycle-list.tsx",
+                                                                    lineNumber: 148,
+                                                                    columnNumber: 49
+                                                                }, this)
+                                                            ]
+                                                        }, void 0, true, {
+                                                            fileName: "[project]/src/components/app/cycle-list.tsx",
+                                                            lineNumber: 142,
+                                                            columnNumber: 45
                                                         }, this)
                                                     ]
                                                 }, void 0, true, {
                                                     fileName: "[project]/src/components/app/cycle-list.tsx",
-                                                    lineNumber: 125,
+                                                    lineNumber: 133,
                                                     columnNumber: 41
                                                 }, this)
                                             ]
                                         }, cycle.id, true, {
                                             fileName: "[project]/src/components/app/cycle-list.tsx",
-                                            lineNumber: 118,
+                                            lineNumber: 126,
                                             columnNumber: 37
                                         }, this)) : /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
                                         className: "text-muted-foreground text-sm text-center py-4",
                                         children: "Create your first cycle!"
                                     }, void 0, false, {
                                         fileName: "[project]/src/components/app/cycle-list.tsx",
-                                        lineNumber: 146,
+                                        lineNumber: 154,
                                         columnNumber: 33
                                     }, this)
                                 }, void 0, false, {
                                     fileName: "[project]/src/components/app/cycle-list.tsx",
-                                    lineNumber: 115,
+                                    lineNumber: 123,
                                     columnNumber: 25
                                 }, this)
                             }, void 0, false, {
                                 fileName: "[project]/src/components/app/cycle-list.tsx",
-                                lineNumber: 114,
+                                lineNumber: 122,
                                 columnNumber: 21
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/src/components/app/cycle-list.tsx",
-                        lineNumber: 110,
+                        lineNumber: 118,
                         columnNumber: 17
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Button"], {
@@ -3598,26 +3608,27 @@ function CycleList() {
                         ]
                     }, void 0, true, {
                         fileName: "[project]/src/components/app/cycle-list.tsx",
-                        lineNumber: 155,
+                        lineNumber: 163,
                         columnNumber: 17
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/src/components/app/cycle-list.tsx",
-                lineNumber: 74,
+                lineNumber: 79,
                 columnNumber: 13
             }, this)
         ]
     }, void 0, true, {
         fileName: "[project]/src/components/app/cycle-list.tsx",
-        lineNumber: 54,
+        lineNumber: 59,
         columnNumber: 9
     }, this);
 }
-_s(CycleList, "gUPjc0N1VpENCbCbeUPFo/8EuXI=", false, function() {
+_s(CycleList, "YrBO2hxnXSKFXKUVogteG86oOuY=", false, function() {
     return [
         __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$contexts$2f$cycle$2d$context$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useCycle"],
-        __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$contexts$2f$timer$2d$context$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useTimer"]
+        __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$contexts$2f$timer$2d$context$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useTimer"],
+        __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$contexts$2f$history$2d$context$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useHistory"]
     ];
 });
 _c = CycleList;
