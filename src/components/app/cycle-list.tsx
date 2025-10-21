@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useCycle } from "@/contexts/cycle-context";
 import { useTimer } from "@/contexts/timer-context";
+import { useHistory } from "@/contexts/history-context"; // 🔥 FIX 1: ADD IMPORT!
 import { Play, Trash, Clock, TrendingUp } from "lucide-react";
 import { ScrollArea } from "../ui/scroll-area";
 
@@ -16,20 +17,25 @@ export function CycleList() {
         currentCycle 
     } = useCycle();
     const { isActive, reset } = useTimer();
+    const { trainingHistory } = useHistory(); // 🔥 FIX 2: GET HISTORY!
 
-    // 🔥 FIX: TÍNH TOTAL TIME TODAY TỪ ALL CYCLES' TRAINING HISTORY
-    const totalTimeToday = allCycles
-        .flatMap(cycle => cycle.trainingHistory) // 🔥 FLAT ALL histories
+    // 🔥 FIX 3: TOTAL TIME TODAY FROM HISTORY CONTEXT
+    const totalTimeToday = trainingHistory
         .filter(h => new Date(h.completedAt).toDateString() === new Date().toDateString())
         .reduce((acc, h) => acc + h.totalDuration, 0);
 
-    // 🔥 GET RECENT COMPLETED CYCLES (last 3)
+    // 🔥 FIX 4: HELPER - COUNT SESSIONS PER CYCLE
+    const getHistoryCount = (cycleId: string) => 
+        trainingHistory.filter(h => h.cycleId === cycleId).length;
+
+    // 🔥 FIX 5: RECENT CYCLES FROM HISTORY
     const recentCycles = allCycles
-        .filter(cycle => cycle.trainingHistory.length > 0)
-        .sort((a, b) => 
-            new Date(b.trainingHistory[0].completedAt).getTime() - 
-            new Date(a.trainingHistory[0].completedAt).getTime()
-        )
+        .filter(cycle => getHistoryCount(cycle.id) > 0)
+        .sort((a, b) => {
+            const lastA = trainingHistory.filter(h => h.cycleId === a.id)[0]?.completedAt;
+            const lastB = trainingHistory.filter(h => h.cycleId === b.id)[0]?.completedAt;
+            return new Date(lastB || 0).getTime() - new Date(lastA || 0).getTime();
+        })
         .slice(0, 3);
 
     const handleDelete = (cycleId: string) => {
@@ -46,7 +52,6 @@ export function CycleList() {
     };
 
     const handleExploreTemplates = () => {
-        // 🔥 TODO: Navigate to public templates page
         console.log("Explore public templates");
     };
 
@@ -81,26 +86,29 @@ export function CycleList() {
                         </h3>
                         <ScrollArea className="h-24">
                             <div className="space-y-2 pr-4">
-                                {recentCycles.map(cycle => (
-                                    <Card key={cycle.id} className="flex items-center justify-between p-3">
-                                        <div className="flex-1 min-w-0">
-                                            <p className="font-semibold truncate">{cycle.name}</p>
-                                            <p className="text-xs text-muted-foreground">
-                                                {cycle.trainingHistory[0].totalDuration}m • {cycle.phases.length} phases
-                                            </p>
-                                        </div>
-                                        <div className="flex items-center gap-1">
-                                            <Button 
-                                                size="icon" 
-                                                variant="ghost" 
-                                                onClick={() => setCurrentCycle(cycle)}
-                                            >
-                                                <Play className="h-5 w-5" />
-                                                <span className="sr-only">Run {cycle.name}</span>
-                                            </Button>
-                                        </div>
-                                    </Card>
-                                ))}
+                                {recentCycles.map(cycle => {
+                                    const lastSession = trainingHistory.filter(h => h.cycleId === cycle.id)[0];
+                                    return (
+                                        <Card key={cycle.id} className="flex items-center justify-between p-3">
+                                            <div className="flex-1 min-w-0">
+                                                <p className="font-semibold truncate">{cycle.name}</p>
+                                                <p className="text-xs text-muted-foreground">
+                                                    {lastSession?.totalDuration || 0}m • {cycle.phases.length} phases
+                                                </p>
+                                            </div>
+                                            <div className="flex items-center gap-1">
+                                                <Button 
+                                                    size="icon" 
+                                                    variant="ghost" 
+                                                    onClick={() => setCurrentCycle(cycle)}
+                                                >
+                                                    <Play className="h-5 w-5" />
+                                                    <span className="sr-only">Run {cycle.name}</span>
+                                                </Button>
+                                            </div>
+                                        </Card>
+                                    );
+                                })}
                             </div>
                         </ScrollArea>
                     </div>
@@ -119,7 +127,7 @@ export function CycleList() {
                                         <div className="flex-1 min-w-0">
                                             <p className="font-semibold truncate">{cycle.name}</p>
                                             <p className="text-xs text-muted-foreground">
-                                                {cycle.phases.length} phases • {cycle.trainingHistory.length} sessions
+                                                {cycle.phases.length} phases • {getHistoryCount(cycle.id)} sessions {/* 🔥 FIXED! */}
                                             </p>
                                         </div>
                                         <div className="flex items-center gap-1">
