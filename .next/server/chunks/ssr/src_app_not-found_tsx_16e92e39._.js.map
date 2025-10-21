@@ -1,0 +1,6 @@
+{
+  "version": 3,
+  "sources": [],
+  "sections": [
+    {"offset": {"line": 7, "column": 0}, "map": {"version":3,"sources":["file:///home/user/FlowTimeFocus/src/app/not-found.tsx"],"sourcesContent":["// src/app/not-found.tsx - EMPTY TO FIX PRERENDER\nexport default function NotFound() {\n  return null; // 🔥 EMPTY = NO CRASH!\n}"],"names":[],"mappings":"AAAA,iDAAiD;;;;AAClC,SAAS;IACtB,OAAO,MAAM,uBAAuB;AACtC","debugId":null}}]
+}
