@@ -8,6 +8,7 @@ import { CycleList } from "./cycle-list";
 import { Footer } from "./footer";
 import { cn } from "@/lib/utils";
 import { useCycle } from "@/contexts/cycle-context";
+import { HistoryProvider } from "@/contexts/history-context";
 
 export function Homepage() {
   const { isActive } = useTimer();
@@ -37,7 +38,9 @@ export function Homepage() {
               <TimerDisplay />
             </div>
             <div className="w-full">
-              <CycleList />
+              <HistoryProvider>
+                <CycleList />
+              </HistoryProvider>
             </div>
         </div>
       </main>

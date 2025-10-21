@@ -533,12 +533,57 @@ const usersCollection = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node
 const getUserDoc = (userId)=>(0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$firebase$2f$firestore$2f$dist$2f$index$2e$node$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["doc"])(db, 'users', userId);
 const getUserTrainingHistoriesQuery = (userId)=>(0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$firebase$2f$firestore$2f$dist$2f$index$2e$node$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["query"])(trainingHistoriesCollection, (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$firebase$2f$firestore$2f$dist$2f$index$2e$node$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["where"])('userId', '==', userId));
 }}),
+"[project]/src/dal/user-dal.ts [app-ssr] (ecmascript)": ((__turbopack_context__) => {
+"use strict";
+
+var { g: global, __dirname } = __turbopack_context__;
+{
+// src/dal/user-dal.ts
+__turbopack_context__.s({
+    "createUserProfile": (()=>createUserProfile),
+    "getUserProfile": (()=>getUserProfile),
+    "updateUserProfile": (()=>updateUserProfile)
+});
+var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$firebase$2f$firestore$2f$dist$2f$index$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$module__evaluation$3e$__ = __turbopack_context__.i("[project]/node_modules/firebase/firestore/dist/index.mjs [app-ssr] (ecmascript) <module evaluation>");
+var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$firebase$2f$firestore$2f$dist$2f$index$2e$node$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/@firebase/firestore/dist/index.node.mjs [app-ssr] (ecmascript)");
+var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$firebase$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/lib/firebase.ts [app-ssr] (ecmascript)");
+;
+;
+async function getUserProfile(uid) {
+    if (!uid) {
+        console.error("getUserProfile called without a uid.");
+        return null;
+    }
+    const userDocRef = (0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$firebase$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["getUserDoc"])(uid);
+    const snap = await (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$firebase$2f$firestore$2f$dist$2f$index$2e$node$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["getDoc"])(userDocRef);
+    return snap.exists() ? snap.data() : null;
+}
+async function createUserProfile(uid, email, displayName) {
+    if (!uid) throw new Error("User ID is required to create a profile.");
+    const newUserProfile = {
+        userId: uid,
+        email: email || '',
+        displayName: displayName || 'Anonymous User',
+        privateCycles: [],
+        audioLibrary: [],
+        createdAt: new Date().toISOString(),
+        lastLogin: new Date().toISOString()
+    };
+    await (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$firebase$2f$firestore$2f$dist$2f$index$2e$node$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["setDoc"])((0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$firebase$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["getUserDoc"])(uid), newUserProfile);
+    return newUserProfile;
+}
+async function updateUserProfile(uid, profile) {
+    if (!uid) throw new Error('User ID is required to update a profile');
+    await (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$firebase$2f$firestore$2f$dist$2f$index$2e$node$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["setDoc"])((0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$firebase$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["getUserDoc"])(uid), profile, {
+        merge: true
+    });
+} // NOTE: Other functions like addPrivateCycle would also be updated to accept UID.
+}}),
 "[project]/src/contexts/auth-context.tsx [app-ssr] (ecmascript)": ((__turbopack_context__) => {
 "use strict";
 
 var { g: global, __dirname } = __turbopack_context__;
 {
-// src/contexts/auth-context.tsx - FINAL VERSION (Oct 19, 2025)
 __turbopack_context__.s({
     "AuthContext": (()=>AuthContext),
     "AuthProvider": (()=>AuthProvider),
@@ -550,122 +595,69 @@ var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$firebase$2f$
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$firebase$2f$node_modules$2f40$firebase$2f$auth$2f$dist$2f$node$2d$esm$2f$totp$2d$a9833fe5$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$export__p__as__getAuth$3e$__ = __turbopack_context__.i("[project]/node_modules/firebase/node_modules/@firebase/auth/dist/node-esm/totp-a9833fe5.js [app-ssr] (ecmascript) <export p as getAuth>");
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$firebase$2f$node_modules$2f40$firebase$2f$auth$2f$dist$2f$node$2d$esm$2f$totp$2d$a9833fe5$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$export__z__as__onAuthStateChanged$3e$__ = __turbopack_context__.i("[project]/node_modules/firebase/node_modules/@firebase/auth/dist/node-esm/totp-a9833fe5.js [app-ssr] (ecmascript) <export z as onAuthStateChanged>");
 var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$firebase$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/lib/firebase.ts [app-ssr] (ecmascript)");
+var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$dal$2f$user$2d$dal$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/dal/user-dal.ts [app-ssr] (ecmascript)"); // IMPORT DAL functions
 "use client";
+;
 ;
 ;
 ;
 ;
 const AuthContext = /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["createContext"])({
     user: null,
-    loading: true,
-    getCurrentUser: ()=>null
+    userProfile: null,
+    loading: true
 });
 function AuthProvider({ children }) {
     const [user, setUser] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useState"])(null);
+    const [userProfile, setUserProfile] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useState"])(null); // ADD state for profile
     const [loading, setLoading] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useState"])(true);
     const auth = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$firebase$2f$node_modules$2f40$firebase$2f$auth$2f$dist$2f$node$2d$esm$2f$totp$2d$a9833fe5$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$export__p__as__getAuth$3e$__["getAuth"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$firebase$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["app"]);
     (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useEffect"])(()=>{
-        const unsubscribe = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$firebase$2f$node_modules$2f40$firebase$2f$auth$2f$dist$2f$node$2d$esm$2f$totp$2d$a9833fe5$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$export__z__as__onAuthStateChanged$3e$__["onAuthStateChanged"])(auth, (user)=>{
-            setUser(user);
+        const unsubscribe = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$firebase$2f$node_modules$2f40$firebase$2f$auth$2f$dist$2f$node$2d$esm$2f$totp$2d$a9833fe5$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$export__z__as__onAuthStateChanged$3e$__["onAuthStateChanged"])(auth, async (user)=>{
+            setLoading(true);
+            if (user) {
+                setUser(user);
+                try {
+                    // User is signed in, see if they have a profile
+                    let profile = await (0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$dal$2f$user$2d$dal$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["getUserProfile"])(user.uid);
+                    if (!profile) {
+                        // If not, create one
+                        console.log("Creating new user profile for UID:", user.uid);
+                        profile = await (0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$dal$2f$user$2d$dal$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["createUserProfile"])(user.uid, user.email, user.displayName);
+                    }
+                    setUserProfile(profile);
+                } catch (error) {
+                    console.error("Error fetching or creating user profile:", error);
+                    setUserProfile(null); // Clear profile on error
+                }
+            } else {
+                // User is signed out
+                setUser(null);
+                setUserProfile(null);
+            }
             setLoading(false);
         });
         return ()=>unsubscribe();
     }, [
         auth
     ]);
-    // 🔥 THÊM HELPER
-    const getCurrentUser = ()=>user;
     const value = {
         user,
-        loading,
-        getCurrentUser
+        userProfile,
+        loading
     };
     return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(AuthContext.Provider, {
         value: value,
-        children: children
+        children: !loading && children
     }, void 0, false, {
         fileName: "[project]/src/contexts/auth-context.tsx",
-        lineNumber: 44,
+        lineNumber: 64,
         columnNumber: 5
     }, this);
 }
 const useAuth = ()=>{
     return (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useContext"])(AuthContext);
 };
-}}),
-"[project]/src/dal/user-dal.ts [app-ssr] (ecmascript)": ((__turbopack_context__) => {
-"use strict";
-
-var { g: global, __dirname } = __turbopack_context__;
-{
-// src/dal/user-dal.ts - FINAL VERSION (Oct 19, 2025)
-__turbopack_context__.s({
-    "addAudioAsset": (()=>addAudioAsset),
-    "addPrivateCycleToUser": (()=>addPrivateCycleToUser),
-    "createOrUpdateUserProfile": (()=>createOrUpdateUserProfile),
-    "getPrivateCycleIds": (()=>getPrivateCycleIds),
-    "getUserProfile": (()=>getUserProfile),
-    "removePrivateCycleFromUser": (()=>removePrivateCycleFromUser)
-});
-var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$firebase$2f$firestore$2f$dist$2f$index$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$module__evaluation$3e$__ = __turbopack_context__.i("[project]/node_modules/firebase/firestore/dist/index.mjs [app-ssr] (ecmascript) <module evaluation>");
-var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$firebase$2f$firestore$2f$dist$2f$index$2e$node$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/@firebase/firestore/dist/index.node.mjs [app-ssr] (ecmascript)");
-var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$firebase$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/lib/firebase.ts [app-ssr] (ecmascript)");
-var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$contexts$2f$auth$2d$context$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/contexts/auth-context.tsx [app-ssr] (ecmascript)");
-;
-;
-;
-async function getUserProfile() {
-    const { getCurrentUser } = (0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$contexts$2f$auth$2d$context$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useAuth"])();
-    const user = getCurrentUser();
-    if (!user) return null;
-    const snap = await (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$firebase$2f$firestore$2f$dist$2f$index$2e$node$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["getDoc"])((0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$firebase$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["getUserDoc"])(user.uid));
-    return snap.exists() ? snap.data() : null;
-}
-async function createOrUpdateUserProfile(profile) {
-    const { getCurrentUser } = (0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$contexts$2f$auth$2d$context$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useAuth"])();
-    const user = getCurrentUser();
-    if (!user) throw new Error('User not authenticated');
-    const fullProfile = {
-        userId: user.uid,
-        email: user.email || '',
-        displayName: user.displayName || 'Anonymous',
-        privateCycles: [],
-        audioLibrary: [],
-        createdAt: new Date().toISOString(),
-        ...profile
-    };
-    await (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$firebase$2f$firestore$2f$dist$2f$index$2e$node$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["setDoc"])((0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$firebase$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["getUserDoc"])(user.uid), fullProfile, {
-        merge: true
-    });
-}
-async function addPrivateCycleToUser(cycleId) {
-    const { getCurrentUser } = (0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$contexts$2f$auth$2d$context$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useAuth"])();
-    const user = getCurrentUser();
-    if (!user) throw new Error('User not authenticated');
-    await (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$firebase$2f$firestore$2f$dist$2f$index$2e$node$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["updateDoc"])((0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$firebase$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["getUserDoc"])(user.uid), {
-        privateCycles: (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$firebase$2f$firestore$2f$dist$2f$index$2e$node$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["arrayUnion"])(cycleId)
-    });
-}
-async function removePrivateCycleFromUser(cycleId) {
-    const { getCurrentUser } = (0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$contexts$2f$auth$2d$context$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useAuth"])();
-    const user = getCurrentUser();
-    if (!user) throw new Error('User not authenticated');
-    await (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$firebase$2f$firestore$2f$dist$2f$index$2e$node$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["updateDoc"])((0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$firebase$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["getUserDoc"])(user.uid), {
-        privateCycles: (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$firebase$2f$firestore$2f$dist$2f$index$2e$node$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["arrayRemove"])(cycleId)
-    });
-}
-async function addAudioAsset(asset) {
-    const { getCurrentUser } = (0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$contexts$2f$auth$2d$context$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useAuth"])();
-    const user = getCurrentUser();
-    if (!user) throw new Error('User not authenticated');
-    await (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$firebase$2f$firestore$2f$dist$2f$index$2e$node$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["updateDoc"])((0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$firebase$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["getUserDoc"])(user.uid), {
-        audioLibrary: (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$firebase$2f$firestore$2f$dist$2f$index$2e$node$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["arrayUnion"])(asset)
-    });
-}
-async function getPrivateCycleIds() {
-    const profile = await getUserProfile();
-    return profile?.privateCycles || [];
-}
 }}),
 "[project]/src/dal/cycle-dal.ts [app-ssr] (ecmascript)": ((__turbopack_context__) => {
 "use strict";
@@ -1163,13 +1155,18 @@ var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$contexts$2f$auth$2d$c
 var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$dal$2f$index$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$module__evaluation$3e$__ = __turbopack_context__.i("[project]/src/dal/index.ts [app-ssr] (ecmascript) <module evaluation>");
 var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$dal$2f$cycle$2d$dal$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/dal/cycle-dal.ts [app-ssr] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$mock$2d$data$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/lib/mock-data.ts [app-ssr] (ecmascript)");
-'use client';
+"use client";
 ;
 ;
 ;
 ;
 ;
-const { mockCycles, mockAudioLibrary } = __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$mock$2d$data$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["default"]; // Corrected import
+// CORRECTED: Import individual cycles and create an array
+const { pomodoroCycle, wimHofCycle, defaultCycle, mockAudioLibrary } = __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$mock$2d$data$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["default"];
+const mockCycles = [
+    pomodoroCycle,
+    wimHofCycle
+];
 const CycleContext = /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["createContext"])(undefined);
 function useCycle() {
     const context = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useContext"])(CycleContext);
@@ -1180,7 +1177,8 @@ function CycleProvider({ children }) {
     const { user } = (0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$contexts$2f$auth$2d$context$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useAuth"])();
     const [allCycles, setAllCycles] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useState"])(mockCycles);
     const [privateCycles, setPrivateCycles] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useState"])([]);
-    const [currentCycle, setCurrentCycle] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useState"])(null);
+    // SIMPLIFIED: Initialize with a default cycle
+    const [currentCycle, setCurrentCycle] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useState"])(defaultCycle);
     const [currentPhaseIndex, setCurrentPhaseIndex] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useState"])(0);
     (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useEffect"])(()=>{
         const loadCycles = async ()=>{
@@ -1205,11 +1203,9 @@ function CycleProvider({ children }) {
         user
     ]);
     (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useEffect"])(()=>{
-        if (allCycles.length > 0 && !currentCycle) {
-            setCurrentCycle(allCycles[0]);
-        }
+        // When the current cycle changes, reset the phase index
+        setCurrentPhaseIndex(0);
     }, [
-        allCycles,
         currentCycle
     ]);
     const advancePhase = ()=>{
@@ -1220,9 +1216,6 @@ function CycleProvider({ children }) {
     };
     const resetCycle = ()=>{
         setCurrentPhaseIndex(0);
-    };
-    const logTraining = async (data)=>{
-    // Placeholder for logging to history (handled by history-context)
     };
     const deleteCycle = async (cycleId)=>{
         try {
@@ -1246,7 +1239,6 @@ function CycleProvider({ children }) {
         setCurrentPhaseIndex,
         advancePhase,
         resetCycle,
-        logTraining,
         deleteCycle,
         audioLibrary: mockAudioLibrary,
         endOfCycleSound: mockAudioLibrary.length > 0 ? mockAudioLibrary[0] : null
@@ -1256,7 +1248,7 @@ function CycleProvider({ children }) {
         children: children
     }, void 0, false, {
         fileName: "[project]/src/contexts/cycle-context.tsx",
-        lineNumber: 110,
+        lineNumber: 108,
         columnNumber: 10
     }, this);
 }
@@ -1266,8 +1258,6 @@ function CycleProvider({ children }) {
 
 var { g: global, __dirname } = __turbopack_context__;
 {
-// src/contexts/history-context.tsx - FIXED VERSION (Oct 19, 2025)
-// 🔥 REMOVE useCycle() - PASS CYCLE AS PROP
 __turbopack_context__.s({
     "HistoryProvider": (()=>HistoryProvider),
     "useHistory": (()=>useHistory)
@@ -1278,22 +1268,19 @@ var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$contexts$2f$auth$2d$c
 var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$dal$2f$index$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$module__evaluation$3e$__ = __turbopack_context__.i("[project]/src/dal/index.ts [app-ssr] (ecmascript) <module evaluation>");
 var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$dal$2f$history$2d$dal$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/dal/history-dal.ts [app-ssr] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$hooks$2f$use$2d$toast$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/hooks/use-toast.ts [app-ssr] (ecmascript)");
-var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$mock$2d$data$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/lib/mock-data.ts [app-ssr] (ecmascript)");
 "use client";
 ;
 ;
 ;
 ;
 ;
-;
-const { mockTrainingHistory } = __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$mock$2d$data$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["default"];
 const HistoryContext = /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["createContext"])(undefined);
 function useHistory() {
     const context = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useContext"])(HistoryContext);
     if (!context) throw new Error("useHistory must be used within HistoryProvider");
     return context;
 }
-function HistoryProvider({ children, currentCycle }) {
+function HistoryProvider({ children }) {
     const { user, loading: authLoading } = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useContext"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$contexts$2f$auth$2d$context$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["AuthContext"]);
     const { toast } = (0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$hooks$2f$use$2d$toast$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useToast"])();
     const [trainingHistory, setTrainingHistory] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useState"])([]);
@@ -1306,7 +1293,6 @@ function HistoryProvider({ children, currentCycle }) {
     const [isLoading, setIsLoading] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useState"])(true);
     const [recentSessions, setRecentSessions] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useState"])([]);
     const [cycleStats, setCycleStats] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useState"])({});
-    // 🔥 LOAD HISTORY - SAME AS BEFORE
     (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useEffect"])(()=>{
         const loadHistory = async ()=>{
             if (authLoading) {
@@ -1361,7 +1347,6 @@ function HistoryProvider({ children, currentCycle }) {
         authLoading,
         toast
     ]);
-    // 🔥 LOG SESSION - USE PASSED CYCLE
     const logSession = async (cycle, status = 'completed')=>{
         if (!user || !cycle) return;
         try {
@@ -1405,10 +1390,9 @@ function HistoryProvider({ children, currentCycle }) {
             });
         }
     };
-    // 🔥 DELETE SESSION - ADD MISSING IMPORT
     const deleteSession = async (historyId)=>{
         try {
-            await deleteTrainingHistory(historyId); // 🔥 NOW IMPORTED!
+            await (0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$dal$2f$history$2d$dal$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["deleteTrainingHistory"])(historyId); // FIXED: Function is now imported
             setTrainingHistory((prev)=>prev.filter((h)=>h.id !== historyId));
             setRecentSessions((prev)=>prev.filter((h)=>h.id !== historyId));
             toast({
@@ -1443,7 +1427,7 @@ function HistoryProvider({ children, currentCycle }) {
         children: children
     }, void 0, false, {
         fileName: "[project]/src/contexts/history-context.tsx",
-        lineNumber: 140,
+        lineNumber: 149,
         columnNumber: 10
     }, this);
 }
@@ -1833,4 +1817,4 @@ function ClientProviders({ children }) {
 
 };
 
-//# sourceMappingURL=%5Broot-of-the-server%5D__b9326310._.js.map
+//# sourceMappingURL=%5Broot-of-the-server%5D__5d2da1bf._.js.map
