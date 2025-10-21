@@ -1,4 +1,4 @@
-// src/contexts/cycle-context.tsx - NEW DATA STRUCTURE (Oct 21, 2025)
+// src/contexts/cycle-context.tsx - ENSURE INITIAL VALUE (Oct 21, 2025)
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
@@ -7,7 +7,7 @@ import { Cycle, Phase, SoundFile } from "@/lib/types";
 import { getCycles, createCycle, deleteCycle } from "@/dal";
 import defaultData from "@/lib/mock-data";
 
-const { mockCycles, audioLibrary=[] } = defaultData;
+const { mockCycles, mockAudioLibrary = [] } = defaultData;
 
 interface CycleContextType {
   allCycles: Cycle[];
@@ -35,30 +35,27 @@ export function useCycle() {
 
 export function CycleProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
-  const [allCycles, setAllCycles] = useState<Cycle[]>(mockCycles);
+  const [allCycles, setAllCycles] = useState<Cycle[]>(mockCycles); // 🔥 INITIAL VALUE
   const [privateCycles, setPrivateCycles] = useState<Cycle[]>([]);
   const [currentCycle, setCurrentCycle] = useState<Cycle | null>(null);
   const [currentPhaseIndex, setCurrentPhaseIndex] = useState(0);
 
-  // Load cycles
   useEffect(() => {
     const loadCycles = async () => {
       try {
-        // 🔥 NEW: Pass userId to getCycles
-        const cycles = await getCycles(user?.uid);
-        const privateCycles = user ? cycles.filter(c => c.userId === user.uid && !c.isPublic) : [];
-        setAllCycles([...mockCycles, ...cycles.filter(c => c.isPublic || c.userId === user?.uid)]);
-        setPrivateCycles(privateCycles);
+        const cycles = await getCycles(user?.uid) || [];
+        const privateCyclesData = user ? cycles.filter(c => c?.userId === user.uid && !c?.isPublic) : [];
+        setAllCycles([...mockCycles, ...(cycles || []).filter(c => c?.isPublic || c?.userId === user?.uid)]);
+        setPrivateCycles(privateCyclesData);
       } catch (error) {
         console.error("Failed to load cycles", error);
-        setAllCycles(mockCycles);
+        setAllCycles(mockCycles); // Fallback on error
         setPrivateCycles([]);
       }
     };
     loadCycles();
   }, [user]);
 
-  // Set initial cycle
   useEffect(() => {
     if (allCycles.length > 0 && !currentCycle) {
       setCurrentCycle(allCycles[0]);
@@ -77,12 +74,12 @@ export function CycleProvider({ children }: { children: ReactNode }) {
   };
 
   const logTraining = async (data: any) => {
-    // Placeholder for logging to history (handled by history-context)
+    // Placeholder
   };
 
   const deleteCycle = async (cycleId: string) => {
     try {
-      await deleteCycle(cycleId, user?.uid); // 🔥 NEW: Pass userId
+      await deleteCycle(cycleId, user?.uid);
       setAllCycles(prev => prev.filter(c => c.id !== cycleId));
       setPrivateCycles(prev => prev.filter(c => c.id !== cycleId));
       if (currentCycle?.id === cycleId) {
@@ -105,8 +102,8 @@ export function CycleProvider({ children }: { children: ReactNode }) {
     resetCycle,
     logTraining,
     deleteCycle,
-    audioLibrary,
-    endOfCycleSound: audioLibrary[0] || null,
+    audioLibrary: mockAudioLibrary,
+    endOfCycleSound: mockAudioLibrary.length > 0 ? mockAudioLibrary[0] : null,
   };
 
   return <CycleContext.Provider value={value}>{children}</CycleContext.Provider>;
