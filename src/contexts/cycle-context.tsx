@@ -7,7 +7,7 @@ import { Cycle, Phase, SoundFile } from "@/lib/types";
 import { getCycles, createCycle, deleteCycle } from "@/dal";
 import defaultData from "@/lib/mock-data";
 
-const { mockCycles, audioLibrary } = defaultData;
+const { mockCycles, audioLibrary=[] } = defaultData;
 
 interface CycleContextType {
   allCycles: Cycle[];
