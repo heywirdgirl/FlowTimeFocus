@@ -1,13 +1,13 @@
-// src/dal/cycle-dal.ts - NEW DATA STRUCTURE (Oct 21, 2025)
-import { collection, getDocs, addDoc, deleteDoc, doc, query, where } from 'firebase/firestore';
+// src/dal/cycle-dal.ts - FIXED VERSION (Oct 21, 2025)
+import { collection, getDocs, addDoc, deleteDoc, doc, query, where, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import { Cycle } from '@/lib/types';
+import { Cycle, Phase } from '@/lib/types';
 
 export const getCycles = async (userId?: string): Promise<Cycle[]> => {
   try {
     const cyclesCollection = collection(db, 'cycles');
     let q = cyclesCollection;
-    
+
     // 🔥 NEW: Filter cycles based on userId (private) or isPublic (public)
     if (userId) {
       q = query(cyclesCollection, where('userId', 'in', [userId, null]), where('isPublic', '==', false));
@@ -16,10 +16,19 @@ export const getCycles = async (userId?: string): Promise<Cycle[]> => {
     }
 
     const snapshot = await getDocs(q);
-    return snapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data(),
-    } as Cycle));
+    return snapshot.docs.map(doc => {
+      const data = doc.data();
+      // Ensure all required fields are present with fallback
+      return {
+        id: doc.id,
+        name: data.name || 'Unnamed Cycle',
+        phases: (data.phases as Phase[]) || [], // Fallback if phases missing
+        isPublic: data.isPublic ?? false, // Default to false if undefined
+        userId: data.userId ?? null, // Fallback to null
+        createdAt: data.createdAt || new Date().toISOString(),
+        updatedAt: data.updatedAt || new Date().toISOString(),
+      } as Cycle;
+    });
   } catch (error) {
     console.error('Error fetching cycles:', error);
     return [];
@@ -31,7 +40,7 @@ export const createCycle = async (cycle: Omit<Cycle, 'id'>, userId?: string): Pr
     const cyclesCollection = collection(db, 'cycles');
     const newCycle = {
       ...cycle,
-      userId: cycle.isPublic ? null : userId, // 🔥 NEW: Set userId for private cycles
+      userId: cycle.isPublic ? null : userId,
       createdAt: new Date().toISOString(),
     };
     const docRef = await addDoc(cyclesCollection, newCycle);
@@ -45,7 +54,6 @@ export const createCycle = async (cycle: Omit<Cycle, 'id'>, userId?: string): Pr
 export const deleteCycle = async (cycleId: string, userId?: string): Promise<void> => {
   try {
     const cycleDoc = doc(db, 'cycles', cycleId);
-    // 🔥 NEW: Optional check for userId to ensure only owner deletes
     if (userId) {
       const cycleSnap = await getDoc(cycleDoc);
       if (cycleSnap.exists() && cycleSnap.data().userId !== userId) {

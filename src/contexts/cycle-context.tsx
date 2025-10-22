@@ -1,4 +1,4 @@
-// src/contexts/cycle-context.tsx - ENSURE INITIAL VALUE (Oct 21, 2025)
+// src/contexts/cycle-context.tsx - FIXED VERSION (Oct 21, 2025)
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
@@ -35,7 +35,7 @@ export function useCycle() {
 
 export function CycleProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
-  const [allCycles, setAllCycles] = useState<Cycle[]>(mockCycles); // 🔥 INITIAL VALUE
+  const [allCycles, setAllCycles] = useState<Cycle[]>(mockCycles); // Use mockCycles array
   const [privateCycles, setPrivateCycles] = useState<Cycle[]>([]);
   const [currentCycle, setCurrentCycle] = useState<Cycle | null>(null);
   const [currentPhaseIndex, setCurrentPhaseIndex] = useState(0);
@@ -44,12 +44,12 @@ export function CycleProvider({ children }: { children: ReactNode }) {
     const loadCycles = async () => {
       try {
         const cycles = await getCycles(user?.uid) || [];
-        const privateCyclesData = user ? cycles.filter(c => c?.userId === user.uid && !c?.isPublic) : [];
-        setAllCycles([...mockCycles, ...(cycles || []).filter(c => c?.isPublic || c?.userId === user?.uid)]);
+        const privateCyclesData = user ? cycles.filter(c => c.userId === user.uid && !c.isPublic) : [];
+        setAllCycles([...mockCycles, ...cycles.filter(c => c.isPublic || c.userId === user?.uid)]);
         setPrivateCycles(privateCyclesData);
       } catch (error) {
         console.error("Failed to load cycles", error);
-        setAllCycles(mockCycles); // Fallback on error
+        setAllCycles(mockCycles); // Fallback to mock data
         setPrivateCycles([]);
       }
     };
@@ -57,10 +57,10 @@ export function CycleProvider({ children }: { children: ReactNode }) {
   }, [user]);
 
   useEffect(() => {
-    if (allCycles.length > 0 && !currentCycle) {
+    if (allCycles?.length > 0 && !currentCycle) {
       setCurrentCycle(allCycles[0]);
     }
-  }, [allCycles]);
+  }, [allCycles, currentCycle]);
 
   const advancePhase = () => {
     if (!currentCycle) return 0;
