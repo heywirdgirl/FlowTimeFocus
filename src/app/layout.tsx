@@ -1,5 +1,5 @@
-// src/app/layout.tsx - PERFECT VERSION (Oct 19, 2025)
-// 🔥 SERVER META + CLIENT PROVIDERS = BUILD 100%!
+// src/app/layout.tsx - PERFECT VERSION (Oct 24, 2025)
+// 🔥 SERVER META + CLIENT PROVIDERS + HEADER/FOOTER = BUILD 100%!
 
 import type { Metadata } from 'next';
 import './globals.css';
@@ -19,6 +19,8 @@ export const metadata: Metadata = {
 
 // 🔥 CLIENT PROVIDERS - SEPARATE FILE
 import ClientProviders from './providers';
+import { Header } from "@/components/app/Header"; // Thêm Header
+import { Footer } from "@/components/app/Footer"; // Thêm Footer
 
 export default function RootLayout({
   children,
@@ -37,9 +39,11 @@ export default function RootLayout({
       </head>
       <body className="font-body antialiased">
         <ClientProviders>
+          <Header /> {/* Thêm Header cố định */}
           {children}
+          <Footer /> {/* Thêm Footer cố định */}
+          <Toaster />
         </ClientProviders>
-        <Toaster />
       </body>
     </html>
   );
