@@ -2,7 +2,7 @@
 
 import { useState, useContext } from "react";
 import Link from "next/link";
-import { CircleUser, LogOut, Mail, BarChart } from "lucide-react"; // Loại bỏ Menu
+import { CircleUser, LogOut, Mail, BarChart, Menu } from "lucide-react"; // Thêm Menu icon
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -12,6 +12,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import {
   getAuth,
   GoogleAuthProvider,
@@ -24,8 +25,9 @@ import { EmailAuthDialog } from "./email-auth-dialog";
 import { toast } from "@/hooks/use-toast";
 
 export function Header() {
-  const [isEmailAuthOpen, setIsEmailAuthOpen] = useState(false); // Thêm state
-  const [emailAuthMode, setEmailAuthMode] = useState<'signIn' | 'signUp'>('signIn'); // Thêm state
+  const [isSheetOpen, setIsSheetOpen] = useState(false); // Quản lý trạng thái menu mobile
+  const [isEmailAuthOpen, setIsEmailAuthOpen] = useState(false);
+  const [emailAuthMode, setEmailAuthMode] = useState<'signIn' | 'signUp'>('signIn');
   const auth = getAuth();
   const { user } = useContext(AuthContext);
 
@@ -63,7 +65,7 @@ export function Header() {
   return (
     <>
       <header className="sticky top-0 flex h-16 items-center gap-4 border-b bg-background px-4 md:px-6">
-        <nav className="flex-col gap-6 text-lg font-medium md:flex md:flex-row md:items-center md:gap-5 md:text-sm lg:gap-6">
+        <nav className="hidden md:flex flex-col gap-6 text-lg font-medium md:flex-row md:items-center md:gap-5 md:text-sm lg:gap-6">
           <Link
             href="/"
             className="flex items-center gap-2 text-lg font-semibold md:text-base"
@@ -83,6 +85,39 @@ export function Header() {
             <BarChart className="h-4 w-4" /> History
           </Link>
         </nav>
+        <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
+          <SheetTrigger asChild className="md:hidden">
+            <Button variant="outline" size="icon" className="shrink-0">
+              <Menu className="h-5 w-5" />
+              <span className="sr-only">Toggle mobile menu</span>
+            </Button>
+          </SheetTrigger>
+          <SheetContent side="left">
+            <nav className="grid gap-6 text-lg font-medium">
+              <Link
+                href="/"
+                className="flex items-center gap-2 text-lg font-semibold"
+                onClick={() => setIsSheetOpen(false)} // Đóng menu khi click
+              >
+                <span className="sr-only">Flowtime</span>
+              </Link>
+              <Link
+                href="/"
+                className="hover:text-foreground"
+                onClick={() => setIsSheetOpen(false)} // Đóng menu khi click
+              >
+                Dashboard
+              </Link>
+              <Link
+                href="/history"
+                className="hover:text-foreground flex items-center gap-1"
+                onClick={() => setIsSheetOpen(false)} // Đóng menu khi click
+              >
+                <BarChart className="h-4 w-4" /> History
+              </Link>
+            </nav>
+          </SheetContent>
+        </Sheet>
         <div className="flex w-full items-center justify-end gap-4 md:ml-auto md:gap-2 lg:gap-4">
           {user ? (
             <DropdownMenu>
