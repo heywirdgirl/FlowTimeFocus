@@ -3,8 +3,6 @@
 import React, { createContext, useContext, useState, useEffect, useRef, useCallback } from 'react';
 import type { FC, ReactNode } from 'react';
 import { useCycle } from './cycle-context';
-import { useHistory } from './history-context';
-import { useAuth } from './auth-context';
 import type { PhaseRecord, Cycle } from '@/lib/types';
 import { Howl } from 'howler';
 
@@ -16,6 +14,7 @@ interface TimerContextType {
   startPause: (sessionsUntilLongRest: number) => void;
   reset: () => void;
   skip: (sessionsUntilLongRest: number) => void;
+  onCycleComplete?: (cycle: Cycle, phaseRecords: PhaseRecord[]) => void; // Callback cho log
 }
 
 const TimerContext = createContext<TimerContextType | undefined>(undefined);
@@ -26,16 +25,14 @@ export const useTimer = () => {
   return context;
 };
 
-export const TimerProvider: FC<{ children: ReactNode }> = ({ children }) => {
-  const { user } = useAuth();
+export const TimerProvider: FC<{ children: ReactNode; onCycleComplete?: (cycle: Cycle, phaseRecords: PhaseRecord[]) => void }> = ({ children, onCycleComplete }) => {
   const { currentCycle, currentPhaseIndex, currentPhase, advancePhase, resetCycle, audioLibrary, endOfCycleSound, setCurrentPhaseIndex } = useCycle();
-  const { logSession } = useHistory();
-  
+
   const [isActive, setIsActive] = useState(false);
   const [cyclesCompleted, setCyclesCompleted] = useState(0);
   const [sessionPhaseRecords, setSessionPhaseRecords] = useState<PhaseRecord[]>([]);
   const [isMounted, setIsMounted] = useState(false);
-  
+
   const getDuration = useCallback(() => {
     return currentPhase?.duration ? currentPhase.duration * 60 : 0;
   }, [currentPhase]);
@@ -105,7 +102,7 @@ export const TimerProvider: FC<{ children: ReactNode }> = ({ children }) => {
 
       if (sessionsUntilLongRestRef.current > 0 && newCyclesCompleted >= sessionsUntilLongRestRef.current) {
         playSound(endOfCycleSound?.url);
-        if (currentCycle) logSession(currentCycle, 'completed');
+        if (currentCycle && onCycleComplete) onCycleComplete(currentCycle, sessionPhaseRecords); // Gọi callback
         setSessionPhaseRecords([]);
         setCurrentPhaseIndex(0);
       } else {
@@ -118,7 +115,7 @@ export const TimerProvider: FC<{ children: ReactNode }> = ({ children }) => {
       advancePhase();
       setIsActive(true);
     }
-  }, [timeLeft, isActive, isMounted, playSound, currentCycle, currentPhaseIndex, currentPhase, advancePhase, logSession, setCurrentPhaseIndex, endOfCycleSound]);
+  }, [timeLeft, isActive, isMounted, playSound, currentCycle, currentPhaseIndex, currentPhase, advancePhase, setCurrentPhaseIndex, endOfCycleSound, onCycleComplete, sessionPhaseRecords]);
 
   useEffect(() => {
     if (!isMounted) return;
@@ -161,7 +158,7 @@ export const TimerProvider: FC<{ children: ReactNode }> = ({ children }) => {
 
       if (sessionsUntilLongRestRef.current > 0 && newCyclesCompleted >= sessionsUntilLongRestRef.current) {
         playSound(endOfCycleSound?.url);
-        setIsActive(false);
+        if (currentCycle && onCycleComplete) onCycleComplete(currentCycle, sessionPhaseRecords); // Gọi callback
         setCurrentPhaseIndex(0);
       } else {
         playSound();
@@ -182,7 +179,8 @@ export const TimerProvider: FC<{ children: ReactNode }> = ({ children }) => {
     sessionPhaseRecords,
     startPause,
     reset,
-    skip
+    skip,
+    onCycleComplete, // Truyền callback
   } as const;
 
   return (

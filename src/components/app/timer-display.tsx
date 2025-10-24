@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useTimer } from "@/contexts/timer-context";
@@ -7,13 +6,13 @@ import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
 import { useCycle } from "@/contexts/cycle-context";
 import { Play, Pause, RotateCcw, SkipForward, Edit, Plus, Trash2, Save, Copy } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import type { Phase } from "@/lib/types";
 import { CycleProgressBar } from "./cycle-progress-bar";
 import { Label } from "../ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
-
+import { useHistory } from "@/contexts/history-context"; // Thêm để log session
 
 const formatTime = (seconds: number) => {
   const mins = Math.floor(seconds / 60);
@@ -22,46 +21,45 @@ const formatTime = (seconds: number) => {
 };
 
 function PhaseEditor({ phase, onSave, onCancel, isNew }: { phase: Partial<Phase>, onSave: (p: Partial<Phase>) => void, onCancel: () => void, isNew?: boolean }) {
-    
-    const [title, setTitle] = useState(phase?.title || "");
-    const [duration, setDuration] = useState(String(phase?.duration || ""));
+  const [title, setTitle] = useState(phase?.title || "");
+  const [duration, setDuration] = useState(String(phase?.duration || ""));
 
-    const handleSave = () => {
-        const newDuration = parseFloat(duration);
-        if (title.trim() && !isNaN(newDuration) && newDuration >= 0.1) {
-            onSave({ ...phase, title, duration: newDuration });
-        }
+  const handleSave = () => {
+    const newDuration = parseFloat(duration);
+    if (title.trim() && !isNaN(newDuration) && newDuration >= 0.1) {
+      onSave({ ...phase, title, duration: newDuration });
     }
+  };
 
-    return (
-        <div className="p-2 my-2 border rounded-lg bg-background space-y-2">
-            <Input 
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                placeholder="Phase Title"
-            />
-            <Input 
-                type="number"
-                value={duration}
-                onChange={(e) => setDuration(e.target.value)}
-                placeholder="Duration (min)"
-                step="0.1"
-            />
-             {parseFloat(duration) < 0.1 && (
-                <p className="text-xs text-destructive mt-1">
-                    Duration must be at least 0.1 minutes.
-                </p>
-            )}
-            <div className="flex gap-2">
-              <Button onClick={handleSave} size="sm" className="w-full">{isNew ? 'Add' : 'Save'}</Button>
-              <Button onClick={onCancel} size="sm" variant="outline" className="w-full">Cancel</Button>
-            </div>
-        </div>
-    )
+  return (
+    <div className="p-2 my-2 border rounded-lg bg-background space-y-2">
+      <Input 
+        value={title}
+        onChange={(e) => setTitle(e.target.value)}
+        placeholder="Phase Title"
+      />
+      <Input 
+        type="number"
+        value={duration}
+        onChange={(e) => setDuration(e.target.value)}
+        placeholder="Duration (min)"
+        step="0.1"
+      />
+      {parseFloat(duration) < 0.1 && (
+        <p className="text-xs text-destructive mt-1">
+          Duration must be at least 0.1 minutes.
+        </p>
+      )}
+      <div className="flex gap-2">
+        <Button onClick={handleSave} size="sm" className="w-full">{isNew ? 'Add' : 'Save'}</Button>
+        <Button onClick={onCancel} size="sm" variant="outline" className="w-full">Cancel</Button>
+      </div>
+    </div>
+  );
 }
 
 export function TimerDisplay() {
-  const { timeLeft, isActive, startPause, reset, skip } = useTimer();
+  const { timeLeft, isActive, startPause, reset, skip, onCycleComplete, sessionPhaseRecords } = useTimer();
   const { 
     currentCycle, 
     currentPhaseIndex, 
@@ -76,20 +74,32 @@ export function TimerDisplay() {
     saveCycleChanges, 
     createNewCycle 
   } = useCycle();
-  
+  const { logSession } = useHistory(); // Sử dụng để log session
+
   const [isDirty, setIsDirty] = useState(false);
   const [isEditingCycle, setIsEditingCycle] = useState(false);
   const [editingPhaseId, setEditingPhaseId] = useState<string | null>(null);
   const [isAddingPhase, setIsAddingPhase] = useState(false);
   const [sessionsUntilLongRest, setSessionsUntilLongRest] = useState(5);
 
-
   const currentPhase = currentCycle?.phases[currentPhaseIndex];
   const totalPhases = currentCycle?.phases.length ?? 0;
   const totalDuration = currentCycle?.phases.reduce((acc, p) => acc + (p.duration || 0), 0) ?? 0;
 
   const progress = currentPhase && currentPhase.duration > 0 ? ((currentPhase.duration * 60 - timeLeft) / (currentPhase.duration * 60)) * 100 : 0;
-  
+
+  // Theo dõi chu kỳ hoàn thành để gọi log
+  useEffect(() => {
+    if (onCycleComplete && currentCycle && sessionPhaseRecords.length > 0) {
+      const isLastPhase = currentPhaseIndex === currentCycle.phases.length - 1;
+      const isCycleComplete = isLastPhase && timeLeft === 0 && !isActive;
+      if (isCycleComplete) {
+        onCycleComplete(currentCycle, sessionPhaseRecords); // Gọi callback để log
+        logSession(currentCycle, 'completed', sessionPhaseRecords); // Ghi log trực tiếp
+      }
+    }
+  }, [timeLeft, isActive, currentPhaseIndex, currentCycle, sessionPhaseRecords, onCycleComplete, logSession]);
+
   if (!currentCycle || !currentPhase) {
     return (
       <Card className="w-full text-center border-2 shadow-lg p-8">
@@ -104,31 +114,31 @@ export function TimerDisplay() {
   };
   
   const handleSavePhase = (phaseId: string, updates: Partial<Phase>) => {
-      updatePhase(phaseId, updates);
-      setEditingPhaseId(null);
-      setIsDirty(true);
-  }
+    updatePhase(phaseId, updates);
+    setEditingPhaseId(null);
+    setIsDirty(true);
+  };
 
   const handleAddPhase = (newPhaseData: Partial<Phase>) => {
     addPhase(newPhaseData);
     setIsAddingPhase(false);
     setIsDirty(true);
-  }
+  };
 
   const handleDeletePhase = (phaseId: string) => {
     deletePhase(phaseId);
     setIsDirty(true);
-  }
+  };
 
   const handleSaveChanges = async () => {
     await saveCycleChanges();
     setIsDirty(false);
-  }
+  };
 
   const handleEndOfCycleSoundChange = (soundUrl: string) => {
     const selectedSound = audioLibrary.find(s => s.url === soundUrl);
     setEndOfCycleSound(selectedSound || null);
-  }
+  };
 
   const isTemplate = currentCycle.id.startsWith("cycle_template_");
 
@@ -188,119 +198,117 @@ export function TimerDisplay() {
         </div>
 
         <div className="mt-6 text-center min-h-[60px] w-full">
-            <p className="text-xl text-muted-foreground">{currentPhase.title}</p>
-            <CycleProgressBar totalCycles={sessionsUntilLongRest} />
+          <p className="text-xl text-muted-foreground">{currentPhase.title}</p>
+          <CycleProgressBar totalCycles={sessionsUntilLongRest} />
         </div>
       </CardContent>
 
       <CardFooter className="flex flex-col gap-4">
         <div className="flex justify-center items-center gap-4">
-            <Button onClick={reset} variant="outline" size="icon" className="h-14 w-14 rounded-full">
-                <RotateCcw />
-                <span className="sr-only">Reset</span>
-            </Button>
-            <Button onClick={() => startPause(sessionsUntilLongRest)} size="icon" className="h-20 w-20 rounded-full text-3xl shadow-lg">
-                {isActive ? <Pause className="h-10 w-10" /> : <Play className="h-10 w-10" />}
-                <span className="sr-only">{isActive ? "Pause" : "Start"}</span>
-            </Button>
-            <Button onClick={() => skip(sessionsUntilLongRest)} variant="outline" size="icon" className="h-14 w-14 rounded-full">
-                <SkipForward />
-                <span className="sr-only">Skip</span>
-            </Button>
+          <Button onClick={reset} variant="outline" size="icon" className="h-14 w-14 rounded-full">
+            <RotateCcw />
+            <span className="sr-only">Reset</span>
+          </Button>
+          <Button onClick={() => startPause(sessionsUntilLongRest)} size="icon" className="h-20 w-20 rounded-full text-3xl shadow-lg">
+            {isActive ? <Pause className="h-10 w-10" /> : <Play className="h-10 w-10" />}
+            <span className="sr-only">{isActive ? "Pause" : "Start"}</span>
+          </Button>
+          <Button onClick={() => skip(sessionsUntilLongRest)} variant="outline" size="icon" className="h-14 w-14 rounded-full">
+            <SkipForward />
+            <span className="sr-only">Skip</span>
+          </Button>
         </div>
 
         <div className="w-full space-y-2 py-4">
           <div className="flex flex-col items-center justify-center gap-2 w-full max-w-sm mx-auto">
-              {currentCycle.phases.map((phase, index) => (
-                  <div key={phase.id} className="w-full">
-                      <div className="flex items-center gap-2 w-full">
-                          <Button 
-                              variant={index === currentPhaseIndex ? "default" : "outline"}
-                              size="sm"
-                              onClick={() => setCurrentPhaseIndex(index)}
-                              className={cn("h-auto py-2 px-4 w-full justify-between flex-grow", index === currentPhaseIndex && "shadow-md")}
-                          >
-                              <span>{phase.title}</span>
-                              <span>{phase.duration}m</span>
-                          </Button>
-                          <Button variant="ghost" size="icon" onClick={() => setEditingPhaseId(editingPhaseId === phase.id ? null : phase.id)} title="Edit Phase">
-                              <Edit className="h-4 w-4" />
-                          </Button>
-                          {totalPhases > 1 && (
-                            <Button variant="ghost" size="icon" onClick={() => handleDeletePhase(phase.id)} title="Delete Phase" className="text-destructive hover:text-destructive">
-                                <Trash2 className="h-4 w-4" />
-                            </Button>
-                          )}
-                      </div>
-                       {editingPhaseId === phase.id && (
-                           <PhaseEditor 
-                            phase={phase}
-                            onSave={(updates) => handleSavePhase(phase.id, updates)}
-                            onCancel={() => setEditingPhaseId(null)}
-                           />
-                       )}
-                  </div>
-              ))}
+            {currentCycle.phases.map((phase, index) => (
+              <div key={phase.id} className="w-full">
+                <div className="flex items-center gap-2 w-full">
+                  <Button 
+                    variant={index === currentPhaseIndex ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setCurrentPhaseIndex(index)}
+                    className={cn("h-auto py-2 px-4 w-full justify-between flex-grow", index === currentPhaseIndex && "shadow-md")}
+                  >
+                    <span>{phase.title}</span>
+                    <span>{phase.duration}m</span>
+                  </Button>
+                  <Button variant="ghost" size="icon" onClick={() => setEditingPhaseId(editingPhaseId === phase.id ? null : phase.id)} title="Edit Phase">
+                    <Edit className="h-4 w-4" />
+                  </Button>
+                  {totalPhases > 1 && (
+                    <Button variant="ghost" size="icon" onClick={() => handleDeletePhase(phase.id)} title="Delete Phase" className="text-destructive hover:text-destructive">
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  )}
+                </div>
+                {editingPhaseId === phase.id && (
+                  <PhaseEditor 
+                    phase={phase}
+                    onSave={(updates) => handleSavePhase(phase.id, updates)}
+                    onCancel={() => setEditingPhaseId(null)}
+                  />
+                )}
+              </div>
+            ))}
           </div>
           <div className="flex justify-center items-center">
-             <Button variant="outline" size="sm" onClick={() => setIsAddingPhase(true)} title="Add Phase" className="mt-2">
-                  <Plus className="mr-2 h-4 w-4" /> Add Phase
-              </Button>
+            <Button variant="outline" size="sm" onClick={() => setIsAddingPhase(true)} title="Add Phase" className="mt-2">
+              <Plus className="mr-2 h-4 w-4" /> Add Phase
+            </Button>
           </div>
           {isAddingPhase && (
-             <div className="w-full max-w-sm mx-auto">
-                <PhaseEditor
-                    isNew
-                    phase={{ title: 'New Phase', duration: 5 }}
-                    onSave={handleAddPhase}
-                    onCancel={() => setIsAddingPhase(false)}
-                />
-             </div>
+            <div className="w-full max-w-sm mx-auto">
+              <PhaseEditor
+                isNew
+                phase={{ title: 'New Phase', duration: 5 }}
+                onSave={handleAddPhase}
+                onCancel={() => setIsAddingPhase(false)}
+              />
+            </div>
           )}
         </div>
 
         <div className="w-full max-w-sm mx-auto space-y-4">
-            <div className="flex items-center justify-between">
-                <Label htmlFor="sessionsUntilLongRest" className="text-sm font-medium">Repeat Cycles</Label>
-                <Input
-                    id="sessionsUntilLongRest"
-                    type="number"
-                    value={sessionsUntilLongRest}
-                    onChange={(e) => setSessionsUntilLongRest(Number(e.target.value))}
-                    className="w-20"
-                    min="1"
-                />
-            </div>
-            <div className="flex items-center justify-between">
-              <Label htmlFor="endOfCycleSound" className="text-sm font-medium">End Sound</Label>
-              <Select onValueChange={handleEndOfCycleSoundChange} value={endOfCycleSound?.url}>
-                <SelectTrigger className="w-[180px]">
-                  <SelectValue placeholder="Select end sound" />
-                </SelectTrigger>
-                <SelectContent>
-                  {audioLibrary.map(audio => (
-                    <SelectItem key={audio.id} value={audio.url}>{audio.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="text-sm text-muted-foreground pt-2">
-                Total duration: {totalDuration.toFixed(1)}m
-            </div>
+          <div className="flex items-center justify-between">
+            <Label htmlFor="sessionsUntilLongRest" className="text-sm font-medium">Repeat Cycles</Label>
+            <Input
+              id="sessionsUntilLongRest"
+              type="number"
+              value={sessionsUntilLongRest}
+              onChange={(e) => setSessionsUntilLongRest(Number(e.target.value))}
+              className="w-20"
+              min="1"
+            />
+          </div>
+          <div className="flex items-center justify-between">
+            <Label htmlFor="endOfCycleSound" className="text-sm font-medium">End Sound</Label>
+            <Select onValueChange={handleEndOfCycleSoundChange} value={endOfCycleSound?.url}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Select end sound" />
+              </SelectTrigger>
+              <SelectContent>
+                {audioLibrary.map(audio => (
+                  <SelectItem key={audio.id} value={audio.url}>{audio.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="text-sm text-muted-foreground pt-2">
+            Total duration: {totalDuration.toFixed(1)}m
+          </div>
         </div>
         <div className="flex items-center justify-center gap-2 pt-4 border-t w-full max-w-sm mx-auto">
-            <Button onClick={createNewCycle} size="sm" variant="outline" className="w-full">
-                <Copy className="mr-2 h-4 w-4" />
-                New Cycle
-            </Button>
-            <Button onClick={handleSaveChanges} size="sm" variant="outline" disabled={isTemplate || !isDirty} className="w-full">
-                <Save className="mr-2 h-4 w-4" />
-                {isTemplate ? 'Template' : 'Save Changes'}
-            </Button>
+          <Button onClick={createNewCycle} size="sm" variant="outline" className="w-full">
+            <Copy className="mr-2 h-4 w-4" />
+            New Cycle
+          </Button>
+          <Button onClick={handleSaveChanges} size="sm" variant="outline" disabled={isTemplate || !isDirty} className="w-full">
+            <Save className="mr-2 h-4 w-4" />
+            {isTemplate ? 'Template' : 'Save Changes'}
+          </Button>
         </div>
       </CardFooter>
     </Card>
   );
 }
-
-    
