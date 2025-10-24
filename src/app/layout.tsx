@@ -20,7 +20,7 @@ export const metadata: Metadata = {
 // 🔥 CLIENT PROVIDERS - SEPARATE FILE
 import ClientProviders from './providers';
 import { Header } from "@/components/app/header"; // Thêm Header
-import { Footer } from "@/components/app/hooter"; // Thêm Footer
+import { Footer } from "@/components/app/footer"; // Thêm Footer
 
 export default function RootLayout({
   children,
