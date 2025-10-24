@@ -1,4 +1,4 @@
-"use client"; // Nếu cần client-side rendering, nhưng nên tránh nếu có thể
+ // Nếu cần client-side rendering, nhưng nên tránh nếu có thể
 
 import Link from "next/link";
 
