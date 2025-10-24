@@ -50,7 +50,7 @@ export const TimerProvider: FC<{ children: ReactNode }> = ({ children }) => {
   }, []);
 
   const playSound = useCallback((soundUrl?: string | null) => {
-    if (!isMounted) return; // Loại bỏ kiểm tra settings.playSounds
+    if (!isMounted) return;
 
     const urlToPlay = soundUrl || currentPhase?.soundFile?.url || audioLibrary[0]?.url;
 
