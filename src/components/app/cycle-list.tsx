@@ -1,7 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle,CardDescription } from "@/components/ui/card";
 import { useCycle } from "@/contexts/cycle-context";
 import { useTimer } from "@/contexts/timer-context";
 import { Play, Trash } from "lucide-react";
