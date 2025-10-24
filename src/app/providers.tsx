@@ -2,16 +2,16 @@
 
 import { TimerProvider } from "@/contexts/timer-context";
 import { HistoryProvider } from "@/contexts/history-context";
-import { CycleProvider } from "@/contexts/cycle-context"; // Loại bỏ SettingsProvider
+import { CycleProvider } from "@/contexts/cycle-context";
 
 export default function ClientProviders({ children }: { children: React.ReactNode }) {
   return (
-    <TimerProvider>
-      <CycleProvider>
+    <CycleProvider> {/* Đặt ngoài cùng */}
+      <TimerProvider>
         <HistoryProvider>
           {children}
         </HistoryProvider>
-      </CycleProvider>
-    </TimerProvider>
+      </TimerProvider>
+    </CycleProvider>
   );
 }
