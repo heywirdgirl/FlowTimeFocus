@@ -664,143 +664,82 @@ const useAuth = ()=>{
 
 var { g: global, __dirname } = __turbopack_context__;
 {
-// src/dal/cycle-dal.ts - FINAL VERSION (Oct 19, 2025)
+// src/dal/cycle-dal.ts - FIXED VERSION (Oct 21, 2025)
 __turbopack_context__.s({
-    "addPhaseToCycle": (()=>addPhaseToCycle),
     "createCycle": (()=>createCycle),
     "deleteCycle": (()=>deleteCycle),
-    "getAllCycles": (()=>getAllCycles),
-    "getCycleById": (()=>getCycleById),
-    "getPrivateCycles": (()=>getPrivateCycles),
-    "getPublicCycles": (()=>getPublicCycles),
-    "removePhaseFromCycle": (()=>removePhaseFromCycle),
-    "updateCycle": (()=>updateCycle)
+    "getCycles": (()=>getCycles)
 });
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$firebase$2f$firestore$2f$dist$2f$index$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$module__evaluation$3e$__ = __turbopack_context__.i("[project]/node_modules/firebase/firestore/dist/index.mjs [app-ssr] (ecmascript) <module evaluation>");
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$firebase$2f$firestore$2f$dist$2f$index$2e$node$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/@firebase/firestore/dist/index.node.mjs [app-ssr] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$firebase$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/lib/firebase.ts [app-ssr] (ecmascript)");
-var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$contexts$2f$auth$2d$context$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/contexts/auth-context.tsx [app-ssr] (ecmascript)");
-var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$dal$2f$user$2d$dal$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/dal/user-dal.ts [app-ssr] (ecmascript)");
 ;
 ;
-;
-;
-async function getPublicCycles() {
-    const q = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$firebase$2f$firestore$2f$dist$2f$index$2e$node$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["query"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$firebase$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["cyclesCollection"], (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$firebase$2f$firestore$2f$dist$2f$index$2e$node$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["where"])('isPublic', '==', true), (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$firebase$2f$firestore$2f$dist$2f$index$2e$node$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["orderBy"])('createdAt', 'desc'));
-    const snapshot = await (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$firebase$2f$firestore$2f$dist$2f$index$2e$node$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["getDocs"])(q);
-    return snapshot.docs.map((d)=>({
-            id: d.id,
-            ...d.data()
-        }));
-}
-async function getPrivateCycles() {
-    const { getCurrentUser } = (0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$contexts$2f$auth$2d$context$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useAuth"])();
-    const user = getCurrentUser();
-    if (!user) throw new Error('User not authenticated');
-    const q = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$firebase$2f$firestore$2f$dist$2f$index$2e$node$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["query"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$firebase$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["cyclesCollection"], (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$firebase$2f$firestore$2f$dist$2f$index$2e$node$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["where"])('authorId', '==', user.uid), (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$firebase$2f$firestore$2f$dist$2f$index$2e$node$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["where"])('isPublic', '==', false));
-    const snapshot = await (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$firebase$2f$firestore$2f$dist$2f$index$2e$node$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["getDocs"])(q);
-    return snapshot.docs.map((d)=>({
-            id: d.id,
-            ...d.data()
-        }));
-}
-async function getAllCycles() {
-    const [publicCycles, privateCycles] = await Promise.all([
-        getPublicCycles(),
-        getPrivateCycles()
-    ]);
-    return [
-        ...publicCycles,
-        ...privateCycles
-    ];
-}
-async function getCycleById(cycleId) {
-    const cycleRef = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$firebase$2f$firestore$2f$dist$2f$index$2e$node$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["doc"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$firebase$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["cyclesCollection"], cycleId);
-    const snap = await (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$firebase$2f$firestore$2f$dist$2f$index$2e$node$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["getDoc"])(cycleRef);
-    if (!snap.exists()) return null;
-    const cycle = {
-        id: snap.id,
-        ...snap.data()
-    };
-    // Permission check
-    const { getCurrentUser } = (0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$contexts$2f$auth$2d$context$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useAuth"])();
-    const user = getCurrentUser();
-    if (!cycle.isPublic && user?.uid !== cycle.authorId) {
-        throw new Error('Access denied: Private cycle');
+const getCycles = async (userId)=>{
+    try {
+        const cyclesCollection = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$firebase$2f$firestore$2f$dist$2f$index$2e$node$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["collection"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$firebase$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["db"], 'cycles');
+        let q = cyclesCollection;
+        // 🔥 NEW: Filter cycles based on userId (private) or isPublic (public)
+        if (userId) {
+            q = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$firebase$2f$firestore$2f$dist$2f$index$2e$node$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["query"])(cyclesCollection, (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$firebase$2f$firestore$2f$dist$2f$index$2e$node$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["where"])('userId', 'in', [
+                userId,
+                null
+            ]), (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$firebase$2f$firestore$2f$dist$2f$index$2e$node$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["where"])('isPublic', '==', false));
+        } else {
+            q = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$firebase$2f$firestore$2f$dist$2f$index$2e$node$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["query"])(cyclesCollection, (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$firebase$2f$firestore$2f$dist$2f$index$2e$node$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["where"])('isPublic', '==', true));
+        }
+        const snapshot = await (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$firebase$2f$firestore$2f$dist$2f$index$2e$node$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["getDocs"])(q);
+        return snapshot.docs.map((doc)=>{
+            const data = doc.data();
+            // Ensure all required fields are present with fallback
+            return {
+                id: doc.id,
+                name: data.name || 'Unnamed Cycle',
+                phases: data.phases || [],
+                isPublic: data.isPublic ?? false,
+                userId: data.userId ?? null,
+                createdAt: data.createdAt || new Date().toISOString(),
+                updatedAt: data.updatedAt || new Date().toISOString()
+            };
+        });
+    } catch (error) {
+        console.error('Error fetching cycles:', error);
+        return [];
     }
-    return cycle;
-}
-async function createCycle(cycleData) {
-    const { getCurrentUser } = (0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$contexts$2f$auth$2d$context$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useAuth"])();
-    const user = getCurrentUser();
-    if (!user) throw new Error('User not authenticated');
-    const newCycle = {
-        ...cycleData,
-        id: `cycle_${Date.now()}`,
-        authorId: user.uid,
-        authorName: user.displayName || 'Anonymous',
-        likes: 0,
-        shares: 0,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-    };
-    const cycleRef = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$firebase$2f$firestore$2f$dist$2f$index$2e$node$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["doc"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$firebase$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["cyclesCollection"], newCycle.id);
-    await (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$firebase$2f$firestore$2f$dist$2f$index$2e$node$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["setDoc"])(cycleRef, newCycle);
-    // Add to user's privateCycles nếu private
-    if (!newCycle.isPublic) {
-        await (0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$dal$2f$user$2d$dal$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["addPrivateCycleToUser"])(newCycle.id);
+};
+const createCycle = async (cycle, userId)=>{
+    try {
+        const cyclesCollection = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$firebase$2f$firestore$2f$dist$2f$index$2e$node$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["collection"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$firebase$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["db"], 'cycles');
+        const newCycle = {
+            ...cycle,
+            userId: cycle.isPublic ? null : userId,
+            createdAt: new Date().toISOString()
+        };
+        const docRef = await (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$firebase$2f$firestore$2f$dist$2f$index$2e$node$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["addDoc"])(cyclesCollection, newCycle);
+        return {
+            id: docRef.id,
+            ...newCycle
+        };
+    } catch (error) {
+        console.error('Error creating cycle:', error);
+        throw error;
     }
-    return newCycle;
-}
-async function updateCycle(cycleId, updates) {
-    const cycle = await getCycleById(cycleId);
-    if (!cycle) throw new Error('Cycle not found');
-    const { getCurrentUser } = (0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$contexts$2f$auth$2d$context$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useAuth"])();
-    const user = getCurrentUser();
-    if (user?.uid !== cycle.authorId) throw new Error('Access denied');
-    await (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$firebase$2f$firestore$2f$dist$2f$index$2e$node$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["updateDoc"])((0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$firebase$2f$firestore$2f$dist$2f$index$2e$node$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["doc"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$firebase$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["cyclesCollection"], cycleId), {
-        ...updates,
-        updatedAt: new Date().toISOString()
-    });
-}
-async function deleteCycle(cycleId) {
-    const cycle = await getCycleById(cycleId);
-    if (!cycle) throw new Error('Cycle not found');
-    const { getCurrentUser } = (0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$contexts$2f$auth$2d$context$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useAuth"])();
-    const user = getCurrentUser();
-    if (user?.uid !== cycle.authorId) throw new Error('Access denied');
-    await (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$firebase$2f$firestore$2f$dist$2f$index$2e$node$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["deleteDoc"])((0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$firebase$2f$firestore$2f$dist$2f$index$2e$node$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["doc"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$firebase$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["cyclesCollection"], cycleId));
-    // Remove from user's privateCycles nếu private
-    if (!cycle.isPublic) {
-        await removePrivateCycleFromUser(cycleId);
+};
+const deleteCycle = async (cycleId, userId)=>{
+    try {
+        const cycleDoc = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$firebase$2f$firestore$2f$dist$2f$index$2e$node$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["doc"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$firebase$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["db"], 'cycles', cycleId);
+        if (userId) {
+            const cycleSnap = await (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$firebase$2f$firestore$2f$dist$2f$index$2e$node$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["getDoc"])(cycleDoc);
+            if (cycleSnap.exists() && cycleSnap.data().userId !== userId) {
+                throw new Error('Unauthorized to delete this cycle');
+            }
+        }
+        await (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$firebase$2f$firestore$2f$dist$2f$index$2e$node$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["deleteDoc"])(cycleDoc);
+    } catch (error) {
+        console.error('Error deleting cycle:', error);
+        throw error;
     }
-}
-async function addPhaseToCycle(cycleId, phase) {
-    const cycle = await getCycleById(cycleId);
-    if (!cycle) throw new Error('Cycle not found');
-    const { getCurrentUser } = (0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$contexts$2f$auth$2d$context$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useAuth"])();
-    const user = getCurrentUser();
-    if (user?.uid !== cycle.authorId) throw new Error('Access denied');
-    await (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$firebase$2f$firestore$2f$dist$2f$index$2e$node$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["updateDoc"])((0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$firebase$2f$firestore$2f$dist$2f$index$2e$node$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["doc"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$firebase$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["cyclesCollection"], cycleId), {
-        phases: [
-            ...cycle.phases,
-            phase
-        ],
-        updatedAt: new Date().toISOString()
-    });
-}
-async function removePhaseFromCycle(cycleId, phaseId) {
-    const cycle = await getCycleById(cycleId);
-    if (!cycle) throw new Error('Cycle not found');
-    const { getCurrentUser } = (0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$contexts$2f$auth$2d$context$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useAuth"])();
-    const user = getCurrentUser();
-    if (user?.uid !== cycle.authorId) throw new Error('Access denied');
-    const newPhases = cycle.phases.filter((p)=>p.id !== phaseId);
-    await (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$firebase$2f$firestore$2f$dist$2f$index$2e$node$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["updateDoc"])((0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$firebase$2f$firestore$2f$dist$2f$index$2e$node$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["doc"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$firebase$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["cyclesCollection"], cycleId), {
-        phases: newPhases,
-        updatedAt: new Date().toISOString()
-    });
-}
+};
 }}),
 "[project]/src/dal/history-dal.ts [app-ssr] (ecmascript)": ((__turbopack_context__) => {
 "use strict";
@@ -906,7 +845,7 @@ var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$dal$2f$index$2e$ts__$
 
 var { g: global, __dirname } = __turbopack_context__;
 {
-// src/lib/mock-data.ts - FINAL VERSION (Oct 19, 2025) - DAL COMPATIBLE
+// src/lib/mock-data.ts - FINAL VERSION (Oct 21, 2025) - DAL COMPATIBLE
 __turbopack_context__.s({
     "default": (()=>__TURBOPACK__default__export__),
     "defaultCycle": (()=>defaultCycle),
@@ -940,7 +879,7 @@ const mockTrainingHistory = [
         totalDuration: 135,
         cycleCount: 1,
         completedAt: "2025-09-26T11:15:00Z",
-        status: 'completed',
+        status: "completed",
         userId: "user123",
         notes: "Great focus today!"
     },
@@ -953,7 +892,7 @@ const mockTrainingHistory = [
         totalDuration: 3,
         cycleCount: 1,
         completedAt: "2025-09-26T08:03:00Z",
-        status: 'completed',
+        status: "completed",
         userId: "user123"
     },
     {
@@ -965,7 +904,7 @@ const mockTrainingHistory = [
         totalDuration: 135,
         cycleCount: 1,
         completedAt: "2025-09-25T16:45:00Z",
-        status: 'interrupted',
+        status: "interrupted",
         userId: "user123",
         notes: "Got distracted by email"
     }
@@ -1056,10 +995,7 @@ const pomodoroCycle = {
         }
     ],
     isPublic: true,
-    authorId: "user123",
-    authorName: "User",
-    likes: 150,
-    shares: 30,
+    userId: null,
     createdAt: "2025-09-23T10:00:00Z",
     updatedAt: "2025-09-23T10:00:00Z"
 };
@@ -1099,10 +1035,7 @@ const wimHofCycle = {
         }
     ],
     isPublic: true,
-    authorId: "uid_system",
-    authorName: "Timeflow Team",
-    likes: 1337,
-    shares: 42,
+    userId: null,
     createdAt: "2025-09-22T23:00:00Z",
     updatedAt: "2025-09-22T23:00:00Z"
 };
@@ -1113,10 +1046,7 @@ const defaultCycle = {
         ...wimHofCycle.phases
     ],
     isPublic: false,
-    authorId: "system",
-    authorName: "Your Quick Start",
-    likes: 0,
-    shares: 0,
+    userId: "user123",
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString()
 };
@@ -1124,18 +1054,17 @@ const mockUserProfile = {
     userId: "user123",
     email: "user@example.com",
     displayName: "John Doe",
-    privateCycles: [
-        "cycle_default_wimhof"
-    ],
     audioLibrary: mockAudioLibrary,
     createdAt: new Date().toISOString(),
     lastLogin: new Date().toISOString()
 };
 const __TURBOPACK__default__export__ = {
     mockAudioLibrary,
-    pomodoroCycle,
-    wimHofCycle,
-    defaultCycle,
+    mockCycles: [
+        pomodoroCycle,
+        wimHofCycle,
+        defaultCycle
+    ],
     mockTrainingHistory,
     mockUserProfile
 };
@@ -1145,6 +1074,7 @@ const __TURBOPACK__default__export__ = {
 
 var { g: global, __dirname } = __turbopack_context__;
 {
+// src/contexts/cycle-context.tsx - FIXED VERSION (Oct 21, 2025)
 __turbopack_context__.s({
     "CycleProvider": (()=>CycleProvider),
     "useCycle": (()=>useCycle)
@@ -1161,41 +1091,33 @@ var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$mock$2d$data$2
 ;
 ;
 ;
-// CORRECTED: Import individual cycles and create an array
-const { pomodoroCycle, wimHofCycle, defaultCycle, mockAudioLibrary } = __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$mock$2d$data$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["default"];
-const mockCycles = [
-    pomodoroCycle,
-    wimHofCycle
-];
+const { mockCycles, mockAudioLibrary = [] } = __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$mock$2d$data$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["default"];
 const CycleContext = /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["createContext"])(undefined);
 function useCycle() {
     const context = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useContext"])(CycleContext);
-    if (!context) throw new Error('useCycle must be used within CycleProvider');
+    if (!context) throw new Error("useCycle must be used within CycleProvider");
     return context;
 }
 function CycleProvider({ children }) {
     const { user } = (0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$contexts$2f$auth$2d$context$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useAuth"])();
-    const [allCycles, setAllCycles] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useState"])(mockCycles);
+    const [allCycles, setAllCycles] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useState"])(mockCycles); // Use mockCycles array
     const [privateCycles, setPrivateCycles] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useState"])([]);
-    // SIMPLIFIED: Initialize with a default cycle
-    const [currentCycle, setCurrentCycle] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useState"])(defaultCycle);
+    const [currentCycle, setCurrentCycle] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useState"])(null);
     const [currentPhaseIndex, setCurrentPhaseIndex] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useState"])(0);
     (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useEffect"])(()=>{
         const loadCycles = async ()=>{
-            if (!user) {
-                setAllCycles(mockCycles);
-                setPrivateCycles([]);
-                return;
-            }
             try {
-                const cycles = await (0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$dal$2f$cycle$2d$dal$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["getAllCycles"])();
+                const cycles = await (0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$dal$2f$cycle$2d$dal$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["getCycles"])(user?.uid) || [];
+                const privateCyclesData = user ? cycles.filter((c)=>c.userId === user.uid && !c.isPublic) : [];
                 setAllCycles([
                     ...mockCycles,
-                    ...cycles
+                    ...cycles.filter((c)=>c.isPublic || c.userId === user?.uid)
                 ]);
-                setPrivateCycles(cycles.filter((c)=>!c.isPublic));
+                setPrivateCycles(privateCyclesData);
             } catch (error) {
-                console.error('Failed to load cycles', error);
+                console.error("Failed to load cycles", error);
+                setAllCycles(mockCycles); // Fallback to mock data
+                setPrivateCycles([]);
             }
         };
         loadCycles();
@@ -1203,9 +1125,11 @@ function CycleProvider({ children }) {
         user
     ]);
     (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useEffect"])(()=>{
-        // When the current cycle changes, reset the phase index
-        setCurrentPhaseIndex(0);
+        if (allCycles?.length > 0 && !currentCycle) {
+            setCurrentCycle(allCycles[0]);
+        }
     }, [
+        allCycles,
         currentCycle
     ]);
     const advancePhase = ()=>{
@@ -1217,16 +1141,19 @@ function CycleProvider({ children }) {
     const resetCycle = ()=>{
         setCurrentPhaseIndex(0);
     };
+    const logTraining = async (data)=>{
+    // Placeholder
+    };
     const deleteCycle = async (cycleId)=>{
         try {
-            await (0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$dal$2f$cycle$2d$dal$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["deleteCycle"])(cycleId);
+            await deleteCycle(cycleId, user?.uid);
             setAllCycles((prev)=>prev.filter((c)=>c.id !== cycleId));
             setPrivateCycles((prev)=>prev.filter((c)=>c.id !== cycleId));
             if (currentCycle?.id === cycleId) {
                 setCurrentCycle(allCycles[0] || null);
             }
         } catch (error) {
-            console.error('Failed to delete cycle', error);
+            console.error("Failed to delete cycle", error);
         }
     };
     const value = {
@@ -1239,6 +1166,7 @@ function CycleProvider({ children }) {
         setCurrentPhaseIndex,
         advancePhase,
         resetCycle,
+        logTraining,
         deleteCycle,
         audioLibrary: mockAudioLibrary,
         endOfCycleSound: mockAudioLibrary.length > 0 ? mockAudioLibrary[0] : null
@@ -1248,7 +1176,7 @@ function CycleProvider({ children }) {
         children: children
     }, void 0, false, {
         fileName: "[project]/src/contexts/cycle-context.tsx",
-        lineNumber: 108,
+        lineNumber: 109,
         columnNumber: 10
     }, this);
 }
