@@ -4,7 +4,6 @@
 import type { Metadata } from 'next';
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
-
 // 🔥 SERVER METADATA
 export const metadata: Metadata = {
   title: 'FlowTime Focus',
@@ -38,15 +37,6 @@ export default function RootLayout({
       </head>
       <body className="font-body antialiased">
         <ClientProviders>
-          // src/app/layout.tsx
-          <nav className="flex flex-col gap-4">
-  <Link href="/" className="flex items-center gap-2">
-    <Menu className="h-5 w-5" /> Dashboard
-  </Link>
-  <Link href="/history" className="flex items-center gap-2">
-    <BarChart className="h-5 w-5" /> History
-  </Link>
-</nav>
           {children}
         </ClientProviders>
         <Toaster />
