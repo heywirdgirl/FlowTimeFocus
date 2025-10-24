@@ -2,7 +2,6 @@
 
 import React, { createContext, useContext, useState, useEffect, useRef, useCallback } from 'react';
 import type { FC, ReactNode } from 'react';
-import { useSettings } from './settings-context';
 import { useCycle } from './cycle-context';
 import { useHistory } from './history-context';
 import { useAuth } from './auth-context';
@@ -28,7 +27,6 @@ export const useTimer = () => {
 };
 
 export const TimerProvider: FC<{ children: ReactNode }> = ({ children }) => {
-  const { settings } = useSettings();
   const { user } = useAuth();
   const { currentCycle, currentPhaseIndex, currentPhase, advancePhase, resetCycle, audioLibrary, endOfCycleSound, setCurrentPhaseIndex } = useCycle();
   const { logSession } = useHistory();
@@ -52,7 +50,7 @@ export const TimerProvider: FC<{ children: ReactNode }> = ({ children }) => {
   }, []);
 
   const playSound = useCallback((soundUrl?: string | null) => {
-    if (!settings.playSounds || !isMounted) return;
+    if (!isMounted) return; // Loại bỏ kiểm tra settings.playSounds
 
     const urlToPlay = soundUrl || currentPhase?.soundFile?.url || audioLibrary[0]?.url;
 
@@ -77,7 +75,7 @@ export const TimerProvider: FC<{ children: ReactNode }> = ({ children }) => {
       });
       soundRef.current = sound;
     }
-  }, [settings.playSounds, currentPhase, audioLibrary, isMounted]);
+  }, [currentPhase, audioLibrary, isMounted]);
 
   useEffect(() => {
     if (!isMounted || !isActive) return;
@@ -164,7 +162,7 @@ export const TimerProvider: FC<{ children: ReactNode }> = ({ children }) => {
       if (sessionsUntilLongRestRef.current > 0 && newCyclesCompleted >= sessionsUntilLongRestRef.current) {
         playSound(endOfCycleSound?.url);
         setIsActive(false);
-        setCurrentPhaseIndex(0); // 🔥 FIX 3: NOW DEFINED!
+        setCurrentPhaseIndex(0);
       } else {
         playSound();
         setCurrentPhaseIndex(0);

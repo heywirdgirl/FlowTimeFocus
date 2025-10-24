@@ -2,7 +2,7 @@
 
 import { useState, useContext } from "react";
 import Link from "next/link";
-import { CircleUser, Cog, Menu, LogOut, Mail, BarChart } from "lucide-react"; // Thêm BarChart cho icon history
+import { CircleUser, Menu, LogOut, Mail, BarChart } from "lucide-react"; // Loại bỏ Cog
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -21,12 +21,11 @@ import {
 } from "firebase/auth";
 import { AuthContext } from "@/contexts/auth-context";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { SettingsSheet } from "./settings-sheet";
-import { EmailAuthDialog } from "./email-auth-dialog";
+import { EmailAuthDialog } from "./email-auth-dialog"; // Loại bỏ SettingsSheet
 import { toast } from "@/hooks/use-toast";
 
 export function Header() {
-  const [isSheetOpen, setIsSheetOpen] = useState(false);
+  const [isSheetOpen, setIsSheetOpen] = useState(false); // Giữ để toggle menu mobile
   const [isEmailAuthOpen, setIsEmailAuthOpen] = useState(false);
   const [emailAuthMode, setEmailAuthMode] = useState<'signIn' | 'signUp'>('signIn');
   const auth = getAuth();
@@ -81,7 +80,7 @@ export function Header() {
             Dashboard
           </Link>
           <Link
-            href="/history" // Thêm liên kết History
+            href="/history"
             className="text-foreground transition-colors hover:text-foreground flex items-center gap-1"
           >
             <BarChart className="h-4 w-4" /> History
@@ -117,17 +116,6 @@ export function Header() {
           </SheetContent>
         </Sheet>
         <div className="flex w-full items-center justify-end gap-4 md:ml-auto md:gap-2 lg:gap-4">
-          <div className="hidden sm:block">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setIsSheetOpen(true)}
-            >
-              <Cog className="h-6 w-6" />
-              <span className="sr-only">Open Settings</span>
-            </Button>
-          </div>
-
           {user ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -152,11 +140,6 @@ export function Header() {
                 <DropdownMenuLabel>
                   {user.displayName || user.email}
                 </DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => setIsSheetOpen(true)}>
-                  <Cog className="mr-2 h-4 w-4" />
-                  <span>Settings</span>
-                </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleSignOut}>
                   <LogOut className="mr-2 h-4 w-4" />
@@ -194,12 +177,11 @@ export function Header() {
             </DropdownMenu>
           )}
           <Button variant="ghost" size="icon" className="sm:hidden" onClick={() => setIsSheetOpen(true)}>
-            <Cog className="h-6 w-6" />
-            <span className="sr-only">Open Settings</span>
+            <Menu className="h-6 w-6" /> {/* Thay Cog bằng Menu cho mobile */}
+            <span className="sr-only">Toggle navigation menu</span>
           </Button>
         </div>
       </header>
-      <SettingsSheet open={isSheetOpen} onOpenChange={setIsSheetOpen} />
       <EmailAuthDialog
         open={isEmailAuthOpen}
         onOpenChange={setIsEmailAuthOpen}

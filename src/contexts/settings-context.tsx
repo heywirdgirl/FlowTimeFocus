@@ -1,25 +1,18 @@
-// src/contexts/settings-context.tsx - OPTIMIZED VERSION (Oct 19, 2025)
 "use client";
 
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-
-type Theme = "light" | "dark" | "system";
+import React, { createContext, useContext, useState, useEffect } from 'react';
 
 interface Settings {
-  playSounds: boolean;
-  theme: Theme;
+  playSounds: boolean; // Chỉ giữ âm thanh, luôn true
 }
 
 interface SettingsContextType {
   settings: Settings;
-  setSettings: React.Dispatch<React.SetStateAction<Settings>>;
-  toggleSounds: () => void;
-  setTheme: (theme: Theme) => void;
+  // Loại bỏ setSettings, toggleSounds, setTheme
 }
 
 const defaultSettings: Settings = {
-  playSounds: true,
-  theme: "system",
+  playSounds: true, // Mặc định luôn bật
 };
 
 const SettingsContext = createContext<SettingsContextType | undefined>(undefined);
@@ -35,22 +28,16 @@ export function useSettings() {
 export function SettingsProvider({ children }: { children: React.ReactNode }) {
   const [settings, setSettings] = useState<Settings>(() => defaultSettings);
 
-  // 🔥 OPTIMIZE 1: DEBOUNCE SAVE
+  // Loại bỏ debounce save vì không còn toggle
   useEffect(() => {
-    let timeoutId: NodeJS.Timeout;
-    const saveToStorage = () => {
-      try {
-        localStorage.setItem("flowtime-settings", JSON.stringify(settings));
-      } catch (error) {
-        console.error("Failed to save settings", error);
-      }
-    };
-
-    timeoutId = setTimeout(saveToStorage, 300); // Debounce 300ms
-    return () => clearTimeout(timeoutId);
+    try {
+      localStorage.setItem("flowtime-settings", JSON.stringify(settings));
+    } catch (error) {
+      console.error("Failed to save settings", error);
+    }
   }, [settings]);
 
-  // 🔥 LOAD FROM STORAGE
+  // Loại bỏ logic load theme, chỉ load âm thanh
   useEffect(() => {
     try {
       const stored = localStorage.getItem("flowtime-settings");
@@ -63,46 +50,9 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  // 🔥 OPTIMIZE 2: INITIAL THEME + SYNC
-  useEffect(() => {
-    const root = document.documentElement;
-    
-    // Set initial theme (no flash)
-    const applyTheme = () => {
-      root.classList.remove("light", "dark");
-      if (settings.theme === "system") {
-        const systemTheme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
-        root.classList.add(systemTheme);
-      } else {
-        root.classList.add(settings.theme);
-      }
-    };
-
-    // Initial apply
-    applyTheme();
-    
-    // Listen for system changes
-    const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
-    const handleChange = () => settings.theme === "system" && applyTheme();
-    
-    mediaQuery.addEventListener("change", handleChange);
-    return () => mediaQuery.removeEventListener("change", handleChange);
-  }, [settings.theme]);
-
-  // 🔥 HELPER FUNCTIONS
-  const toggleSounds = useCallback(() => {
-    setSettings(prev => ({ ...prev, playSounds: !prev.playSounds }));
-  }, []);
-
-  const setTheme = useCallback((theme: Theme) => {
-    setSettings(prev => ({ ...prev, theme }));
-  }, []);
-
+  // Loại bỏ useEffect cho theme, áp dụng dark cố định trong globals.css
   const value: SettingsContextType = {
     settings,
-    setSettings,
-    toggleSounds, // 🔥 BONUS
-    setTheme       // 🔥 BONUS
   };
 
   return (

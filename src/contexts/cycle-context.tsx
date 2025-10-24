@@ -35,7 +35,7 @@ export function useCycle() {
 
 export function CycleProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
-  const [allCycles, setAllCycles] = useState<Cycle[]>(mockCycles); // Use mockCycles array
+  const [allCycles, setAllCycles] = useState<Cycle[]>(mockCycles);
   const [privateCycles, setPrivateCycles] = useState<Cycle[]>([]);
   const [currentCycle, setCurrentCycle] = useState<Cycle | null>(null);
   const [currentPhaseIndex, setCurrentPhaseIndex] = useState(0);
@@ -49,7 +49,7 @@ export function CycleProvider({ children }: { children: ReactNode }) {
         setPrivateCycles(privateCyclesData);
       } catch (error) {
         console.error("Failed to load cycles", error);
-        setAllCycles(mockCycles); // Fallback to mock data
+        setAllCycles(mockCycles);
         setPrivateCycles([]);
       }
     };
