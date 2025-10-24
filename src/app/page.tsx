@@ -2,7 +2,7 @@
 
 import { useTimer } from "@/contexts/timer-context";
 import { CycleList } from "@/components/app/cycle-list";
-import { TimerDisplay } from "./timer-display";
+import { TimerDisplay } from "@/components/app/timer-display";
 import { cn } from "@/lib/utils";
 import { useCycle } from "@/contexts/cycle-context";
 
