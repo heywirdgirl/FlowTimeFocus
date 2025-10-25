@@ -1,5 +1,5 @@
-// src/lib/mock-data.ts - FINAL VERSION (Oct 21, 2025) - DAL COMPATIBLE
-import { Cycle, Phase, AudioAsset, TrainingHistory } from "@/lib/types";
+// src/lib/mock-data.ts
+import { Cycle, Phase, AudioAsset } from "@/lib/types";
 
 export const mockAudioLibrary: AudioAsset[] = [
   {
@@ -16,8 +16,6 @@ export const mockAudioLibrary: AudioAsset[] = [
   },
 ];
 
-
-// 🔥 POMODORO CLASSIC - 8 PHASES
 export const pomodoroCycle: Cycle = {
   id: "cycle_pomodoro",
   name: "Pomodoro Classic",
@@ -32,12 +30,14 @@ export const pomodoroCycle: Cycle = {
     { id: "p8", title: "Long Break", duration: 15, soundFile: { url: mockAudioLibrary[1].url, name: mockAudioLibrary[1].name }, removable: false },
   ],
   isPublic: true,
-  userId: null, // 🔥 NEW: Replace authorId
+  authorId: null,
+  authorName: "System",
+  likes: 0,
+  shares: 0,
   createdAt: "2025-09-23T10:00:00Z",
   updatedAt: "2025-09-23T10:00:00Z",
 };
 
-// 🔥 WIM HOF MORNING - 3 PHASES
 export const wimHofCycle: Cycle = {
   id: "cycle_template_wimhof",
   name: "Wim Hof Morning",
@@ -47,31 +47,31 @@ export const wimHofCycle: Cycle = {
     { id: "phase_3", title: "Recovery Breath", duration: 0.5, soundFile: { url: mockAudioLibrary[1].url, name: mockAudioLibrary[1].name }, removable: false },
   ],
   isPublic: true,
-  userId: null, // 🔥 NEW: Replace authorId
+  authorId: null,
+  authorName: "System",
+  likes: 0,
+  shares: 0,
   createdAt: "2025-09-22T23:00:00Z",
   updatedAt: "2025-09-22T23:00:00Z",
 };
 
 export const defaultCycle: Cycle = {
-  id: "cycle_template_wimhof",
-  name: "Wim Hof Morning",
+  id: "cycle_template_default",
+  name: "Default Cycle",
   phases: [
-    { id: "phase_1", title: "Deep Breathing", duration: 1, soundFile: { url: mockAudioLibrary[0].url, name: mockAudioLibrary[0].name }, removable: false },
-    { id: "phase_2", title: "Breath Hold", duration: 1.5, soundFile: { url: mockAudioLibrary[0].url, name: mockAudioLibrary[0].name }, removable: false },
-    { id: "phase_3", title: "Recovery Breath", duration: 0.5, soundFile: { url: mockAudioLibrary[1].url, name: mockAudioLibrary[1].name }, removable: false },
+    { id: "phase_1", title: "Work", duration: 25, soundFile: { url: mockAudioLibrary[0].url, name: mockAudioLibrary[0].name }, removable: false },
+    { id: "phase_2", title: "Break", duration: 5, soundFile: { url: mockAudioLibrary[0].url, name: mockAudioLibrary[0].name }, removable: false },
   ],
   isPublic: true,
-  userId: null, // 🔥 NEW: Replace authorId
+  authorId: null,
+  authorName: "System",
+  likes: 0,
+  shares: 0,
   createdAt: "2025-09-22T23:00:00Z",
   updatedAt: "2025-09-22T23:00:00Z",
 };
 
-// 🔥 MOCK USER PROFILE - REMOVE privateCycles
-
-
-// 🔥 DEFAULT EXPORT - ADD mockCycles ARRAY
 export default {
   mockAudioLibrary,
-  mockCycles: [pomodoroCycle, wimHofCycle, defaultCycle] // 🔥 NEW: Export as array
- 
+  mockCycles: [pomodoroCycle, wimHofCycle, defaultCycle],
 };
