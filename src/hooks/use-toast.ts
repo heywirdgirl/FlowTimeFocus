@@ -2,6 +2,7 @@
 
 // Inspired by react-hot-toast library
 import * as React from "react"
+import { useRouter } from "next/navigation"; // Thêm để navigate login
 
 import type {
   ToastActionElement,
@@ -171,7 +172,26 @@ function toast({ ...props }: Toast) {
   }
 }
 
+// 🔥 THÊM HÀM TIỆN ÍCH CHO LOGIN PROMPT
+function showLoginPrompt(action: string, router?: any) {
+  const defaultRouter = router || { push: () => {} }; // Fallback nếu không truyền router
+  toast({
+    title: "Cần đăng nhập để tùy chỉnh",
+    description: `Bạn muốn ${action}? Đăng nhập để lưu cycle cá nhân nhé! 👋`,
+    action: (
+      <button
+        onClick={() => defaultRouter.push("/login")} // Navigate đến trang login
+        className="inline-flex h-10 items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow transition-colors hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none"
+      >
+        Đăng nhập
+      </button>
+    ),
+    duration: 5000, // Tự động dismiss sau 5s
+  });
+}
+
 function useToast() {
+  const router = useRouter(); // Lấy router để dùng trong prompt
   const [state, setState] = React.useState<State>(memoryState)
 
   React.useEffect(() => {
@@ -188,7 +208,8 @@ function useToast() {
     ...state,
     toast,
     dismiss: (toastId?: string) => dispatch({ type: "DISMISS_TOAST", toastId }),
+    showLoginPrompt: (action: string) => showLoginPrompt(action, router), // Export hàm prompt
   }
 }
 
-export { useToast, toast }
+export { useToast, toast, showLoginPrompt } // Export thêm showLoginPrompt

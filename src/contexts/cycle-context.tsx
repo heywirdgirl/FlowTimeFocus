@@ -1,4 +1,3 @@
-// src/contexts/cycle-context.tsx
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
@@ -83,12 +82,20 @@ export function CycleProvider({ children }: { children: ReactNode }) {
     }
   }, [allCycles, currentCycle]);
 
+  // 🔥 THÊM KIỂM TRA AUTH CHO TẤT CẢ HÀM WRITE/EDIT
+  const requireAuth = (action: string) => {
+    if (!user) {
+      throw new Error(`Please log in to ${action} cycles`);
+    }
+  };
+
   const createCycle = async (cycle: Omit<Cycle, "id">) => {
+    requireAuth("create");
     try {
       if (!cycle.phases.every((phase) => phase.duration > 0 && phase.title)) {
         throw new Error("Invalid phase data: duration must be positive and title is required");
       }
-      const newCycle = await createCycle(cycle, user?.uid, user?.displayName);
+      const newCycle = await createCycle(cycle, user.uid, user.displayName); // Bỏ ? vì đã check
       setAllCycles((prev) => [...prev, newCycle]);
       if (!newCycle.isPublic) {
         setPrivateCycles((prev) => [...prev, newCycle]);
@@ -103,8 +110,9 @@ export function CycleProvider({ children }: { children: ReactNode }) {
   };
 
   const updateCycle = async (cycleId: string, updatedData: Partial<Cycle>) => {
+    requireAuth("update");
     try {
-      await updateCycle(cycleId, updatedData, user?.uid);
+      await updateCycle(cycleId, updatedData, user.uid); // Bỏ ?
       setAllCycles((prev) =>
         prev.map((c) => (c.id === cycleId ? { ...c, ...updatedData } : c))
       );
@@ -121,8 +129,9 @@ export function CycleProvider({ children }: { children: ReactNode }) {
   };
 
   const deleteCycle = async (cycleId: string) => {
+    requireAuth("delete");
     try {
-      await deleteCycle(cycleId, user?.uid);
+      await deleteCycle(cycleId, user.uid); // Bỏ ?
       setAllCycles((prev) => prev.filter((c) => c.id !== cycleId));
       setPrivateCycles((prev) => prev.filter((c) => c.id !== cycleId));
       if (currentCycle?.id === cycleId) {
@@ -135,6 +144,7 @@ export function CycleProvider({ children }: { children: ReactNode }) {
   };
 
   const updatePhase = async (cycleId: string, phaseId: string, updates: Partial<Phase>) => {
+    requireAuth("update");
     try {
       const cycle = allCycles.find((c) => c.id === cycleId);
       if (!cycle) throw new Error("Cycle not found");
@@ -150,6 +160,7 @@ export function CycleProvider({ children }: { children: ReactNode }) {
   };
 
   const addPhase = async (cycleId: string, newPhase: Partial<Phase>) => {
+    requireAuth("add phases to");
     try {
       const cycle = allCycles.find((c) => c.id === cycleId);
       if (!cycle) throw new Error("Cycle not found");
@@ -164,6 +175,7 @@ export function CycleProvider({ children }: { children: ReactNode }) {
   };
 
   const deletePhase = async (cycleId: string, phaseId: string) => {
+    requireAuth("delete phases from");
     try {
       const cycle = allCycles.find((c) => c.id === cycleId);
       if (!cycle) throw new Error("Cycle not found");
@@ -177,6 +189,7 @@ export function CycleProvider({ children }: { children: ReactNode }) {
   };
 
   const saveCycleChanges = async (cycleId: string) => {
+    requireAuth("save changes to");
     try {
       const cycle = allCycles.find((c) => c.id === cycleId);
       if (!cycle) throw new Error("Cycle not found");

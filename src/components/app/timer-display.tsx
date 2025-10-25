@@ -1,4 +1,3 @@
-// src/components/app/TimerDisplay.tsx
 "use client";
 
 import { useTimer } from "@/contexts/timer-context";
@@ -16,6 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from ".
 import { useHistory } from "@/contexts/history-context";
 import { v4 as uuidv4 } from "uuid";
 import { useAuth } from "@/contexts/auth-context";
+import { useToast } from "@/hooks/use-toast";
 
 const formatTime = (seconds: number) => {
   const mins = Math.floor(seconds / 60);
@@ -107,6 +107,7 @@ export function TimerDisplay() {
   } = useCycle();
   const { logSession } = useHistory();
   const { user } = useAuth();
+  const { toast, showLoginPrompt } = useToast();
 
   const [isDirty, setIsDirty] = useState(false);
   const [isEditingCycle, setIsEditingCycle] = useState(false);
@@ -142,9 +143,26 @@ export function TimerDisplay() {
     );
   }
 
+  const handleError = (error: unknown, action: string) => {
+    if (error instanceof Error && error.message.includes("Please log in")) {
+      showLoginPrompt(action);
+    } else {
+      console.error(error);
+      toast({
+        title: "Lỗi",
+        description: "Có lỗi xảy ra khi thực hiện hành động này.",
+        variant: "destructive",
+      });
+    }
+  };
+
   const handleCycleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    updateCycle(currentCycle.id, { name: e.target.value });
-    setIsDirty(true);
+    try {
+      updateCycle(currentCycle.id, { name: e.target.value });
+      setIsDirty(true);
+    } catch (error) {
+      handleError(error, "thay đổi tên cycle");
+    }
   };
 
   const handleSavePhase = async (phaseId: string, updates: Partial<Phase>) => {
@@ -153,7 +171,7 @@ export function TimerDisplay() {
       setEditingPhaseId(null);
       setIsDirty(true);
     } catch (error) {
-      console.error("Failed to save phase", error);
+      handleError(error, "sửa phase");
     }
   };
 
@@ -163,7 +181,7 @@ export function TimerDisplay() {
       setIsAddingPhase(false);
       setIsDirty(true);
     } catch (error) {
-      console.error("Failed to add phase", error);
+      handleError(error, "thêm phase");
     }
   };
 
@@ -172,7 +190,7 @@ export function TimerDisplay() {
       await deletePhase(currentCycle.id, phaseId);
       setIsDirty(true);
     } catch (error) {
-      console.error("Failed to delete phase", error);
+      handleError(error, "xóa phase");
     }
   };
 
@@ -181,7 +199,7 @@ export function TimerDisplay() {
       await saveCycleChanges(currentCycle.id);
       setIsDirty(false);
     } catch (error) {
-      console.error("Failed to save changes", error);
+      handleError(error, "lưu thay đổi");
     }
   };
 
@@ -207,7 +225,7 @@ export function TimerDisplay() {
       };
       await createCycle(newCycle);
     } catch (error) {
-      console.error("Failed to create new cycle", error);
+      handleError(error, "tạo cycle mới");
     }
   };
 
@@ -217,6 +235,9 @@ export function TimerDisplay() {
   };
 
   const isTemplate = currentCycle.id.startsWith("cycle_template_");
+
+  // 🔥 DISABLE EDIT ICONS NÚT CHO GUEST
+  const canEdit = !!user && !isTemplate;
 
   return (
     <Card className="w-full text-center border-2 shadow-lg relative">
@@ -235,7 +256,19 @@ export function TimerDisplay() {
         ) : (
           <div className="flex items-center justify-center gap-2">
             <h2 className="text-3xl font-headline tracking-wider">{currentCycle.name}</h2>
-            <Button variant="ghost" size="icon" onClick={() => setIsEditingCycle(true)}>
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              onClick={() => {
+                if (!canEdit) {
+                  showLoginPrompt("chỉnh sửa cycle");
+                  return;
+                }
+                setIsEditingCycle(true);
+              }}
+              disabled={!canEdit}
+              title={!canEdit ? "Đăng nhập để chỉnh sửa" : "Edit Cycle"}
+            >
               <Edit className="h-5 w-5" />
             </Button>
           </div>
@@ -326,8 +359,15 @@ export function TimerDisplay() {
                   <Button
                     variant="ghost"
                     size="icon"
-                    onClick={() => setEditingPhaseId(editingPhaseId === phase.id ? null : phase.id)}
-                    title="Edit Phase"
+                    onClick={() => {
+                      if (!canEdit) {
+                        showLoginPrompt("chỉnh sửa phase");
+                        return;
+                      }
+                      setEditingPhaseId(editingPhaseId === phase.id ? null : phase.id);
+                    }}
+                    title={!canEdit ? "Đăng nhập để chỉnh sửa phase" : "Edit Phase"}
+                    disabled={!canEdit}
                   >
                     <Edit className="h-4 w-4" />
                   </Button>
@@ -335,9 +375,16 @@ export function TimerDisplay() {
                     <Button
                       variant="ghost"
                       size="icon"
-                      onClick={() => handleDeletePhase(phase.id)}
-                      title="Delete Phase"
-                      className="text-destructive hover:text-destructive"
+                      onClick={() => {
+                        if (!canEdit) {
+                          showLoginPrompt("xóa phase");
+                          return;
+                        }
+                        handleDeletePhase(phase.id);
+                      }}
+                      title={!canEdit ? "Đăng nhập để xóa phase" : "Delete Phase"}
+                      disabled={!canEdit}
+                      className={cn("text-destructive hover:text-destructive", !canEdit && "opacity-50 cursor-not-allowed")}
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
@@ -354,7 +401,20 @@ export function TimerDisplay() {
             ))}
           </div>
           <div className="flex justify-center items-center">
-            <Button variant="outline" size="sm" onClick={() => setIsAddingPhase(true)} title="Add Phase" className="mt-2">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => {
+                if (!canEdit) {
+                  showLoginPrompt("thêm phase");
+                  return;
+                }
+                setIsAddingPhase(true);
+              }} 
+              title={!canEdit ? "Đăng nhập để thêm phase" : "Add Phase"} 
+              disabled={!canEdit}
+              className={cn("mt-2", !canEdit && "opacity-50 cursor-not-allowed")}
+            >
               <Plus className="mr-2 h-4 w-4" /> Add Phase
             </Button>
           </div>
@@ -404,15 +464,33 @@ export function TimerDisplay() {
           <div className="text-sm text-muted-foreground pt-2">Total duration: {totalDuration.toFixed(1)}m</div>
         </div>
         <div className="flex items-center justify-center gap-2 pt-4 border-t w-full max-w-sm mx-auto">
-          <Button onClick={handleCreateNewCycle} size="sm" variant="outline" className="w-full">
+          <Button 
+            onClick={() => {
+              if (!canEdit) {
+                showLoginPrompt("tạo cycle mới");
+                return;
+              }
+              handleCreateNewCycle();
+            }} 
+            size="sm" 
+            variant="outline" 
+            disabled={!canEdit}
+            className={cn("w-full", !canEdit && "opacity-50 cursor-not-allowed")}
+          >
             <Copy className="mr-2 h-4 w-4" />
             New Cycle
           </Button>
           <Button
-            onClick={handleSaveChanges}
+            onClick={() => {
+              if (!canEdit) {
+                showLoginPrompt("lưu thay đổi");
+                return;
+              }
+              handleSaveChanges();
+            }}
             size="sm"
             variant="outline"
-            disabled={isTemplate || !isDirty}
+            disabled={isTemplate || !isDirty || !canEdit}
             className="w-full"
           >
             <Save className="mr-2 h-4 w-4" />
