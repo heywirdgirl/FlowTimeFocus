@@ -52,6 +52,19 @@ export const wimHofCycle: Cycle = {
   updatedAt: "2025-09-22T23:00:00Z",
 };
 
+export const defaultCycle: Cycle = {
+  id: "cycle_template_wimhof",
+  name: "Wim Hof Morning",
+  phases: [
+    { id: "phase_1", title: "Deep Breathing", duration: 1, soundFile: { url: mockAudioLibrary[0].url, name: mockAudioLibrary[0].name }, removable: false },
+    { id: "phase_2", title: "Breath Hold", duration: 1.5, soundFile: { url: mockAudioLibrary[0].url, name: mockAudioLibrary[0].name }, removable: false },
+    { id: "phase_3", title: "Recovery Breath", duration: 0.5, soundFile: { url: mockAudioLibrary[1].url, name: mockAudioLibrary[1].name }, removable: false },
+  ],
+  isPublic: true,
+  userId: null, // 🔥 NEW: Replace authorId
+  createdAt: "2025-09-22T23:00:00Z",
+  updatedAt: "2025-09-22T23:00:00Z",
+};
 
 // 🔥 MOCK USER PROFILE - REMOVE privateCycles
 
