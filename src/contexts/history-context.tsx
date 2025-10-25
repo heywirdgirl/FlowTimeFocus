@@ -1,4 +1,4 @@
-
+// src/contexts/history-context.tsx - FINAL VERSION (Oct 25, 2025)
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
@@ -6,7 +6,7 @@ import { AuthContext } from "./auth-context";
 import { 
   getTrainingHistory, 
   createTrainingHistory, 
-  deleteTrainingHistory, // ADDED: Import for delete function
+  deleteTrainingHistory,
   getHistoryStats,
   HistoryStats 
 } from "@/dal";
@@ -33,7 +33,6 @@ export function useHistory() {
   return context;
 }
 
-// REMOVED: Unused currentCycle prop
 interface HistoryProviderProps {
   children: ReactNode;
 }
@@ -50,7 +49,10 @@ export function HistoryProvider({ children }: HistoryProviderProps) {
 
   useEffect(() => {
     const loadHistory = async () => {
-      if (authLoading) { setIsLoading(true); return; }
+      if (authLoading) {
+        setIsLoading(true);
+        return;
+      }
       setIsLoading(true);
       
       if (!user) {
@@ -63,7 +65,10 @@ export function HistoryProvider({ children }: HistoryProviderProps) {
       }
 
       try {
-        const [history, statsData] = await Promise.all([getTrainingHistory(), getHistoryStats()]);
+        const [history, statsData] = await Promise.all([
+          getTrainingHistory(user.uid), // Truyền user.uid
+          getHistoryStats(user.uid) // Truyền user.uid
+        ]);
         setTrainingHistory(history);
         setStats(statsData);
         setRecentSessions(history.slice(0, 5));
@@ -76,6 +81,7 @@ export function HistoryProvider({ children }: HistoryProviderProps) {
         });
         setCycleStats(cycleMap);
       } catch (error) {
+        console.error('Error loading history:', error);
         toast({ title: "Load Error", description: "Failed to load history", variant: "destructive" });
       } finally {
         setIsLoading(false);
@@ -99,7 +105,8 @@ export function HistoryProvider({ children }: HistoryProviderProps) {
         status,
         notes: status === 'interrupted' ? 'Session interrupted' : undefined
       };
-      const newHistory = await createTrainingHistory(historyData);
+      
+      const newHistory = await createTrainingHistory(user.uid, historyData); // Truyền user.uid
       
       setTrainingHistory(prev => [newHistory, ...prev]);
       setRecentSessions(prev => [newHistory, ...prev.slice(0, 4)]);
@@ -107,23 +114,29 @@ export function HistoryProvider({ children }: HistoryProviderProps) {
         ...stats,
         totalSessions: stats.totalSessions + 1,
         totalTime: stats.totalTime + totalDuration,
-        completedSessions: status === 'completed' ? stats.completedSessions + 1 : stats.completedSessions
+        completedSessions: status === 'completed' ? stats.completedSessions + 1 : stats.completedSessions,
+        avgSessionTime: stats.totalSessions + 1 > 0 
+          ? Math.round((stats.totalTime + totalDuration) / (stats.totalSessions + 1))
+          : 0
       };
       setStats(newStats);
       
       toast({ title: status === 'completed' ? "🎉 Completed!" : "⏸️ Paused", description: `${totalDuration}m session logged!` });
     } catch (error: any) {
+      console.error('Error logging session:', error);
       toast({ title: "Error", description: error.message || "Failed to log session", variant: "destructive" });
     }
   };
 
   const deleteSession = async (historyId: string) => {
+    if (!user) return;
     try {
-      await deleteTrainingHistory(historyId); // FIXED: Function is now imported
+      await deleteTrainingHistory(user.uid, historyId); // Truyền user.uid
       setTrainingHistory(prev => prev.filter(h => h.id !== historyId));
       setRecentSessions(prev => prev.filter(h => h.id !== historyId));
       toast({ title: "Deleted ✅", description: "Session removed!" });
     } catch (error: any) {
+      console.error('Error deleting session:', error);
       toast({ title: "Error", description: error.message || "Delete failed.", variant: "destructive" });
     }
   };
