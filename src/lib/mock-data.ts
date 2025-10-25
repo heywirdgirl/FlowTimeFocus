@@ -109,7 +109,6 @@ export const mockUserProfile = {
   userId: "user123",
   email: "user@example.com",
   displayName: "John Doe",
-  audioLibrary: mockAudioLibrary,
   createdAt: new Date().toISOString(),
   lastLogin: new Date().toISOString(),
 };

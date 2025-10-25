@@ -1,8 +1,10 @@
+// src/components/app/header.tsx
+
 "use client";
 
 import { useState, useContext } from "react";
 import Link from "next/link";
-import { CircleUser, LogOut, Mail, BarChart, Menu } from "lucide-react"; // Thêm Menu icon
+import { CircleUser, LogOut, Mail, BarChart, Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -13,28 +15,23 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import {
-  getAuth,
-  GoogleAuthProvider,
-  signInWithPopup,
-  signOut,
-} from "firebase/auth";
+import { GoogleAuthProvider, signInWithPopup, signOut } from "firebase/auth"; // Giữ lại các import cần thiết
+import { auth } from "@/lib/firebase"; // Import auth từ firebase.ts
 import { AuthContext } from "@/contexts/auth-context";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { EmailAuthDialog } from "./email-auth-dialog";
 import { toast } from "@/hooks/use-toast";
 
 export function Header() {
-  const [isSheetOpen, setIsSheetOpen] = useState(false); // Quản lý trạng thái menu mobile
+  const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [isEmailAuthOpen, setIsEmailAuthOpen] = useState(false);
   const [emailAuthMode, setEmailAuthMode] = useState<'signIn' | 'signUp'>('signIn');
-  const auth = getAuth();
   const { user } = useContext(AuthContext);
 
   const handleGoogleSignIn = async () => {
     const provider = new GoogleAuthProvider();
     try {
-      await signInWithPopup(auth, provider);
+      await signInWithPopup(auth, provider); // Sử dụng auth từ firebase.ts
     } catch (error) {
       console.error("Error signing in with Google: ", error);
     }
@@ -42,7 +39,7 @@ export function Header() {
 
   const handleSignOut = async () => {
     try {
-      await signOut(auth);
+      await signOut(auth); // Sử dụng auth từ firebase.ts
       toast({
         title: "Signed Out",
         description: "You have been successfully signed out.",
@@ -97,21 +94,21 @@ export function Header() {
               <Link
                 href="/"
                 className="flex items-center gap-2 text-lg font-semibold"
-                onClick={() => setIsSheetOpen(false)} // Đóng menu khi click
+                onClick={() => setIsSheetOpen(false)}
               >
                 <span className="sr-only">Flowtime</span>
               </Link>
               <Link
                 href="/"
                 className="hover:text-foreground"
-                onClick={() => setIsSheetOpen(false)} // Đóng menu khi click
+                onClick={() => setIsSheetOpen(false)}
               >
                 Dashboard
               </Link>
               <Link
                 href="/history"
                 className="hover:text-foreground flex items-center gap-1"
-                onClick={() => setIsSheetOpen(false)} // Đóng menu khi click
+                onClick={() => setIsSheetOpen(false)}
               >
                 <BarChart className="h-4 w-4" /> History
               </Link>

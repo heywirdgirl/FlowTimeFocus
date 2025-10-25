@@ -1,4 +1,4 @@
-
+// src/components/app/email-auth-dialog.tsx
 "use client";
 
 import { useState, useEffect } from "react";
