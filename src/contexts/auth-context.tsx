@@ -1,4 +1,3 @@
-// src/contexts/auth-context.tsx 
 "use client";
 
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
@@ -6,6 +5,7 @@ import { getAuth, onAuthStateChanged, User } from "firebase/auth";
 import { app } from "@/lib/firebase";
 import { UserProfile } from "@/lib/types"; // IMPORT UserProfile type
 import { getUserProfile, createUserProfile } from "@/dal/user-dal"; // IMPORT DAL functions
+import { createTrainingHistory } from "@/dal/history-dal"; // IMPORT để tạo lịch sử ban đầu
 
 interface AuthContextType {
     user: User | null;
@@ -38,14 +38,30 @@ export function AuthProvider({ children }: AuthProviderProps) {
           // User is signed in, see if they have a profile
           let profile = await getUserProfile(user.uid);
           if (!profile) {
-            // If not, create one
-            console.log("Creating new user profile for UID:", user.uid);
+            // If not, create a new profile and initial training history
+            console.log("Creating new user profile and initial training history for UID:", user.uid);
             profile = await createUserProfile(user.uid, user.email, user.displayName);
+
+            // Tạo tài liệu ban đầu trong trainingHistories để thể hiện chưa luyện tập
+            const initialHistory = {
+              cycleId: "none", // Giá trị đặc biệt để chỉ chưa luyện tập
+              name: "No Training Yet",
+              startTime: new Date().toISOString(),
+              endTime: new Date().toISOString(),
+              totalDuration: 0,
+              cycleCount: 0,
+              completedAt: new Date().toISOString(),
+              status: "not_started", // Trạng thái đặc biệt
+              notes: "This is an initial record indicating no training has been done."
+            };
+            await createTrainingHistory(user.uid, initialHistory); // Tạo tài liệu ban đầu
+          } else {
+            console.log("Profile found for UID:", user.uid);
           }
           setUserProfile(profile);
         } catch (error) {
-            console.error("Error fetching or creating user profile:", error);
-            setUserProfile(null); // Clear profile on error
+          console.error("Error fetching or creating user profile/training history:", error);
+          setUserProfile(null); // Clear profile on error
         }
       } else {
         // User is signed out
@@ -68,5 +84,5 @@ export function AuthProvider({ children }: AuthProviderProps) {
 }
 
 export const useAuth = () => {
-    return useContext(AuthContext);
+  return useContext(AuthContext);
 };

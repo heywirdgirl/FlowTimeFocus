@@ -16,47 +16,6 @@ export const mockAudioLibrary: AudioAsset[] = [
   },
 ];
 
-// 🔥 MOCK TRAINING HISTORY - RIÊNG BIỆT
-export const mockTrainingHistory: TrainingHistory[] = [
-  {
-    id: "hist1",
-    cycleId: "cycle_pomodoro",
-    name: "Pomodoro Classic",
-    startTime: "2025-09-26T09:00:00Z",
-    endTime: "2025-09-26T11:15:00Z",
-    totalDuration: 135,
-    cycleCount: 1,
-    completedAt: "2025-09-26T11:15:00Z",
-    status: "completed",
-    userId: "user123",
-    notes: "Great focus today!",
-  },
-  {
-    id: "hist2",
-    cycleId: "cycle_template_wimhof",
-    name: "Wim Hof Morning",
-    startTime: "2025-09-26T08:00:00Z",
-    endTime: "2025-09-26T08:03:00Z",
-    totalDuration: 3,
-    cycleCount: 1,
-    completedAt: "2025-09-26T08:03:00Z",
-    status: "completed",
-    userId: "user123",
-  },
-  {
-    id: "hist3",
-    cycleId: "cycle_pomodoro",
-    name: "Pomodoro Classic",
-    startTime: "2025-09-25T14:30:00Z",
-    endTime: "2025-09-25T16:45:00Z",
-    totalDuration: 135,
-    cycleCount: 1,
-    completedAt: "2025-09-25T16:45:00Z",
-    status: "interrupted",
-    userId: "user123",
-    notes: "Got distracted by email",
-  },
-];
 
 // 🔥 POMODORO CLASSIC - 8 PHASES
 export const pomodoroCycle: Cycle = {
@@ -93,30 +52,13 @@ export const wimHofCycle: Cycle = {
   updatedAt: "2025-09-22T23:00:00Z",
 };
 
-// 🔥 DEFAULT CYCLE - WIM HOF CLONE
-export const defaultCycle: Cycle = {
-  id: "cycle_default_wimhof",
-  name: "🏔️ Wim Hof Quick Start",
-  phases: [...wimHofCycle.phases],
-  isPublic: false,
-  userId: "user123", // 🔥 NEW: Private cycle
-  createdAt: new Date().toISOString(),
-  updatedAt: new Date().toISOString(),
-};
 
 // 🔥 MOCK USER PROFILE - REMOVE privateCycles
-export const mockUserProfile = {
-  userId: "user123",
-  email: "user@example.com",
-  displayName: "John Doe",
-  createdAt: new Date().toISOString(),
-  lastLogin: new Date().toISOString(),
-};
+
 
 // 🔥 DEFAULT EXPORT - ADD mockCycles ARRAY
 export default {
   mockAudioLibrary,
-  mockCycles: [pomodoroCycle, wimHofCycle, defaultCycle], // 🔥 NEW: Export as array
-  mockTrainingHistory,
-  mockUserProfile,
+  mockCycles: [pomodoroCycle, wimHofCycle, defaultCycle] // 🔥 NEW: Export as array
+ 
 };
