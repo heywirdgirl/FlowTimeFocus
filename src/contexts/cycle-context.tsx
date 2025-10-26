@@ -1,9 +1,9 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import React, { createContext, useContext, useState, useEffect, ReactNode, useRef, useCallback } from "react";
 import { useAuth } from "./auth-context";
 import { Cycle, Phase, AudioAsset } from "@/lib/types";
-import { getCycles, createCycle, updateCycle, deleteCycle, cloneCycle } from "@/dal"; // 🔥 Thêm cloneCycle
+import { getCycles, updateCycle, deleteCycle } from "@/dal"; // Loại bỏ createCycle, cloneCycleDAL
 import defaultData from "@/lib/mock-data";
 import { v4 as uuidv4 } from "uuid";
 
@@ -21,14 +21,14 @@ interface CycleContextType {
   advancePhase: () => number;
   resetCycle: () => void;
   logTraining: (data: any) => void;
-  createCycle: (cycle: Omit<Cycle, "id">) => Promise<void>;
+  // Loại bỏ createCycle
   updateCycle: (cycleId: string, updatedData: Partial<Cycle>) => Promise<void>;
   deleteCycle: (cycleId: string) => Promise<void>;
   updatePhase: (cycleId: string, phaseId: string, updates: Partial<Phase>) => Promise<void>;
   addPhase: (cycleId: string, newPhase: Partial<Phase>) => Promise<void>;
   deletePhase: (cycleId: string, phaseId: string) => Promise<void>;
   saveCycleChanges: (cycleId: string) => Promise<void>;
-  cloneCycle: (cycleId: string) => Promise<void>; // 🔥 Thêm hàm clone
+  cloneCycle: (cycleId: string) => Promise<void>; // Giữ clone, nhưng từ state
   audioLibrary: AudioAsset[];
   endOfCycleSound: AudioAsset | null;
   setEndOfCycleSound: (sound: AudioAsset | null) => void;
@@ -53,8 +53,11 @@ export function CycleProvider({ children }: { children: ReactNode }) {
     mockAudioLibrary.length > 0 ? mockAudioLibrary[0] : null
   );
 
+  const isCloningRef = useRef(false); // Flag để ngăn loop
+
   useEffect(() => {
     const loadCycles = async () => {
+      if (isCloningRef.current) return; // Skip nếu đang clone
       try {
         const cycles = (await getCycles(user?.uid)) || [];
         let privateCyclesData: Cycle[] = [];
@@ -86,26 +89,6 @@ export function CycleProvider({ children }: { children: ReactNode }) {
   const requireAuth = (action: string) => {
     if (!user) {
       throw new Error(`Please log in to ${action} cycles`);
-    }
-  };
-
-  const createCycle = async (cycle: Omit<Cycle, "id">) => {
-    requireAuth("create");
-    try {
-      if (!cycle.phases.every((phase) => phase.duration > 0 && phase.title)) {
-        throw new Error("Invalid phase data: duration must be positive and title is required");
-      }
-      const newCycle = await createCycle(cycle, user.uid, user.displayName);
-      setAllCycles((prev) => [...prev, newCycle]);
-      if (!newCycle.isPublic) {
-        setPrivateCycles((prev) => [...prev, newCycle]);
-      }
-      if (!currentCycle) {
-        setCurrentCycle(newCycle);
-      }
-    } catch (error) {
-      console.error("Failed to create cycle", error);
-      throw error;
     }
   };
 
@@ -200,19 +183,41 @@ export function CycleProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  // 🔥 THÊM HÀM CLONE CYCLE
-  const cloneCycle = async (cycleId: string) => {
+  // 🔥 SỬA CLONE CYCLE: Chỉ clone từ currentCycle trong state
+  const cloneCycle = useCallback(async (cycleId: string) => {
     requireAuth("clone");
-    try {
-      const newCycle = await cloneCycle(cycleId, user.uid, user.displayName || "Unknown");
-      setAllCycles((prev) => [...prev, newCycle]);
-      setPrivateCycles((prev) => [...prev, newCycle]); // Clone luôn là private
-      setCurrentCycle(newCycle); // Chuyển sang cycle mới
-    } catch (error) {
-      console.error("Failed to clone cycle", error);
-      throw error;
+    if (isCloningRef.current || !currentCycle) {
+      console.warn("Clone in progress or no current cycle");
+      return;
     }
-  };
+    isCloningRef.current = true;
+    try {
+      // Clone trực tiếp từ currentCycle (không cần Firestore)
+      const newCycle: Cycle = {
+        ...currentCycle,
+        id: uuidv4(), // ID mới
+        name: `[Copy] ${currentCycle.name}`,
+        authorId: user.uid,
+        authorName: user.displayName || "Unknown",
+        isPublic: false,
+        likes: 0,
+        shares: 0,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+
+      // Update state
+      setAllCycles((prev) => [...prev, newCycle]);
+      setPrivateCycles((prev) => [...prev, newCycle]);
+      setCurrentCycle(newCycle);
+      console.log("Cloned cycle from state:", newCycle.id); // Debug
+    } catch (error) {
+      console.error("Failed to clone cycle from state", error);
+      throw error;
+    } finally {
+      isCloningRef.current = false;
+    }
+  }, [user, currentCycle]); // Dependencies: user và currentCycle
 
   const advancePhase = () => {
     if (!currentCycle) return 0;
@@ -241,14 +246,13 @@ export function CycleProvider({ children }: { children: ReactNode }) {
     advancePhase,
     resetCycle,
     logTraining,
-    createCycle,
     updateCycle,
     deleteCycle,
     updatePhase,
     addPhase,
     deletePhase,
     saveCycleChanges,
-    cloneCycle, // 🔥 Thêm vào context
+    cloneCycle, // Giữ clone từ state
     audioLibrary: mockAudioLibrary,
     endOfCycleSound,
     setEndOfCycleSound,

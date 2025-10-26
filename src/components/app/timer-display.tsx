@@ -6,7 +6,7 @@ import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
 import { useCycle } from "@/contexts/cycle-context";
 import { Play, Pause, RotateCcw, SkipForward, Edit, Plus, Trash2, Save, Copy } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react"; // Thêm useCallback
 import { cn } from "@/lib/utils";
 import type { Phase } from "@/lib/types";
 import { CycleProgressBar } from "./cycle-progress-bar";
@@ -16,6 +16,7 @@ import { useHistory } from "@/contexts/history-context";
 import { v4 as uuidv4 } from "uuid";
 import { useAuth } from "@/contexts/auth-context";
 import { useToast } from "@/hooks/use-toast";
+import { debounce } from "lodash"; // Cần cài: npm i lodash
 
 const formatTime = (seconds: number) => {
   const mins = Math.floor(seconds / 60);
@@ -99,9 +100,9 @@ export function TimerDisplay() {
     addPhase,
     deletePhase,
     setCurrentPhaseIndex,
-    createCycle,
+    // Loại bỏ createCycle
     saveCycleChanges,
-    cloneCycle, // 🔥 Thêm cloneCycle
+    cloneCycle, // Giữ cloneCycle
     audioLibrary,
     endOfCycleSound,
     setEndOfCycleSound,
@@ -204,21 +205,27 @@ export function TimerDisplay() {
     }
   };
 
-  const handleCreateNewCycle = async () => {
-    if (!user?.uid) {
-      showLoginPrompt("tạo cycle mới");
-      return;
-    }
-    try {
-      console.log("Cloning cycle with ID:", currentCycle.id); // Debug
-      await cloneCycle(currentCycle.id); // 🔥 Gọi cloneCycle thay vì createCycle
-      toast({
-        title: "Thành công",
-        description: `Đã tạo bản sao cycle: [Copy] ${currentCycle.name}`,
-      });
-    } catch (error) {
-      handleError(error, "tạo cycle mới");
-    }
+  const debouncedClone = useCallback(
+    debounce(async () => {
+      if (!user?.uid || !currentCycle) {
+        showLoginPrompt("tạo cycle mới");
+        return;
+      }
+      try {
+        await cloneCycle(currentCycle.id);
+        toast({
+          title: "Thành công",
+          description: `Đã tạo bản sao: [Copy] ${currentCycle.name}`,
+        });
+      } catch (error) {
+        handleError(error, "tạo cycle mới");
+      }
+    }, 500),
+    [user, currentCycle, cloneCycle, showLoginPrompt, toast]
+  );
+
+  const handleCreateNewCycle = () => {
+    debouncedClone();
   };
 
   const handleEndOfCycleSoundChange = (soundUrl: string) => {
@@ -246,9 +253,9 @@ export function TimerDisplay() {
         ) : (
           <div className="flex items-center justify-center gap-2">
             <h2 className="text-3xl font-headline tracking-wider">{currentCycle.name}</h2>
-            <Button 
-              variant="ghost" 
-              size="icon" 
+            <Button
+              variant="ghost"
+              size="icon"
               onClick={() => {
                 if (!canEdit) {
                   showLoginPrompt("chỉnh sửa cycle");
@@ -391,17 +398,17 @@ export function TimerDisplay() {
             ))}
           </div>
           <div className="flex justify-center items-center">
-            <Button 
-              variant="outline" 
-              size="sm" 
+            <Button
+              variant="outline"
+              size="sm"
               onClick={() => {
                 if (!canEdit) {
                   showLoginPrompt("thêm phase");
                   return;
                 }
                 setIsAddingPhase(true);
-              }} 
-              title={!canEdit ? "Đăng nhập để thêm phase" : "Add Phase"} 
+              }}
+              title={!canEdit ? "Đăng nhập để thêm phase" : "Add Phase"}
               disabled={!canEdit}
               className={cn("mt-2", !canEdit && "opacity-50 cursor-not-allowed")}
             >
@@ -454,10 +461,10 @@ export function TimerDisplay() {
           <div className="text-sm text-muted-foreground pt-2">Total duration: {totalDuration.toFixed(1)}m</div>
         </div>
         <div className="flex items-center justify-center gap-2 pt-4 border-t w-full max-w-sm mx-auto">
-          <Button 
-            onClick={handleCreateNewCycle} // 🔥 Đã sửa thành clone
-            size="sm" 
-            variant="outline" 
+          <Button
+            onClick={handleCreateNewCycle}
+            size="sm"
+            variant="outline"
             disabled={!canEdit}
             className={cn("w-full", !canEdit && "opacity-50 cursor-not-allowed")}
           >
