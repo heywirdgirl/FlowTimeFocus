@@ -124,3 +124,75 @@
 [debug] [2025-10-26T09:24:43.068Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform","https://www.googleapis.com/auth/userinfo.email"]
 [debug] [2025-10-26T09:24:43.069Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform","https://www.googleapis.com/auth/userinfo.email"]
 [debug] [2025-10-26T09:24:43.069Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform","https://www.googleapis.com/auth/userinfo.email"]
+[error] Failed to fetch Firebase Project from Studio Workspace because WORKSPACE_SLUG environment variable is empty
+[error] Failed to fetch Firebase Project from Studio Workspace because WORKSPACE_SLUG environment variable is empty
+[error] Failed to fetch Firebase Project from Studio Workspace because WORKSPACE_SLUG environment variable is empty
+[error] Failed to fetch Firebase Project from Studio Workspace because WORKSPACE_SLUG environment variable is empty
+[debug] [2025-10-26T10:46:32.580Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform","https://www.googleapis.com/auth/userinfo.email"]
+[debug] [2025-10-26T10:46:32.585Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform","https://www.googleapis.com/auth/userinfo.email"]
+[debug] [2025-10-26T10:46:49.800Z] Running auto auth
+[debug] [2025-10-26T10:46:49.801Z] Running auto auth
+[debug] [2025-10-26T10:46:49.847Z] No OAuth tokens found
+[debug] [2025-10-26T10:46:49.852Z] No OAuth tokens found
+[debug] [2025-10-26T10:46:49.869Z] No OAuth tokens found
+[debug] [2025-10-26T10:46:49.870Z] No OAuth tokens found
+[debug] [2025-10-26T10:46:49.872Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/studio-7242952701-d91b7/services/firebasedataconnect.googleapis.com [none]
+[debug] [2025-10-26T10:46:49.872Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/studio-7242952701-d91b7/services/firebasedataconnect.googleapis.com x-goog-quota-user=projects/studio-7242952701-d91b7
+[debug] [2025-10-26T10:46:49.875Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/studio-7242952701-d91b7/services/cloudfunctions.googleapis.com [none]
+[debug] [2025-10-26T10:46:49.875Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/studio-7242952701-d91b7/services/cloudfunctions.googleapis.com x-goog-quota-user=projects/studio-7242952701-d91b7
+[debug] [2025-10-26T10:46:49.877Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/studio-7242952701-d91b7/services/firebaseapphosting.googleapis.com [none]
+[debug] [2025-10-26T10:46:49.877Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/studio-7242952701-d91b7/services/firebaseapphosting.googleapis.com x-goog-quota-user=projects/studio-7242952701-d91b7
+[debug] [2025-10-26T10:46:49.879Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/studio-7242952701-d91b7/services/firebaseio.com [none]
+[debug] [2025-10-26T10:46:49.879Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/studio-7242952701-d91b7/services/firebaseio.com x-goog-quota-user=projects/studio-7242952701-d91b7
+[debug] [2025-10-26T10:46:49.917Z] No OAuth tokens found
+[debug] [2025-10-26T10:46:49.921Z] No OAuth tokens found
+[debug] [2025-10-26T10:46:49.929Z] No OAuth tokens found
+[debug] [2025-10-26T10:46:49.929Z] No OAuth tokens found
+[debug] [2025-10-26T10:46:49.929Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/studio-7242952701-d91b7/services/firebasedataconnect.googleapis.com [none]
+[debug] [2025-10-26T10:46:49.930Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/studio-7242952701-d91b7/services/firebasedataconnect.googleapis.com x-goog-quota-user=projects/studio-7242952701-d91b7
+[debug] [2025-10-26T10:46:49.940Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/studio-7242952701-d91b7/services/cloudfunctions.googleapis.com [none]
+[debug] [2025-10-26T10:46:49.940Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/studio-7242952701-d91b7/services/cloudfunctions.googleapis.com x-goog-quota-user=projects/studio-7242952701-d91b7
+[debug] [2025-10-26T10:46:49.943Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/studio-7242952701-d91b7/services/firebaseapphosting.googleapis.com [none]
+[debug] [2025-10-26T10:46:49.943Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/studio-7242952701-d91b7/services/firebaseapphosting.googleapis.com x-goog-quota-user=projects/studio-7242952701-d91b7
+[debug] [2025-10-26T10:46:49.945Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/studio-7242952701-d91b7/services/firebaseio.com [none]
+[debug] [2025-10-26T10:46:49.945Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/studio-7242952701-d91b7/services/firebaseio.com x-goog-quota-user=projects/studio-7242952701-d91b7
+[debug] [2025-10-26T10:46:50.917Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/studio-7242952701-d91b7/services/firebaseio.com 403
+[debug] [2025-10-26T10:46:50.918Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/studio-7242952701-d91b7/services/firebaseio.com [omitted]
+[debug] [2025-10-26T10:46:50.937Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/studio-7242952701-d91b7/services/firebaseio.com 403
+[debug] [2025-10-26T10:46:50.940Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/studio-7242952701-d91b7/services/firebaseio.com [omitted]
+[debug] [2025-10-26T10:46:50.959Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/studio-7242952701-d91b7/services/firebasedataconnect.googleapis.com 200
+[debug] [2025-10-26T10:46:50.959Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/studio-7242952701-d91b7/services/firebasedataconnect.googleapis.com [omitted]
+[debug] [2025-10-26T10:46:50.983Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/studio-7242952701-d91b7/services/firebasedataconnect.googleapis.com 200
+[debug] [2025-10-26T10:46:50.986Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/studio-7242952701-d91b7/services/firebasedataconnect.googleapis.com [omitted]
+[debug] [2025-10-26T10:46:50.999Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/studio-7242952701-d91b7/services/firebaseapphosting.googleapis.com 200
+[debug] [2025-10-26T10:46:50.999Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/studio-7242952701-d91b7/services/firebaseapphosting.googleapis.com [omitted]
+[debug] [2025-10-26T10:46:51.010Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/studio-7242952701-d91b7/services/firebaseapphosting.googleapis.com 200
+[debug] [2025-10-26T10:46:51.011Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/studio-7242952701-d91b7/services/firebaseapphosting.googleapis.com [omitted]
+[debug] [2025-10-26T10:46:51.017Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/studio-7242952701-d91b7/services/cloudfunctions.googleapis.com 200
+[debug] [2025-10-26T10:46:51.017Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/studio-7242952701-d91b7/services/cloudfunctions.googleapis.com [omitted]
+[debug] [2025-10-26T10:46:51.021Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/studio-7242952701-d91b7/services/cloudfunctions.googleapis.com 200
+[debug] [2025-10-26T10:46:51.021Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/studio-7242952701-d91b7/services/cloudfunctions.googleapis.com [omitted]
+[error] Failed to fetch Firebase Project from Studio Workspace because WORKSPACE_SLUG environment variable is empty
+[error] Failed to fetch Firebase Project from Studio Workspace because WORKSPACE_SLUG environment variable is empty
+[error] Failed to fetch Firebase Project from Studio Workspace because WORKSPACE_SLUG environment variable is empty
+[debug] [2025-10-26T10:46:51.048Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform","https://www.googleapis.com/auth/userinfo.email"]
+[debug] [2025-10-26T10:46:51.048Z] > authorizing via signed-in user (vincentvm1993@gmail.com)
+[error] Failed to fetch Firebase Project from Studio Workspace because WORKSPACE_SLUG environment variable is empty
+[debug] [2025-10-26T10:46:51.056Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform","https://www.googleapis.com/auth/userinfo.email"]
+[debug] [2025-10-26T10:46:51.056Z] > authorizing via signed-in user (vincentvm1993@gmail.com)
+[error] Failed to fetch Firebase Project from Studio Workspace because WORKSPACE_SLUG environment variable is empty
+[error] Failed to fetch Firebase Project from Studio Workspace because WORKSPACE_SLUG environment variable is empty
+[error] Failed to fetch Firebase Project from Studio Workspace because WORKSPACE_SLUG environment variable is empty
+[error] Failed to fetch Firebase Project from Studio Workspace because WORKSPACE_SLUG environment variable is empty
+[debug] [2025-10-26T10:46:51.112Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform","https://www.googleapis.com/auth/userinfo.email"]
+[debug] [2025-10-26T10:46:51.112Z] > authorizing via signed-in user (vincentvm1993@gmail.com)
+[error] Failed to fetch Firebase Project from Studio Workspace because WORKSPACE_SLUG environment variable is empty
+[debug] [2025-10-26T10:46:51.113Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform","https://www.googleapis.com/auth/userinfo.email"]
+[debug] [2025-10-26T10:46:51.116Z] > authorizing via signed-in user (vincentvm1993@gmail.com)
+[error] Failed to fetch Firebase Project from Studio Workspace because WORKSPACE_SLUG environment variable is empty
+[error] Failed to fetch Firebase Project from Studio Workspace because WORKSPACE_SLUG environment variable is empty
+[debug] [2025-10-26T10:46:51.132Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform","https://www.googleapis.com/auth/userinfo.email"]
+[debug] [2025-10-26T10:46:51.133Z] > authorizing via signed-in user (vincentvm1993@gmail.com)
+[error] Failed to fetch Firebase Project from Studio Workspace because WORKSPACE_SLUG environment variable is empty
+[debug] [2025-10-26T10:46:51.137Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform","https://www.googleapis.com/auth/userinfo.email"]
+[debug] [2025-10-26T10:46:51.137Z] > authorizing via signed-in user (vincentvm1993@gmail.com)

@@ -17,27 +17,34 @@ import { useToast } from "@/hooks/use-toast";
 
 const { mockAudioLibrary = [] } = defaultData;
 
-// ... Interface definition remains the same
+// --- NEW CONTEXT DESIGN ---
 interface CycleContextType {
   allCycles: Cycle[];
   currentCycle: Cycle | null;
   currentPhase: Phase | null;
   currentPhaseIndex: number;
+  isLoaded: boolean;
+  isDirty: boolean; // Is there an unsaved change?
+  audioLibrary: AudioAsset[];
+  endOfCycleSound: AudioAsset | null;
+
   setCurrentCycleById: (cycleId: string) => void;
   setCurrentPhaseIndex: (index: number) => void;
   advancePhase: () => number;
   resetCycle: () => void;
-  updateCycle: (cycleId: string, updates: Partial<Cycle>) => Promise<void>;
-  deleteCycle: (cycleId: string) => Promise<Cycle | void>;
-  updatePhase: (cycleId: string, phaseId: string, updates: Partial<Phase>) => Promise<void>;
-  addPhase: (cycleId: string, newPhase: Partial<Phase>) => Promise<void>;
-  deletePhase: (cycleId: string, phaseId: string) => Promise<void>;
-  cloneCycle: (cycleId: string) => Promise<void>;
-  makeCurrentCycleEditable: () => Promise<Cycle | null>;
-  audioLibrary: AudioAsset[];
-  endOfCycleSound: AudioAsset | null;
   setEndOfCycleSound: (sound: AudioAsset | null) => void;
-  isLoaded: boolean;
+  
+  // Editing actions (now update temporary state)
+  updateCycleInfo: (updates: Partial<Cycle>) => void;
+  addPhase: (newPhase: Partial<Phase>) => void;
+  updatePhase: (phaseId: string, updates: Partial<Phase>) => void;
+  deletePhase: (phaseId: string) => void;
+
+  // Persistence actions
+  saveChanges: () => Promise<void>;
+  discardChanges: () => void;
+  cloneCycle: (cycleId: string) => Promise<void>;
+  deleteCycle: (cycleId: string) => Promise<void>;
 }
 
 const CycleContext = createContext<CycleContextType | undefined>(undefined);
@@ -56,6 +63,7 @@ export function CycleProvider({ children }: { children: ReactNode }) {
   const [currentCycle, setCurrentCycle] = useState<Cycle | null>(null);
   const [currentPhaseIndex, setCurrentPhaseIndex] = useState(0);
   const [isLoaded, setIsLoaded] = useState(false);
+  const [isDirty, setIsDirty] = useState(false); // Track unsaved changes
   const [endOfCycleSound, setEndOfCycleSound] = useState<AudioAsset | null>(
     mockAudioLibrary.length > 0 ? mockAudioLibrary[0] : null
   );
@@ -66,19 +74,16 @@ export function CycleProvider({ children }: { children: ReactNode }) {
     try {
       const cycles = await getCycles(user?.uid);
       setAllCycles(cycles);
-      
-      // If there is no current cycle or the current one is no longer in the list, set a new one.
       if (!currentCycle || !cycles.some(c => c.id === currentCycle.id)) {
          setCurrentCycle(cycles.find(c => !c.isPublic) || cycles[0] || null);
       }
-
     } catch (error) {
       console.error("Failed to load cycles", error);
-      toast({ title: "Error", description: "Could not load your cycles.", variant: "destructive" });
     } finally {
       setIsLoaded(true);
+      setIsDirty(false);
     }
-  }, [user, authLoading, toast]); // Removed currentCycle
+  }, [user, authLoading]);
 
   useEffect(() => {
     if (user && !sessionStorage.getItem('merged')) {
@@ -92,127 +97,145 @@ export function CycleProvider({ children }: { children: ReactNode }) {
     }
   }, [user, loadCycles]);
 
-  // ✨ FIX: Correctly create a private copy without the old ID.
-  const createPrivateCopy = async (cycleToClone: Cycle): Promise<Cycle> => {
-    const { id: originalId, ...dataToClone } = cycleToClone;
 
-    const newCycleData: Omit<Cycle, 'id'> = {
-      ...dataToClone,
-      isPublic: false, // Ensure the copy is private
-      authorId: user?.uid ?? 'guest',
-      authorName: user?.displayName ?? 'Guest',
-      name: cycleToClone.isPublic ? cycleToClone.name : `${cycleToClone.name} (Copy)`,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      likes: 0,
-      shares: 0,
-      originalId: originalId, // Keep track of where it came from
-    };
-
-    const newCycle = await addCycleDAL(newCycleData as Cycle, user?.uid);
-    
-    setAllCycles(prev => [...prev, newCycle]);
-    toast({
-      title: cycleToClone.isPublic ? "Copied to My Cycles" : "Cycle Duplicated",
-      description: `A new private copy named '${newCycle.name}' is now in your list.`,
-    });
-    return newCycle;
+  const setCurrentCycleById = (cycleId: string) => {
+    if (isDirty) {
+        if (!confirm("You have unsaved changes. Are you sure you want to switch?")) {
+            return;
+        }
+    }
+    const cycle = allCycles.find(c => c.id === cycleId);
+    if (cycle && cycle.id !== currentCycle?.id) {
+        setCurrentCycle(cycle);
+        setCurrentPhaseIndex(0);
+        setIsDirty(false); // Reset dirty state
+    }
   };
 
-  const makeCurrentCycleEditable = async (): Promise<Cycle | null> => {
-    if (!currentCycle) return null;
-    
-    if (currentCycle.isPublic) {
-      const privateCopy = await createPrivateCopy(currentCycle);
-      setCurrentCycle(privateCopy);
-      return privateCopy;
+  // --- Temporary State Editing Functions ---
+
+  const updateCycleInfo = (updates: Partial<Cycle>) => {
+    if (!currentCycle) return;
+    setCurrentCycle(prev => prev ? { ...prev, ...updates } : null);
+    setIsDirty(true);
+  };
+
+  const addPhase = (newPhaseData: Partial<Phase>) => {
+    if (!currentCycle) return;
+    const phaseWithId: Phase = { id: uuidv4(), title: "New Phase", duration: 5, type: 'work', ...newPhaseData };
+    setCurrentCycle(prev => prev ? { ...prev, phases: [...prev.phases, phaseWithId] } : null);
+    setIsDirty(true);
+  };
+
+  const updatePhase = (phaseId: string, updates: Partial<Phase>) => {
+    if (!currentCycle) return;
+    const updatedPhases = currentCycle.phases.map(p => (p.id === phaseId ? { ...p, ...updates } : p));
+    setCurrentCycle(prev => prev ? { ...prev, phases: updatedPhases } : null);
+    setIsDirty(true);
+  };
+
+  const deletePhase = (phaseId: string) => {
+    if (!currentCycle || currentCycle.phases.length <= 1) return;
+    const updatedPhases = currentCycle.phases.filter(p => p.id !== phaseId);
+    setCurrentCycle(prev => prev ? { ...prev, phases: updatedPhases } : null);
+    setIsDirty(true);
+  };
+
+  // --- Persistence Functions ---
+
+  const discardChanges = () => {
+    if (currentCycle) {
+        const originalCycle = allCycles.find(c => c.id === currentCycle.id);
+        if (originalCycle) {
+            setCurrentCycle(originalCycle);
+        }
     }
-    
-    return currentCycle;
+    setIsDirty(false);
+  }
+
+  const saveChanges = async () => {
+    if (!currentCycle || !isDirty) return;
+
+    // Check if it was a public template or an unsaved new cycle
+    const isNewCycle = currentCycle.isPublic || !allCycles.some(c => c.id === currentCycle.id && !c.isPublic);
+
+    try {
+      if (isNewCycle) {
+        const { id, ...dataToSave } = currentCycle;
+        const newCycleData = {
+          ...dataToSave,
+          isPublic: false,
+          authorId: user?.uid ?? 'guest',
+          authorName: user?.displayName ?? 'Guest',
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          likes: 0,
+          shares: 0,
+          originalId: currentCycle.id,
+        };
+        const savedCycle = await addCycleDAL(newCycleData as Cycle, user?.uid);
+        setAllCycles(prev => [...prev.filter(c => c.id !== savedCycle.originalId), savedCycle]);
+        setCurrentCycle(savedCycle);
+        toast({ title: "Cycle Saved", description: `A new private cycle '${savedCycle.name}' was created.` });
+      } else {
+        const updates = { ...currentCycle, updatedAt: new Date().toISOString() };
+        await updateCycleDAL(currentCycle.id, updates, user?.uid);
+        setAllCycles(prev => prev.map(c => c.id === currentCycle.id ? updates : c));
+        toast({ title: "Changes Saved", description: `'${currentCycle.name}' has been updated.` });
+      }
+      setIsDirty(false);
+    } catch (error) {
+      console.error("Failed to save changes:", error);
+      toast({ title: "Error Saving", variant: "destructive" });
+    }
   };
 
   const cloneCycle = async (cycleId: string) => {
     const cycleToClone = allCycles.find(c => c.id === cycleId);
     if (!cycleToClone) return;
 
-    const newCopy = await createPrivateCopy(cycleToClone);
+    const newCycleData = { 
+        ...cycleToClone, 
+        name: `${cycleToClone.name} (Copy)`,
+        isPublic: false,
+        authorId: user?.uid ?? 'guest',
+        authorName: user?.displayName ?? 'Guest',
+        originalId: cycleToClone.id
+    };
+    delete newCycleData.id; // remove id to create new
+
+    const newCopy = await addCycleDAL(newCycleData as Cycle, user?.uid);
+    setAllCycles(prev => [...prev, newCopy]);
     setCurrentCycle(newCopy);
-  };
-
-  const updateCycleState = (updatedCycle: Cycle) => {
-    setAllCycles(prev => prev.map(c => (c.id === updatedCycle.id ? updatedCycle : c)));
-    if (currentCycle?.id === updatedCycle.id) {
-      setCurrentCycle(updatedCycle);
-    }
-  };
-
-  const updateCycle = async (cycleId: string, updates: Partial<Cycle>) => {
-    const editableCycle = await makeCurrentCycleEditable();
-    if (!editableCycle || editableCycle.id !== cycleId) return;
-    
-    await updateCycleDAL(editableCycle.id, updates, user?.uid);
-    const updatedCycle = { ...editableCycle, ...updates, updatedAt: new Date().toISOString() };
-    updateCycleState(updatedCycle);
+    setIsDirty(false);
+    toast({ title: "Cycle Cloned", description: `Switched to new copy '${newCopy.name}'`});
   };
 
   const deleteCycle = async (cycleId: string) => {
-      const cycleToDelete = allCycles.find(c => c.id === cycleId);
-      if (!cycleToDelete || cycleToDelete.isPublic) return;
-
-      await deleteCycleDAL(cycleId, user?.uid);
-      const remainingCycles = allCycles.filter(c => c.id !== cycleId);
-      setAllCycles(remainingCycles);
-
-      if (currentCycle?.id === cycleId) {
-        const newCurrent = remainingCycles.find(c => !c.isPublic) || allCycles.find(c => c.isPublic) || null;
-        setCurrentCycle(newCurrent);
-      }
-      toast({ title: "Cycle Deleted", description: `'${cycleToDelete.name}' has been removed.`});
+    await deleteCycleDAL(cycleId, user?.uid);
+    if (currentCycle?.id === cycleId) {
+        setCurrentCycle(allCycles.find(c => c.id !== cycleId) || null);
+    }
+    setAllCycles(prev => prev.filter(c => c.id !== cycleId));
+    toast({ title: "Cycle Deleted" });
   };
 
-  const updatePhase = async (cycleId: string, phaseId: string, updates: Partial<Phase>) => {
-      const editableCycle = await makeCurrentCycleEditable();
-      if (!editableCycle || editableCycle.id !== cycleId) return;
-
-      const updatedPhases = editableCycle.phases.map(p => p.id === phaseId ? { ...p, ...updates } : p);
-      await updateCycle(editableCycle.id, { phases: updatedPhases });
-  };
-
-  const addPhase = async (cycleId: string, newPhaseData: Partial<Phase>) => {
-      const editableCycle = await makeCurrentCycleEditable();
-      if (!editableCycle || editableCycle.id !== cycleId) return;
-
-      const phaseWithId: Phase = { id: uuidv4(), title: "New Phase", duration: 5, type: 'work', ...newPhaseData };
-      const updatedPhases = [...editableCycle.phases, phaseWithId];
-      await updateCycle(editableCycle.id, { phases: updatedPhases });
-  };
-
-  const deletePhase = async (cycleId: string, phaseId: string) => {
-      const editableCycle = await makeCurrentCycleEditable();
-      if (!editableCycle || editableCycle.id !== cycleId || editableCycle.phases.length <= 1) return;
-
-      const updatedPhases = editableCycle.phases.filter(p => p.id !== phaseId);
-      await updateCycle(editableCycle.id, { phases: updatedPhases });
-  };
-
-  const setCurrentCycleById = (cycleId: string) => {
-      const cycle = allCycles.find(c => c.id === cycleId);
-      if (cycle && cycle.id !== currentCycle?.id) {
-          setCurrentCycle(cycle);
-          setCurrentPhaseIndex(0);
-      }
-  };
-
+  // --- Boilerplate ---
   const advancePhase = () => {
       if (!currentCycle) return 0;
       const nextIndex = (currentPhaseIndex + 1) % currentCycle.phases.length;
       setCurrentPhaseIndex(nextIndex);
       return nextIndex;
   };
-
   const resetCycle = () => setCurrentPhaseIndex(0);
 
-  const value = { allCycles, currentCycle, currentPhase: currentCycle?.phases[currentPhaseIndex] || null, currentPhaseIndex, isLoaded, audioLibrary: mockAudioLibrary, endOfCycleSound, setEndOfCycleSound, setCurrentCycleById, advancePhase, resetCycle, updateCycle, deleteCycle, updatePhase, addPhase, deletePhase, cloneCycle, makeCurrentCycleEditable };
+  const value = { 
+      allCycles, currentCycle, currentPhase: currentCycle?.phases[currentPhaseIndex] || null, 
+      currentPhaseIndex, isLoaded, audioLibrary: mockAudioLibrary, endOfCycleSound, 
+      setEndOfCycleSound, setCurrentCycleById, advancePhase, resetCycle, isDirty,
+      updateCycleInfo, addPhase, updatePhase, deletePhase, 
+      saveChanges, discardChanges, cloneCycle, deleteCycle
+  };  
 
   return <CycleContext.Provider value={value}>{children}</CycleContext.Provider>;
 }
