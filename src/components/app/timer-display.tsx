@@ -47,7 +47,7 @@ function PhaseEditor({
         ...phase,
         title,
         duration: newDuration,
-        soundFile: selectedSound ? { url: selectedSound.url, name: selectedSound.name, type: selectedSound.type } : null,
+        soundFile: selectedSound ? { url: selectedSound.url, name: selectedSound.name, type: selectedSound.type || '' } : null,
       });
     }
   };
@@ -101,6 +101,7 @@ export function TimerDisplay() {
     setCurrentPhaseIndex,
     createCycle,
     saveCycleChanges,
+    cloneCycle, // 🔥 Thêm cloneCycle
     audioLibrary,
     endOfCycleSound,
     setEndOfCycleSound,
@@ -144,13 +145,13 @@ export function TimerDisplay() {
   }
 
   const handleError = (error: unknown, action: string) => {
+    console.error(`Error in ${action}:`, error);
     if (error instanceof Error && error.message.includes("Please log in")) {
       showLoginPrompt(action);
     } else {
-      console.error(error);
       toast({
         title: "Lỗi",
-        description: "Có lỗi xảy ra khi thực hiện hành động này.",
+        description: `Có lỗi xảy ra khi ${action}: ${error instanceof Error ? error.message : 'Unknown error'}. Kiểm tra console để biết thêm.`,
         variant: "destructive",
       });
     }
@@ -204,26 +205,17 @@ export function TimerDisplay() {
   };
 
   const handleCreateNewCycle = async () => {
+    if (!user?.uid) {
+      showLoginPrompt("tạo cycle mới");
+      return;
+    }
     try {
-      const newCycle = {
-        name: "New Cycle",
-        phases: [
-          {
-            id: uuidv4(),
-            title: "Work",
-            duration: 25,
-            soundFile: audioLibrary[0] ? { url: audioLibrary[0].url, name: audioLibrary[0].name, type: audioLibrary[0].type } : null,
-          },
-        ],
-        isPublic: false,
-        authorId: user?.uid || null,
-        authorName: user?.displayName || "Unknown",
-        likes: 0,
-        shares: 0,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
-      await createCycle(newCycle);
+      console.log("Cloning cycle with ID:", currentCycle.id); // Debug
+      await cloneCycle(currentCycle.id); // 🔥 Gọi cloneCycle thay vì createCycle
+      toast({
+        title: "Thành công",
+        description: `Đã tạo bản sao cycle: [Copy] ${currentCycle.name}`,
+      });
     } catch (error) {
       handleError(error, "tạo cycle mới");
     }
@@ -235,8 +227,6 @@ export function TimerDisplay() {
   };
 
   const isTemplate = currentCycle.id.startsWith("cycle_template_");
-
-  // 🔥 DISABLE EDIT ICONS NÚT CHO GUEST
   const canEdit = !!user && !isTemplate;
 
   return (
@@ -422,7 +412,7 @@ export function TimerDisplay() {
             <div className="w-full max-w-sm mx-auto">
               <PhaseEditor
                 isNew
-                phase={{ title: "New Phase", duration: 5, soundFile: audioLibrary[0] ? { url: audioLibrary[0].url, name: audioLibrary[0].name, type: audioLibrary[0].type } : null }}
+                phase={{ title: "New Phase", duration: 5, soundFile: audioLibrary[0] ? { url: audioLibrary[0].url, name: audioLibrary[0].name, type: audioLibrary[0].type || '' } : null }}
                 onSave={handleAddPhase}
                 onCancel={() => setIsAddingPhase(false)}
               />
@@ -465,20 +455,14 @@ export function TimerDisplay() {
         </div>
         <div className="flex items-center justify-center gap-2 pt-4 border-t w-full max-w-sm mx-auto">
           <Button 
-            onClick={() => {
-              if (!canEdit) {
-                showLoginPrompt("tạo cycle mới");
-                return;
-              }
-              handleCreateNewCycle();
-            }} 
+            onClick={handleCreateNewCycle} // 🔥 Đã sửa thành clone
             size="sm" 
             variant="outline" 
             disabled={!canEdit}
             className={cn("w-full", !canEdit && "opacity-50 cursor-not-allowed")}
           >
             <Copy className="mr-2 h-4 w-4" />
-            New Cycle
+            Copy Cycle
           </Button>
           <Button
             onClick={() => {

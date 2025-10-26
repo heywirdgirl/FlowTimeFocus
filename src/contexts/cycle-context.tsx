@@ -3,7 +3,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { useAuth } from "./auth-context";
 import { Cycle, Phase, AudioAsset } from "@/lib/types";
-import { getCycles, createCycle, updateCycle, deleteCycle } from "@/dal";
+import { getCycles, createCycle, updateCycle, deleteCycle, cloneCycle } from "@/dal"; // 🔥 Thêm cloneCycle
 import defaultData from "@/lib/mock-data";
 import { v4 as uuidv4 } from "uuid";
 
@@ -28,6 +28,7 @@ interface CycleContextType {
   addPhase: (cycleId: string, newPhase: Partial<Phase>) => Promise<void>;
   deletePhase: (cycleId: string, phaseId: string) => Promise<void>;
   saveCycleChanges: (cycleId: string) => Promise<void>;
+  cloneCycle: (cycleId: string) => Promise<void>; // 🔥 Thêm hàm clone
   audioLibrary: AudioAsset[];
   endOfCycleSound: AudioAsset | null;
   setEndOfCycleSound: (sound: AudioAsset | null) => void;
@@ -82,7 +83,6 @@ export function CycleProvider({ children }: { children: ReactNode }) {
     }
   }, [allCycles, currentCycle]);
 
-  // 🔥 THÊM KIỂM TRA AUTH CHO TẤT CẢ HÀM WRITE/EDIT
   const requireAuth = (action: string) => {
     if (!user) {
       throw new Error(`Please log in to ${action} cycles`);
@@ -95,7 +95,7 @@ export function CycleProvider({ children }: { children: ReactNode }) {
       if (!cycle.phases.every((phase) => phase.duration > 0 && phase.title)) {
         throw new Error("Invalid phase data: duration must be positive and title is required");
       }
-      const newCycle = await createCycle(cycle, user.uid, user.displayName); // Bỏ ? vì đã check
+      const newCycle = await createCycle(cycle, user.uid, user.displayName);
       setAllCycles((prev) => [...prev, newCycle]);
       if (!newCycle.isPublic) {
         setPrivateCycles((prev) => [...prev, newCycle]);
@@ -112,7 +112,7 @@ export function CycleProvider({ children }: { children: ReactNode }) {
   const updateCycle = async (cycleId: string, updatedData: Partial<Cycle>) => {
     requireAuth("update");
     try {
-      await updateCycle(cycleId, updatedData, user.uid); // Bỏ ?
+      await updateCycle(cycleId, updatedData, user.uid);
       setAllCycles((prev) =>
         prev.map((c) => (c.id === cycleId ? { ...c, ...updatedData } : c))
       );
@@ -131,7 +131,7 @@ export function CycleProvider({ children }: { children: ReactNode }) {
   const deleteCycle = async (cycleId: string) => {
     requireAuth("delete");
     try {
-      await deleteCycle(cycleId, user.uid); // Bỏ ?
+      await deleteCycle(cycleId, user.uid);
       setAllCycles((prev) => prev.filter((c) => c.id !== cycleId));
       setPrivateCycles((prev) => prev.filter((c) => c.id !== cycleId));
       if (currentCycle?.id === cycleId) {
@@ -200,6 +200,20 @@ export function CycleProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  // 🔥 THÊM HÀM CLONE CYCLE
+  const cloneCycle = async (cycleId: string) => {
+    requireAuth("clone");
+    try {
+      const newCycle = await cloneCycle(cycleId, user.uid, user.displayName || "Unknown");
+      setAllCycles((prev) => [...prev, newCycle]);
+      setPrivateCycles((prev) => [...prev, newCycle]); // Clone luôn là private
+      setCurrentCycle(newCycle); // Chuyển sang cycle mới
+    } catch (error) {
+      console.error("Failed to clone cycle", error);
+      throw error;
+    }
+  };
+
   const advancePhase = () => {
     if (!currentCycle) return 0;
     const nextIndex = currentPhaseIndex + 1 >= currentCycle.phases.length ? 0 : currentPhaseIndex + 1;
@@ -234,6 +248,7 @@ export function CycleProvider({ children }: { children: ReactNode }) {
     addPhase,
     deletePhase,
     saveCycleChanges,
+    cloneCycle, // 🔥 Thêm vào context
     audioLibrary: mockAudioLibrary,
     endOfCycleSound,
     setEndOfCycleSound,

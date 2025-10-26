@@ -1,6 +1,6 @@
 // src/dal/cycle-dal.ts
 import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc, query, where, getDoc } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { db,cyclesCollection } from '@/lib/firebase';
 import { Cycle, Phase } from '@/lib/types';
 
 export const getCycles = async (userId?: string): Promise<Cycle[]> => {
@@ -101,5 +101,45 @@ export const deleteCycle = async (cycleId: string, userId?: string): Promise<voi
   } catch (error) {
     console.error('Error deleting cycle:', error);
     throw error;
+  }
+};
+
+
+// ... (giữ nguyên các hàm hiện có: getCycles, createCycle, updateCycle, deleteCycle)
+
+export const cloneCycle = async (cycleIdToClone: string, userId: string, userDisplayName: string): Promise<Cycle> => {
+  if (!userId) {
+    throw new Error("Người dùng chưa đăng nhập. Không thể sao chép Cycle.");
+  }
+
+  // 1. Lấy dữ liệu Cycle gốc
+  const cycleRef = doc(db, 'cycles', cycleIdToClone);
+  const cycleSnap = await getDoc(cycleRef);
+
+  if (!cycleSnap.exists()) {
+    throw new Error(`Cycle với ID ${cycleIdToClone} không tồn tại.`);
+  }
+
+  // 2. Chuẩn bị dữ liệu cho Cycle mới
+  const originalData = cycleSnap.data() as Cycle;
+  const newCycleData: Cycle = {
+    ...originalData,
+    name: `[Copy] ${originalData.name}`, // Thêm tiền tố để phân biệt
+    authorId: userId,
+    authorName: userDisplayName || "Unknown",
+    isPublic: false, // Đặt là private
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    likes: 0, // Reset likes
+    shares: 0, // Reset shares
+  };
+
+  // 3. Lưu Cycle mới vào Firestore
+  try {
+    const newDocRef = await addDoc(cyclesCollection, newCycleData);
+    return { ...newCycleData, id: newDocRef.id };
+  } catch (error) {
+    console.error("Lỗi khi sao chép Cycle:", error);
+    throw new Error("Không thể lưu Cycle mới. Vui lòng kiểm tra quyền truy cập.");
   }
 };
