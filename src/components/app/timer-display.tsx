@@ -182,7 +182,7 @@ export function TimerDisplay() {
 
   const handleSaveCycleName = async (newName: string) => {
     if (!currentCycle) return;
-    await updateCycle(currentCycle.id, { name: newName });
+    updateCycleInfo({ name: newName });
     setIsEditingCycleName(false);
   };
 

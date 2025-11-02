@@ -17,14 +17,13 @@ import { useToast } from "@/hooks/use-toast";
 
 const { mockAudioLibrary = [] } = defaultData;
 
-// --- NEW CONTEXT DESIGN ---
 interface CycleContextType {
   allCycles: Cycle[];
   currentCycle: Cycle | null;
   currentPhase: Phase | null;
   currentPhaseIndex: number;
   isLoaded: boolean;
-  isDirty: boolean; // Is there an unsaved change?
+  isDirty: boolean;
   audioLibrary: AudioAsset[];
   endOfCycleSound: AudioAsset | null;
 
@@ -34,17 +33,16 @@ interface CycleContextType {
   resetCycle: () => void;
   setEndOfCycleSound: (sound: AudioAsset | null) => void;
   
-  // Editing actions (now update temporary state)
   updateCycleInfo: (updates: Partial<Cycle>) => void;
   addPhase: (newPhase: Partial<Phase>) => void;
   updatePhase: (phaseId: string, updates: Partial<Phase>) => void;
   deletePhase: (phaseId: string) => void;
 
-  // Persistence actions
   saveChanges: () => Promise<void>;
   discardChanges: () => void;
   cloneCycle: (cycleId: string) => Promise<void>;
   deleteCycle: (cycleId: string) => Promise<void>;
+  makeCurrentCycleEditable: () => Promise<Cycle | null>; // THÊM HÀM NÀY
 }
 
 const CycleContext = createContext<CycleContextType | undefined>(undefined);
@@ -63,7 +61,7 @@ export function CycleProvider({ children }: { children: ReactNode }) {
   const [currentCycle, setCurrentCycle] = useState<Cycle | null>(null);
   const [currentPhaseIndex, setCurrentPhaseIndex] = useState(0);
   const [isLoaded, setIsLoaded] = useState(false);
-  const [isDirty, setIsDirty] = useState(false); // Track unsaved changes
+  const [isDirty, setIsDirty] = useState(false);
   const [endOfCycleSound, setEndOfCycleSound] = useState<AudioAsset | null>(
     mockAudioLibrary.length > 0 ? mockAudioLibrary[0] : null
   );
@@ -75,7 +73,7 @@ export function CycleProvider({ children }: { children: ReactNode }) {
       const cycles = await getCycles(user?.uid);
       setAllCycles(cycles);
       if (!currentCycle || !cycles.some(c => c.id === currentCycle.id)) {
-         setCurrentCycle(cycles.find(c => !c.isPublic) || cycles[0] || null);
+        setCurrentCycle(cycles.find(c => !c.isPublic) || cycles[0] || null);
       }
     } catch (error) {
       console.error("Failed to load cycles", error);
@@ -93,26 +91,21 @@ export function CycleProvider({ children }: { children: ReactNode }) {
       loadCycles();
     }
     if (!user) {
-        sessionStorage.removeItem('merged');
+      sessionStorage.removeItem('merged');
     }
   }, [user, loadCycles]);
 
-
   const setCurrentCycleById = (cycleId: string) => {
     if (isDirty) {
-        if (!confirm("You have unsaved changes. Are you sure you want to switch?")) {
-            return;
-        }
+      if (!confirm("You have unsaved changes. Are you sure you want to switch?")) return;
     }
     const cycle = allCycles.find(c => c.id === cycleId);
     if (cycle && cycle.id !== currentCycle?.id) {
-        setCurrentCycle(cycle);
-        setCurrentPhaseIndex(0);
-        setIsDirty(false); // Reset dirty state
+      setCurrentCycle(cycle);
+      setCurrentPhaseIndex(0);
+      setIsDirty(false);
     }
   };
-
-  // --- Temporary State Editing Functions ---
 
   const updateCycleInfo = (updates: Partial<Cycle>) => {
     if (!currentCycle) return;
@@ -141,22 +134,16 @@ export function CycleProvider({ children }: { children: ReactNode }) {
     setIsDirty(true);
   };
 
-  // --- Persistence Functions ---
-
   const discardChanges = () => {
     if (currentCycle) {
-        const originalCycle = allCycles.find(c => c.id === currentCycle.id);
-        if (originalCycle) {
-            setCurrentCycle(originalCycle);
-        }
+      const originalCycle = allCycles.find(c => c.id === currentCycle.id);
+      if (originalCycle) setCurrentCycle(originalCycle);
     }
     setIsDirty(false);
-  }
+  };
 
   const saveChanges = async () => {
     if (!currentCycle || !isDirty) return;
-
-    // Check if it was a public template or an unsaved new cycle
     const isNewCycle = currentCycle.isPublic || !allCycles.some(c => c.id === currentCycle.id && !c.isPublic);
 
     try {
@@ -195,14 +182,14 @@ export function CycleProvider({ children }: { children: ReactNode }) {
     if (!cycleToClone) return;
 
     const newCycleData = { 
-        ...cycleToClone, 
-        name: `${cycleToClone.name} (Copy)`,
-        isPublic: false,
-        authorId: user?.uid ?? 'guest',
-        authorName: user?.displayName ?? 'Guest',
-        originalId: cycleToClone.id
+      ...cycleToClone, 
+      name: `${cycleToClone.name} (Copy)`,
+      isPublic: false,
+      authorId: user?.uid ?? 'guest',
+      authorName: user?.displayName ?? 'Guest',
+      originalId: cycleToClone.id
     };
-    delete newCycleData.id; // remove id to create new
+    delete newCycleData.id;
 
     const newCopy = await addCycleDAL(newCycleData as Cycle, user?.uid);
     setAllCycles(prev => [...prev, newCopy]);
@@ -214,27 +201,62 @@ export function CycleProvider({ children }: { children: ReactNode }) {
   const deleteCycle = async (cycleId: string) => {
     await deleteCycleDAL(cycleId, user?.uid);
     if (currentCycle?.id === cycleId) {
-        setCurrentCycle(allCycles.find(c => c.id !== cycleId) || null);
+      setCurrentCycle(allCycles.find(c => c.id !== cycleId) || null);
     }
     setAllCycles(prev => prev.filter(c => c.id !== cycleId));
     toast({ title: "Cycle Deleted" });
   };
 
-  // --- Boilerplate ---
+  // THÊM HÀM NÀY
+  const makeCurrentCycleEditable = async (): Promise<Cycle | null> => {
+    if (!currentCycle) return null;
+    if (currentCycle.authorId === user?.uid) return currentCycle;
+
+    const newCycleData = {
+      ...currentCycle,
+      id: uuidv4(),
+      name: `[Copy] ${currentCycle.name}`,
+      isPublic: false,
+      authorId: user?.uid ?? 'guest',
+      authorName: user?.displayName ?? 'Guest',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      likes: 0,
+      shares: 0,
+    };
+
+    try {
+      const savedCycle = await addCycleDAL(newCycleData as Cycle, user?.uid);
+      setAllCycles(prev => [...prev, savedCycle]);
+      setCurrentCycle(savedCycle);
+      setIsDirty(false);
+      toast({
+        title: "Bắt đầu chỉnh sửa",
+        description: `Đã tạo bản sao để chỉnh sửa '${savedCycle.name}'`,
+      });
+      return savedCycle;
+    } catch (error) {
+      console.error("Failed to clone for editing", error);
+      toast({ title: "Lỗi", description: "Không thể tạo bản sao.", variant: "destructive" });
+      return null;
+    }
+  };
+
   const advancePhase = () => {
-      if (!currentCycle) return 0;
-      const nextIndex = (currentPhaseIndex + 1) % currentCycle.phases.length;
-      setCurrentPhaseIndex(nextIndex);
-      return nextIndex;
+    if (!currentCycle) return 0;
+    const nextIndex = (currentPhaseIndex + 1) % currentCycle.phases.length;
+    setCurrentPhaseIndex(nextIndex);
+    return nextIndex;
   };
   const resetCycle = () => setCurrentPhaseIndex(0);
 
   const value = { 
-      allCycles, currentCycle, currentPhase: currentCycle?.phases[currentPhaseIndex] || null, 
-      currentPhaseIndex, isLoaded, audioLibrary: mockAudioLibrary, endOfCycleSound, 
-      setEndOfCycleSound, setCurrentCycleById, advancePhase, resetCycle, isDirty,
-      updateCycleInfo, addPhase, updatePhase, deletePhase, 
-      saveChanges, discardChanges, cloneCycle, deleteCycle
+    allCycles, currentCycle, currentPhase: currentCycle?.phases[currentPhaseIndex] || null, 
+    currentPhaseIndex, isLoaded, audioLibrary: mockAudioLibrary, endOfCycleSound, 
+    setEndOfCycleSound, setCurrentCycleById, advancePhase, resetCycle, isDirty,
+    updateCycleInfo, addPhase, updatePhase, deletePhase, 
+    saveChanges, discardChanges, cloneCycle, deleteCycle,
+    makeCurrentCycleEditable // XUẤT RA ĐÂY
   };  
 
   return <CycleContext.Provider value={value}>{children}</CycleContext.Provider>;
