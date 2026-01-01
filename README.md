@@ -6,49 +6,79 @@ This is a Next.js application designed for time management, likely implementing 
 ## Project Structure
 
 ```
-.
-├── components.json
-├── docs
-│   └── blueprint.md
-├── firestore.rules
-├── next-env.d.ts
-├── next.config.ts
-├── package.json
-├── postcss.config.mjs
-├── public
-│   └── sounds
-├── README.md
-├── src
-│   ├── ai
-│   │   ├── dev.ts
-│   │   ├── flows
-│   │   │   └── smart-session-recommendation.ts
-│   │   └── genkit.ts
+src
+├── ai
+│   └── timer-machine.ts
+├── app
+│   ├── favicon.ico
+│   ├── globals.css
+│   ├── layout.tsx
+│   └── page.tsx
+├── components
 │   ├── app
-│   │   ├── create
-│   │   │   └── page.tsx
-│   │   ├── favicon.ico
-│   │   ├── globals.css
-│   │   ├── layout.tsx
-│   │   └── page.tsx
-│   ├── components
-│   │   ├── app
-│   │   └── ui
-│   ├── contexts
-│   │   ├── cycle-context.tsx
-│   │   ├── settings-context.tsx
-│   │   └── timer-context.tsx
-│   ├── hooks
-│   │   ├── use-mobile.tsx
-│   │   └── use-toast.ts
-│   └── lib
-│       ├── firebase.ts
-│       ├── placeholder-images.json
-│       ├── placeholder-images.ts
-│       ├── types.ts
-│       └── utils.ts
-├── tailwind.config.ts
-└── tsconfig.json
+│   │   ├── cycle-list.tsx
+│   │   ├── cycle-progress-bar.tsx
+│   │   ├── email-auth-dialog.tsx
+│   │   ├── footer.tsx
+│   │   ├── header.tsx
+│   │   ├── homepage.tsx
+│   │   ├── phase-editor.tsx
+│   │   ├── sortable-phase-card.tsx
+│   │   ├── syncStoreGate.tsx
+│   │   ├── task-manager.tsx
+│   │   ├── theme-provider.tsx
+│   │   ├── theme-toggle.tsx
+│   │   └── timer-display.tsx
+│   └── ui
+│       ├── accordion.tsx
+│       ├── alert-dialog.tsx
+│       ├── alert.tsx
+│       ├── avatar.tsx
+│       ├── badge.tsx
+│       ├── button.tsx
+│       ├── calendar.tsx
+│       ├── card.tsx
+│       ├── carousel.tsx
+│       ├── chart.tsx
+│       ├── checkbox.tsx
+│       ├── collapsible.tsx
+│       ├── dialog.tsx
+│       ├── dropdown-menu.tsx
+│       ├── form.tsx
+│       ├── input.tsx
+│       ├── label.tsx
+│       ├── menubar.tsx
+│       ├── popover.tsx
+│       ├── progress.tsx
+│       ├── radio-group.tsx
+│       ├── scroll-area.tsx
+│       ├── select.tsx
+│       ├── separator.tsx
+│       ├── sheet.tsx
+│       ├── sidebar.tsx
+│       ├── skeleton.tsx
+│       ├── slider.tsx
+│       ├── switch.tsx
+│       ├── table.tsx
+│       ├── tabs.tsx
+│       ├── textarea.tsx
+│       ├── toaster.tsx
+│       ├── toast.tsx
+│       └── tooltip.tsx
+├── hooks
+│   ├── use-mobile.tsx
+│   └── use-toast.ts
+├── lib
+│   ├── firebase.ts
+│   ├── placeholder-images.json
+│   ├── placeholder-images.ts
+│   ├── types.ts
+│   └── utils.ts
+└── store
+    ├── use-auth-store.ts
+    ├── useCycleStore.ts
+    ├── use-setting-store.ts
+    └── useTimerStore.ts
 ```
 
 ## Main File Functionalities
