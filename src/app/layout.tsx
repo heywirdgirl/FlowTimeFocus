@@ -3,8 +3,8 @@ import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
 import { AuthProvider } from '@/contexts/auth-context';
 import { CycleProvider } from '@/contexts/cycle-context';
-import { Header } from " @/components/app/header";
-import { Footer } from " @/components/app/footer";
+import { Header } from "@/components/app/header";
+import { Footer } from "@/components/app/footer";
 
 export const metadata: Metadata = {
   title: 'FlowTime Focus',
