@@ -3,13 +3,13 @@
 
 import { useEffect, useState } from "react";
 import { useCycleStore } from "@/store/useCycleStore"; 
-import { useTimerStore } from "@/store/useTimerStore"; // Store mới
+import { useTimerStore } from "@/store/useTimerStore";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Play, Pause, RotateCcw, SkipForward, Edit, Plus, Trash2, Save, Copy } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
-import type { Phase } from "@/lib/types";
+import type { Phase } from "@/types/cycle";
 import { CycleProgressBar } from "./cycle-progress-bar";
 
 const formatTime = (seconds: number) => {
@@ -42,7 +42,6 @@ function PhaseEditor({ phase, onSave, onCancel, isNew }: { phase: Partial<Phase>
 }
 
 export function TimerDisplay() {
-  // 1. KẾT NỐI ZUSTAND
   const { 
     currentCycle, 
     currentPhaseIndex, 
@@ -55,12 +54,10 @@ export function TimerDisplay() {
     createNewCycle
   } = useCycleStore();
 
-  // 2. LẤY STATE TỪ TIMER STORE
   const { timeLeft, isActive, send } = useTimerStore();
   
   const currentPhase = currentCycle?.phases[currentPhaseIndex];
   
-  // State local cho UI giữ nguyên
   const [isDirty, setIsDirty] = useState(false);
   const [isEditingCycle, setIsEditingCycle] = useState(false);
   const [editingPhaseId, setEditingPhaseId] = useState<string | null>(null);
@@ -71,7 +68,6 @@ export function TimerDisplay() {
 
   const progress = ( (currentPhase.duration * 60 - timeLeft) / (currentPhase.duration * 60) ) * 100;
 
-  // Handlers kết nối Store
   const handleSavePhase = (phaseId: string, updates: Partial<Phase>) => {
       updatePhase(phaseId, updates);
       setEditingPhaseId(null);
