@@ -1,243 +1,212 @@
 
 import { create } from 'zustand';
+import { Cycle, Phase, CompletionStatus } from '@/types/cycle';
+import { doc, onSnapshot, setDoc, deleteDoc, updateDoc, collection, addDoc, serverTimestamp, query, orderBy, getDocs } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-import { 
-  collection, query, onSnapshot, doc, setDoc, addDoc, deleteDoc 
-} from "firebase/firestore";
-import { Cycle, Phase, AudioAsset, SessionPhaseRecord } from "@/lib/types";
-import { toast } from "@/hooks/use-toast";
+import { v4 as uuidv4 } from 'uuid';
 
-// A default cycle to prevent the app from crashing if no cycles are loaded
-const defaultCycle: Cycle = {
-    id: 'default_cycle_id',
-    name: 'Default',
-    phases: [{ id: 'default_phase', title: 'Focus', duration: 25, removable: false }],
-    authorId: 'system',
-    isPublic: true,
+// --- Guest Data Template ---
+const GUEST_PHASES: Phase[] = [
+    { id: uuidv4(), title: "Focus", duration: 25, completionStatus: 'pending' },
+    { id: uuidv4(), title: "Short Break", duration: 5, completionStatus: 'pending' },
+    { id: uuidv4(), title: "Focus", duration: 25, completionStatus: 'pending' },
+    { id: uuidv4(), title: "Short Break", duration: 5, completionStatus: 'pending' },
+    { id: uuidv4(), title: "Focus", duration: 25, completionStatus: 'pending' },
+    { id: uuidv4(), title: "Short Break", duration: 5, completionStatus: 'pending' },
+    { id: uuidv4(), title: "Focus", duration: 25, completionStatus: 'pending' },
+    { id: uuidv4(), title: "Long Break", duration: 15, completionStatus: 'pending' },
+];
+
+const GUEST_CYCLE: Cycle = {
+    id: 'guest-cycle',
+    name: "Default Pomodoro",
+    phases: GUEST_PHASES,
+    createdAt: new Date(),
 };
 
+// --- Store Definition ---
 interface CycleState {
-  // Data
-  privateCycles: Cycle[];
-  currentCycle: Cycle | null;
-  currentPhaseIndex: number;
-  isLoading: boolean;
-  
-  // New state for progress tracking
-  cyclesCompleted: number;
-  sessionPhaseRecords: SessionPhaseRecord[];
-  
-  // Settings (inferred from timer-display)
-  playSounds: boolean;
-  audioLibrary: AudioAsset[];
+    cycles: Cycle[];
+    currentCycle: Cycle | null;
+    currentPhaseIndex: number;
+    isLoading: boolean;
+    isGuestMode: boolean;
+    userId: string | null;
+    unsubscribe: (() => void) | null;
 
-  // Firebase Sync Logic
-  syncUnsubscribe: (() => void) | null;
-  
-  // Actions - Sync
-  startSyncCycles: (userId: string) => void;
-  stopSyncCycles: () => void;
-  
-  // Actions - UI/Logic
-  setCurrentCycle: (cycle: Cycle) => void;
-  setCurrentPhaseIndex: (index: number) => void;
-  advancePhase: (skipped?: boolean) => void;
-  
-  // Actions - CRUD
-  updateCycle: (updates: Partial<Cycle>) => void; // Added for editing cycle name
-  updatePhase: (phaseId: string, updates: Partial<Phase>) => Promise<void>;
-  addPhase: (newPhaseData: Partial<Phase>) => Promise<void>;
-  deletePhase: (phaseId: string) => Promise<void>;
-  deleteCycle: (cycleId: string) => Promise<void>;
-  saveCycleChanges: () => Promise<void>;
-  createNewCycle: () => void;
+    loadGuestData: () => void;
+    startSyncCycles: (uid: string) => void;
+    stopSyncCycles: () => void;
+    setCurrentCycle: (cycleId: string) => void;
+    setCurrentPhaseIndex: (index: number) => void;
+    goToNextPhase: () => void;
+
+    // Cycle and Phase Manipulation
+    createNewCycle: () => void;
+    updateCycle: (updates: Partial<Omit<Cycle, 'id' | 'phases'>>) => void;
+    saveCycleChanges: () => Promise<void>;
+    deleteCycle: (cycleId: string) => Promise<void>;
+    addPhase: (newPhase: Partial<Phase>) => void;
+    updatePhase: (phaseId: string, updates: Partial<Phase>) => void;
+    deletePhase: (phaseId: string) => void;
 }
 
 export const useCycleStore = create<CycleState>((set, get) => ({
-  // Initial State
-  privateCycles: [],
-  currentCycle: null,
-  currentPhaseIndex: 0,
-  isLoading: true, // Start with loading true
-  cyclesCompleted: 0,
-  sessionPhaseRecords: [],
-  playSounds: true, // Default value
-  audioLibrary: [], // Default value
-  syncUnsubscribe: null,
+    // Initial State
+    cycles: [],
+    currentCycle: null,
+    currentPhaseIndex: 0,
+    isLoading: true,
+    isGuestMode: true,
+    userId: null,
+    unsubscribe: null,
 
-  // --- SYNC ---
-  startSyncCycles: (userId: string) => {
-    get().stopSyncCycles();
-    set({ isLoading: true });
-
-    const q = query(collection(db, `users/${userId}/privateCycles`));
-    
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const cycles = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Cycle));
-      const currentCycleId = get().currentCycle?.id;
-      const currentCycleExists = cycles.some(c => c.id === currentCycleId);
-
-      let newCurrentCycle = get().currentCycle;
-      if (!currentCycleExists) {
-          newCurrentCycle = cycles[0] || defaultCycle;
-      }
-
-      set({ 
-        privateCycles: cycles, 
-        isLoading: false,
-        currentCycle: newCurrentCycle
-      });
-
-    }, (error) => {
-      console.error("Firestore Sync Error:", error);
-      set({ isLoading: false, currentCycle: defaultCycle }); // Fallback to default
-    });
-
-    set({ syncUnsubscribe: unsubscribe });
-  },
-
-  stopSyncCycles: () => {
-    const { syncUnsubscribe } = get();
-    if (syncUnsubscribe) {
-      syncUnsubscribe();
-      set({ syncUnsubscribe: null });
-    }
-  },
-
-  // --- UI/LOGIC ACTIONS ---
-  setCurrentCycle: (cycle) => set({ 
-      currentCycle: cycle, 
-      currentPhaseIndex: 0, 
-      cyclesCompleted: 0, 
-      sessionPhaseRecords: [] 
-  }),
-  
-  setCurrentPhaseIndex: (index) => set({ currentPhaseIndex: index }),
-
-  advancePhase: (skipped = false) => {
-    const { currentCycle, currentPhaseIndex, cyclesCompleted, sessionPhaseRecords } = get();
-    if (!currentCycle) return;
-
-    const newRecords = [
-        ...sessionPhaseRecords,
-        {
-            phaseId: currentCycle.phases[currentPhaseIndex].id,
-            completionStatus: skipped ? 'skipped' : 'completed'
-        } as SessionPhaseRecord
-    ];
-
-    let nextPhaseIndex = currentPhaseIndex + 1;
-    let newCyclesCompleted = cyclesCompleted;
-
-    if (nextPhaseIndex >= currentCycle.phases.length) {
-        nextPhaseIndex = 0;
-        newCyclesCompleted += 1;
+    loadGuestData: () => {
+        const newGuestCycle = { ...GUEST_CYCLE, phases: GUEST_CYCLE.phases.map(p => ({...p})) };
         set({
-            cyclesCompleted: newCyclesCompleted,
-            currentPhaseIndex: nextPhaseIndex,
-            sessionPhaseRecords: [] // Clear records for new cycle
+            cycles: [newGuestCycle],
+            currentCycle: newGuestCycle,
+            currentPhaseIndex: 0,
+            isLoading: false,
+            isGuestMode: true,
+            userId: null
         });
-    } else {
-        set({
-            currentPhaseIndex: nextPhaseIndex,
-            sessionPhaseRecords: newRecords
+    },
+
+    startSyncCycles: (uid) => {
+        const { unsubscribe } = get();
+        if (unsubscribe) unsubscribe();
+
+        set({ isLoading: true, isGuestMode: false, userId: uid });
+
+        const q = query(collection(db, "users", uid, "cycles"), orderBy("createdAt", "desc"));
+        const newUnsubscribe = onSnapshot(q, (snapshot) => {
+            const cycles = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Cycle));
+            if (cycles.length === 0) {
+                 console.log("User has no cycles, creating a default one.");
+                 const defaultCycle = { ...GUEST_CYCLE, id: undefined, createdAt: serverTimestamp() };
+                 addDoc(collection(db, "users", uid, "cycles"), defaultCycle);
+            } else {
+                set({
+                    cycles,
+                    isLoading: false,
+                    currentCycle: get().currentCycle ? cycles.find(c => c.id === get().currentCycle!.id) || cycles[0] : cycles[0],
+                    currentPhaseIndex: 0,
+                });
+            }
+        }, (error) => {
+            console.error("Error syncing cycles:", error);
+            set({ isLoading: false });
         });
-    }
-  },
 
-  // --- CRUD ACTIONS ---
-  updateCycle: (updates) => {
-      const { currentCycle } = get();
-      if (!currentCycle) return;
-      
-      const updatedCycle = { ...currentCycle, ...updates };
-      set({ currentCycle: updatedCycle });
-  },
+        set({ unsubscribe: newUnsubscribe });
+    },
 
-  updatePhase: async (phaseId, updates) => {
-    const { currentCycle } = get();
-    if (!currentCycle) return;
+    stopSyncCycles: () => {
+        get().unsubscribe?.();
+        set({ unsubscribe: null, userId: null });
+        get().loadGuestData();
+    },
 
-    const newPhases = currentCycle.phases.map(p => 
-      p.id === phaseId ? { ...p, ...updates } : p
-    );
-    get().updateCycle({ phases: newPhases });
-  },
-
-  addPhase: async (newPhaseData) => {
-    const { currentCycle } = get();
-    if (!currentCycle) return;
-
-    const newPhase: Phase = {
-        id: `phase_${Math.random().toString(36).substr(2, 9)}`,
-        title: newPhaseData.title || "New Phase",
-        duration: newPhaseData.duration || 5,
-        soundFile: null,
-        removable: true,
-        ...newPhaseData,
-    };
+    setCurrentCycle: (cycleId) => {
+        const cycle = get().cycles.find((c) => c.id === cycleId) || null;
+        set({ currentCycle: cycle, currentPhaseIndex: 0 });
+    },
     
-    get().updateCycle({ phases: [...currentCycle.phases, newPhase] });
-  },
-  
-  deletePhase: async (phaseId: string) => {
-    const { currentCycle } = get();
-    if (!currentCycle) return;
-    const newPhases = currentCycle.phases.filter(p => p.id !== phaseId);
-    get().updateCycle({ phases: newPhases });
-  },
+    setCurrentPhaseIndex: (index) => set({ currentPhaseIndex: index }),
 
-  saveCycleChanges: async () => {
-    const { currentCycle } = get();
-    if (!currentCycle || !currentCycle.authorId || currentCycle.id.startsWith('cycle_template_')) return;
+    goToNextPhase: () => {
+        set(state => {
+            if (!state.currentCycle) return {};
+            const isLastPhase = state.currentPhaseIndex >= state.currentCycle.phases.length - 1;
+            return { currentPhaseIndex: isLastPhase ? 0 : state.currentPhaseIndex + 1 };
+        });
+    },
 
-    try {
-        const cycleRef = doc(db, `users/${currentCycle.authorId}/privateCycles`, currentCycle.id);
-        await setDoc(cycleRef, currentCycle, { merge: true });
-        toast({ title: "Success", description: "Cycle saved successfully."});
-    } catch (error) {
-        console.error("Error saving cycle:", error);
-        toast({ title: "Error", description: "Could not save changes."});
-    }
-  },
+    createNewCycle: () => {
+        const newCycle: Cycle = {
+            id: `guest-${Date.now()}`,
+            name: "New Custom Cycle",
+            phases: [{ id: uuidv4(), title: "Focus", duration: 25, completionStatus: 'pending' }],
+            createdAt: new Date(),
+        };
+        set(state => ({ 
+            cycles: [...state.cycles, newCycle],
+            currentCycle: newCycle, 
+            currentPhaseIndex: 0,
+        }));
+    },
 
-  createNewCycle: () => {
-    const { privateCycles } = get();
-    const newCycle: Cycle = {
-        id: `cycle_${Date.now()}`,
-        name: "New Custom Cycle",
-        phases: [{ id: 'new_phase_1', title: "Focus", duration: 25, removable: true }],
-        authorId: useCycleStore.getState().privateCycles[0]?.authorId || 'unknown_user',
-        isPublic: false,
-    };
-    set({
-        privateCycles: [...privateCycles, newCycle],
-        currentCycle: newCycle,
-        currentPhaseIndex: 0,
-        cyclesCompleted: 0,
-        sessionPhaseRecords: []
-    });
-    toast({title: "New Cycle Created", description: "Edit the details and save your changes."});
-  },
+    updateCycle: (updates) => {
+        set(state => {
+            if (!state.currentCycle) return {};
+            const updatedCycle = { ...state.currentCycle, ...updates };
+            return {
+                currentCycle: updatedCycle,
+                cycles: state.cycles.map(c => c.id === updatedCycle.id ? updatedCycle : c)
+            };
+        });
+    },
 
-  deleteCycle: async (cycleId: string) => {
-    const { privateCycles, currentCycle } = get();
-    const cycleToDelete = privateCycles.find(c => c.id === cycleId);
-    if (!cycleToDelete || !cycleToDelete.authorId) return;
+    saveCycleChanges: async () => {
+        const { userId, isGuestMode, currentCycle } = get();
+        if (isGuestMode || !userId || !currentCycle) return;
+        
+        const cycleRef = doc(db, "users", userId, "cycles", currentCycle.id);
+        await setDoc(cycleRef, { ...currentCycle, updatedAt: serverTimestamp() }, { merge: true });
+    },
 
-    const newCycles = privateCycles.filter(c => c.id !== cycleId);
-    
-    if (currentCycle && currentCycle.id === cycleId) {
-        get().setCurrentCycle(newCycles[0] || defaultCycle);
-    }
-    set({ privateCycles: newCycles });
+    deleteCycle: async (cycleId: string) => {
+        const { userId, isGuestMode, cycles } = get();
+        if (isGuestMode || !userId) return;
+        await deleteDoc(doc(db, "users", userId, "cycles", cycleId));
+    },
 
-    try {
-        await deleteDoc(doc(db, `users/${cycleToDelete.authorId}/privateCycles`, cycleId));
-        toast({ title: "Cycle Deleted" });
-    } catch (error) {
-        set({ privateCycles, currentCycle }); 
-        toast({ title: "Error", description: "Could not delete cycle." });
-    }
-  }
+    addPhase: (newPhase) => {
+        set(state => {
+            if (!state.currentCycle) return {};
+            const phaseToAdd: Phase = { 
+                id: uuidv4(), 
+                title: newPhase.title || "New Phase", 
+                duration: newPhase.duration || 5, 
+                completionStatus: 'pending'
+            };
+            const updatedPhases = [...state.currentCycle.phases, phaseToAdd];
+            const updatedCycle = { ...state.currentCycle, phases: updatedPhases };
+            return {
+                currentCycle: updatedCycle,
+                cycles: state.cycles.map(c => c.id === updatedCycle.id ? updatedCycle : c)
+            };
+        });
+    },
+
+    updatePhase: (phaseId, updates) => {
+        set(state => {
+            if (!state.currentCycle) return {};
+            const updatedPhases = state.currentCycle.phases.map(p => p.id === phaseId ? { ...p, ...updates } : p);
+            const updatedCycle = { ...state.currentCycle, phases: updatedPhases };
+            return {
+                currentCycle: updatedCycle,
+                cycles: state.cycles.map(c => c.id === updatedCycle.id ? updatedCycle : c)
+            };
+        });
+    },
+
+    deletePhase: (phaseId) => {
+        set(state => {
+            if (!state.currentCycle) return {};
+            const updatedPhases = state.currentCycle.phases.filter(p => p.id !== phaseId);
+            const updatedCycle = { ...state.currentCycle, phases: updatedPhases };
+            return {
+                currentCycle: updatedCycle,
+                cycles: state.cycles.map(c => c.id === updatedCycle.id ? updatedCycle : c)
+            };
+        });
+    },
 }));
+
+// Initialize for guest user
+useCycleStore.getState().loadGuestData();
+
+// Add uuid package to the project
+// You will need to run `npm install uuid` and `npm install --save-dev @types/uuid`
