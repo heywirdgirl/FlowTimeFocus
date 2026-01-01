@@ -1,16 +1,16 @@
 
 "use client";
 
-import { useTimer } from "@/contexts/timer-context";
-
 import { TimerDisplay } from "./timer-display";
 import { CycleList } from "./cycle-list";
 import { cn } from "@/lib/utils";
-import { useCycle } from "@/contexts/cycle-context";
+import { useCycleStore } from "@/store/useCycleStore";
+import { useTimerStore } from "@/store/useTimerStore";
 
 export function Homepage() {
-  const { isActive } = useTimer();
-  const { currentPhase } = useCycle();
+  const { isActive } = useTimerStore();
+  const { currentCycle, currentPhaseIndex } = useCycleStore();
+  const currentPhase = currentCycle?.phases[currentPhaseIndex];
 
   const sessionTypeClass = () => {
     if (!isActive) return 'bg-background';

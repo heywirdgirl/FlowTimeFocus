@@ -10,7 +10,7 @@ import { FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/comp
 import { GripVertical, Trash2 } from "lucide-react";
 import { useFormContext } from "react-hook-form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useCycle } from "@/contexts/cycle-context";
+import { useAppStore } from "@/store/useAppStore";
 
 
 interface SortablePhaseCardProps {
@@ -22,7 +22,7 @@ interface SortablePhaseCardProps {
 export function SortablePhaseCard({ id, index, remove }: SortablePhaseCardProps) {
   const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id });
   const { control, watch } = useFormContext(); // Gaining access to the form context
-  const { audioLibrary } = useCycle();
+  const { audioLibrary } = useAppStore();
   const selectedSound = watch(`phases.${index}.soundFile`);
 
 

@@ -1,17 +1,16 @@
+
 "use client";
 
-import { useTimer } from "@/contexts/timer-context";
 import { cn } from "@/lib/utils";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { useCycle } from "@/contexts/cycle-context";
+import { useCycleStore } from "@/store/useCycleStore";
 
 interface CycleProgressBarProps {
   totalCycles: number;
 }
 
 export function CycleProgressBar({ totalCycles }: CycleProgressBarProps) {
-  const { cyclesCompleted, sessionPhaseRecords } = useTimer();
-  const { currentCycle } = useCycle();
+  const { cyclesCompleted, sessionPhaseRecords, currentCycle } = useCycleStore();
 
   if (totalCycles <= 0) {
     return (
@@ -29,18 +28,15 @@ export function CycleProgressBar({ totalCycles }: CycleProgressBarProps) {
 
   const getBarHeight = (cycleIndex: number): string => {
     if (cycleIndex < cyclesCompleted) {
-        // This logic could be enhanced if we store full history for each completed cycle
         return "100%";
     }
     if (cycleIndex === cyclesCompleted) {
         const progress = currentCycleProgress();
         if (progress > 0) {
-            // Minimum 10% height for any progress, up to 100%
             return `${Math.max(10, progress * 100)}%`;
         }
-        // if there is progress but it was all skipped
         if(sessionPhaseRecords.length > 0 && progress === 0) {
-            return "5%"; // Small bar at the base if all phases so far were skipped
+            return "5%";
         }
     }
     return "0%";

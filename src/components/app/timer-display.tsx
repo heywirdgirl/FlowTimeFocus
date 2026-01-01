@@ -1,9 +1,9 @@
+
 "use client";
 
 import { useEffect, useState } from "react";
-import { useMachine } from "@xstate/react";
-import { timerMachine } from "@/ai/timer-machine"; // File đã tạo ở bước trước
-import { useCycleStore } from "@/store/useCycleStore"; // Store Zustand mới
+import { useCycleStore } from "@/store/useCycleStore"; 
+import { useTimerStore } from "@/store/useTimerStore"; // Store mới
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Play, Pause, RotateCcw, SkipForward, Edit, Plus, Trash2, Save, Copy } from "lucide-react";
@@ -11,17 +11,13 @@ import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import type { Phase } from "@/lib/types";
 import { CycleProgressBar } from "./cycle-progress-bar";
-import { Label } from "../ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
 
-// Helper giữ nguyên
 const formatTime = (seconds: number) => {
   const mins = Math.floor(seconds / 60);
   const secs = seconds % 60;
   return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
 };
 
-// PhaseEditor giữ nguyên cấu trúc cũ
 function PhaseEditor({ phase, onSave, onCancel, isNew }: { phase: Partial<Phase>, onSave: (p: Partial<Phase>) => void, onCancel: () => void, isNew?: boolean }) {
     const [title, setTitle] = useState(phase?.title || "");
     const [duration, setDuration] = useState(String(phase?.duration || ""));
@@ -46,7 +42,7 @@ function PhaseEditor({ phase, onSave, onCancel, isNew }: { phase: Partial<Phase>
 }
 
 export function TimerDisplay() {
-  // 1. KẾT NỐI ZUSTAND (Thay thế useCycle cũ)
+  // 1. KẾT NỐI ZUSTAND
   const { 
     currentCycle, 
     currentPhaseIndex, 
@@ -55,29 +51,15 @@ export function TimerDisplay() {
     addPhase, 
     deletePhase, 
     setCurrentPhaseIndex,
-    advancePhase,
-    audioLibrary,
     saveCycleChanges,
-    createNewCycle,
-    playSounds
+    createNewCycle
   } = useCycleStore();
 
-  // 2. KẾT NỐI XSTATE (Thay thế useTimer cũ)
+  // 2. LẤY STATE TỪ TIMER STORE
+  const { timeLeft, isActive, send } = useTimerStore();
+  
   const currentPhase = currentCycle?.phases[currentPhaseIndex];
   
-  const [state, send] = useMachine(timerMachine, {
-    input: { duration: (currentPhase?.duration || 0) * 60 },
-    actions: {
-      onTimerEnd: () => {
-        // Logic âm thanh và chuyển phase khi hết giờ
-        if (playSounds && currentPhase?.soundFile) {
-          new Audio(currentPhase.soundFile.url).play();
-        }
-        advancePhase();
-      }
-    }
-  });
-
   // State local cho UI giữ nguyên
   const [isDirty, setIsDirty] = useState(false);
   const [isEditingCycle, setIsEditingCycle] = useState(false);
@@ -85,18 +67,8 @@ export function TimerDisplay() {
   const [isAddingPhase, setIsAddingPhase] = useState(false);
   const [sessionsUntilLongRest, setSessionsUntilLongRest] = useState(5);
 
-  // Đồng bộ XState khi Phase thay đổi (Ví dụ: click chọn phase khác hoặc sửa duration)
-  useEffect(() => {
-    if (currentPhase) {
-      send({ type: 'UPDATE_DURATION', duration: currentPhase.duration * 60 });
-    }
-  }, [currentPhase?.id, currentPhase?.duration, send]);
-
   if (!currentCycle || !currentPhase) return <Card className="p-8 text-center">Loading...</Card>;
 
-  // Trích xuất thông tin từ XState
-  const { timeLeft } = state.context;
-  const isActive = state.matches('running');
   const progress = ( (currentPhase.duration * 60 - timeLeft) / (currentPhase.duration * 60) ) * 100;
 
   // Handlers kết nối Store
@@ -123,7 +95,6 @@ export function TimerDisplay() {
       </CardHeader>
       
       <CardContent className="flex flex-col items-center justify-center pt-4">
-        {/* SVG Progress Circle giữ nguyên logic, chỉ thay timeLeft từ XState */}
         <div className="relative w-64 h-64 md:w-80 md:h-80">
           <svg className="w-full h-full" viewBox="0 0 100 100">
             <circle className="text-gray-200 dark:text-gray-700" strokeWidth="5" stroke="currentColor" fill="transparent" r="45" cx="50" cy="50" />
@@ -154,7 +125,6 @@ export function TimerDisplay() {
             <Button onClick={() => send({ type: 'RESET' })} variant="outline" size="icon" className="h-14 w-14 rounded-full">
                 <RotateCcw />
             </Button>
-            {/* Start/Pause điều khiển qua XState send() */}
             <Button onClick={() => send({ type: isActive ? 'PAUSE' : 'START' })} size="icon" className="h-20 w-20 rounded-full shadow-lg">
                 {isActive ? <Pause className="h-10 w-10" /> : <Play className="h-10 w-10" />}
             </Button>
@@ -163,7 +133,6 @@ export function TimerDisplay() {
             </Button>
         </div>
 
-        {/* Phần danh sách Phase và Editor giữ nguyên, chỉ thay đổi các hàm gọi từ Zustand */}
         <div className="w-full space-y-2 py-4">
           <div className="flex flex-col items-center justify-center gap-2 w-full max-w-sm mx-auto">
               {currentCycle.phases.map((phase, index) => (
@@ -203,7 +172,6 @@ export function TimerDisplay() {
           )}
         </div>
 
-        {/* Footer actions kết nối saveCycleChanges từ Store */}
         <div className="flex items-center justify-center gap-2 pt-4 border-t w-full max-w-sm mx-auto">
             <Button onClick={createNewCycle} size="sm" variant="outline" className="w-full">
                 <Copy className="mr-2 h-4 w-4" /> New Cycle

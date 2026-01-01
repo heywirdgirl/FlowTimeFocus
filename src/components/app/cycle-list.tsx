@@ -1,30 +1,34 @@
+
 "use client";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { useCycle } from "@/contexts/cycle-context";
-import { useTimer } from "@/contexts/timer-context";
+import { useCycleStore } from "@/store/useCycleStore";
+import { useTimerStore } from "@/store/useTimerStore";
 import { Play, Trash } from "lucide-react";
 import { ScrollArea } from "../ui/scroll-area";
 
 export function CycleList() {
-    const { privateCycles, setCurrentCycle, trainingHistory, deleteCycle, currentCycle } = useCycle();
-    const { isActive, reset } = useTimer();
-
-    const totalTimeToday = trainingHistory
-        .filter(h => new Date(h.completedAt).toDateString() === new Date().toDateString())
-        .reduce((acc, h) => acc + h.totalDuration, 0);
+    const {
+        privateCycles,
+        setCurrentCycle,
+        deleteCycle,
+        currentCycle
+    } = useCycleStore();
+    const { isActive, send } = useTimerStore();
 
     const handleDelete = (cycleId: string) => {
         if (isActive && currentCycle?.id === cycleId) {
             if (window.confirm("This cycle is currently running. Are you sure you want to delete it? The timer will be reset to the default cycle.")) {
                 deleteCycle(cycleId);
-                reset();
+                send({ type: 'RESET' });
             }
         } else {
             deleteCycle(cycleId);
         }
     };
+
+    const totalTimeToday = 0; 
 
     return (
         <Card className="w-full">

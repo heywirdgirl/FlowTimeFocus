@@ -1,6 +1,7 @@
+
 "use client";
 
-import { useState, useContext } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { CircleUser, Cog, Menu, LogOut, Mail } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -19,7 +20,7 @@ import {
   signInWithPopup,
   signOut,
 } from "firebase/auth";
-import { AuthContext } from "@/contexts/auth-context";
+import { useAuthStore } from "@/store/use-auth-store"; // Changed import
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { EmailAuthDialog } from "./email-auth-dialog";
 import { toast } from "@/hooks/use-toast";
@@ -29,14 +30,16 @@ export function Header() {
   const [isEmailAuthOpen, setIsEmailAuthOpen] = useState(false);
   const [emailAuthMode, setEmailAuthMode] = useState<'signIn' | 'signUp'>('signIn');
   const auth = getAuth();
-  const { user } = useContext(AuthContext);
+  const user = useAuthStore((state) => state.user); // Changed to use Zustand store
 
   const handleGoogleSignIn = async () => {
     const provider = new GoogleAuthProvider();
     try {
       await signInWithPopup(auth, provider);
+      toast({ title: "Signed In", description: "Welcome!" });
     } catch (error) {
       console.error("Error signing in with Google: ", error);
+      toast({ title: "Error", description: "Failed to sign in with Google.", variant: "destructive" });
     }
   };
 
@@ -64,20 +67,14 @@ export function Header() {
 
   return (
     <>
-      <header className="sticky top-0 flex h-16 items-center gap-4 border-b bg-background px-4 md:px-6">
+      <header className="sticky top-0 flex h-16 items-center gap-4 border-b bg-background px-4 md:px-6 z-10">
         <nav className="hidden flex-col gap-6 text-lg font-medium md:flex md:flex-row md:items-center md:gap-5 md:text-sm lg:gap-6">
           <Link
-            href="#"
+            href="/"
             className="flex items-center gap-2 text-lg font-semibold md:text-base"
           >
-            <Menu className="h-6 w-6" />
-            <span className="sr-only">Flowtime</span>
-          </Link>
-          <Link
-            href="#"
-            className="text-foreground transition-colors hover:text-foreground"
-          >
-            Dashboard
+            {/* You might want a proper logo here */}
+            <span className="font-bold text-xl">FlowTime</span>
           </Link>
         </nav>
         <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
@@ -94,30 +91,16 @@ export function Header() {
           <SheetContent side="left">
             <nav className="grid gap-6 text-lg font-medium">
               <Link
-                href="#"
+                href="/"
                 className="flex items-center gap-2 text-lg font-semibold"
               >
-                <Menu className="h-6 w-6" />
-                <span className="sr-only">Flowtime</span>
+                <span className="font-bold text-xl">FlowTime</span>
               </Link>
-              <Link href="#" className="hover:text-foreground">
-                Dashboard
-              </Link>
+              {/* Add mobile nav links here if needed */}
             </nav>
           </SheetContent>
         </Sheet>
         <div className="flex w-full items-center justify-end gap-4 md:ml-auto md:gap-2 lg:gap-4">
-          <div className="hidden sm:block">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setIsSheetOpen(true)}
-            >
-              <Cog className="h-6 w-6" />
-              <span className="sr-only">Open Settings</span>
-            </Button>
-          </div>
-
           {user ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -132,7 +115,7 @@ export function Header() {
                       alt={user.displayName || ""}
                     />
                     <AvatarFallback>
-                      {user.email?.charAt(0).toUpperCase()}
+                      {user.email?.charAt(0).toUpperCase() || 'U'}
                     </AvatarFallback>
                   </Avatar>
                   <span className="sr-only">Toggle user menu</span>
@@ -142,11 +125,6 @@ export function Header() {
                 <DropdownMenuLabel>
                   {user.displayName || user.email}
                 </DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => setIsSheetOpen(true)}>
-                  <Cog className="mr-2 h-4 w-4" />
-                  <span>Settings</span>
-                </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleSignOut}>
                   <LogOut className="mr-2 h-4 w-4" />
@@ -167,26 +145,22 @@ export function Header() {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuLabel>Guest</DropdownMenuLabel>
+                <DropdownMenuLabel>Guest Menu</DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onSelect={handleGoogleSignIn}>
-                  Continue with Google
+                  Sign in with Google
                 </DropdownMenuItem>
                 <DropdownMenuItem onSelect={() => openEmailAuthDialog('signIn')}>
                   <Mail className="mr-2 h-4 w-4" />
                   <span>Sign In with Email</span>
                 </DropdownMenuItem>
-                <DropdownMenuItem onSelect={() => openEmailAuthDialog('signUp')}>
+                 <DropdownMenuItem onSelect={() => openEmailAuthDialog('signUp')}>
                   <Mail className="mr-2 h-4 w-4" />
                   <span>Sign Up with Email</span>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           )}
-          <Button variant="ghost" size="icon" className="sm:hidden" onClick={() => setIsSheetOpen(true)}>
-            <Cog className="h-6 w-6" />
-            <span className="sr-only">Open Settings</span>
-          </Button>
         </div>
       </header>
       <EmailAuthDialog
