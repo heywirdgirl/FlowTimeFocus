@@ -10,7 +10,7 @@ interface AppStore {
   
   // --- Settings State ---
   playSounds: boolean;
-  theme: 'light' | 'dark' | 'system';
+  theme: 'dark' | 'light' | 'system';
   audioLibrary: AudioAsset[];
 
   // --- Actions ---
