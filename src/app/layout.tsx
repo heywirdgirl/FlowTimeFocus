@@ -2,9 +2,10 @@ import type {Metadata} from 'next';
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
 import { AuthProvider } from '@/contexts/auth-context';
-import { CycleProvider } from '@/contexts/cycle-context';
 import { Header } from "@/components/app/header";
 import { Footer } from "@/components/app/footer";
+import { SyncStoreGate } from "@/components/app/syncStoreGate";
+
 
 export const metadata: Metadata = {
   title: 'FlowTime Focus',
@@ -24,15 +25,17 @@ export default function RootLayout({
         <link href="https://fonts.googleapis.com/css2?family=PT+Sans:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet" />
       </head>
       <body className="font-body antialiased">
-        <AuthProvider>
-          <CycleProvider>
-                  <Header />
-            {children}
-                  <Footer />
-          </CycleProvider>
+        <AuthProvider> 
+          {/* AuthProvider vẫn nên giữ nếu bạn dùng Firebase Auth trực tiếp */}
+          <SyncStoreGate /> {/* <-- Thêm một "Cổng" điều phối Sync ở đây */}
+          <Header />
+          <main>{children}</main>
+          <Footer />
         </AuthProvider>
         <Toaster />
       </body>
     </html>
   );
 }
+
+

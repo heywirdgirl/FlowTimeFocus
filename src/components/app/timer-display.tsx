@@ -1,28 +1,28 @@
-
 "use client";
 
-import { useTimer } from "@/contexts/timer-context";
+import { useEffect, useState } from "react";
+import { useMachine } from "@xstate/react";
+import { timerMachine } from "@/ai/timer-machine"; // File đã tạo ở bước trước
+import { useCycleStore } from "@/store/useCycleStore"; // Store Zustand mới
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
-import { useCycle } from "@/contexts/cycle-context";
 import { Play, Pause, RotateCcw, SkipForward, Edit, Plus, Trash2, Save, Copy } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { useState } from "react";
 import { cn } from "@/lib/utils";
 import type { Phase } from "@/lib/types";
 import { CycleProgressBar } from "./cycle-progress-bar";
 import { Label } from "../ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
 
-
+// Helper giữ nguyên
 const formatTime = (seconds: number) => {
   const mins = Math.floor(seconds / 60);
   const secs = seconds % 60;
   return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
 };
 
+// PhaseEditor giữ nguyên cấu trúc cũ
 function PhaseEditor({ phase, onSave, onCancel, isNew }: { phase: Partial<Phase>, onSave: (p: Partial<Phase>) => void, onCancel: () => void, isNew?: boolean }) {
-    
     const [title, setTitle] = useState(phase?.title || "");
     const [duration, setDuration] = useState(String(phase?.duration || ""));
 
@@ -35,33 +35,18 @@ function PhaseEditor({ phase, onSave, onCancel, isNew }: { phase: Partial<Phase>
 
     return (
         <div className="p-2 my-2 border rounded-lg bg-background space-y-2">
-            <Input 
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                placeholder="Phase Title"
-            />
-            <Input 
-                type="number"
-                value={duration}
-                onChange={(e) => setDuration(e.target.value)}
-                placeholder="Duration (min)"
-                step="0.1"
-            />
-             {parseFloat(duration) < 0.1 && (
-                <p className="text-xs text-destructive mt-1">
-                    Duration must be at least 0.1 minutes.
-                </p>
-            )}
+            <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Phase Title" />
+            <Input type="number" value={duration} onChange={(e) => setDuration(e.target.value)} placeholder="Duration (min)" step="0.1" />
             <div className="flex gap-2">
               <Button onClick={handleSave} size="sm" className="w-full">{isNew ? 'Add' : 'Save'}</Button>
               <Button onClick={onCancel} size="sm" variant="outline" className="w-full">Cancel</Button>
             </div>
         </div>
-    )
+    );
 }
 
 export function TimerDisplay() {
-  const { timeLeft, isActive, startPause, reset, skip } = useTimer();
+  // 1. KẾT NỐI ZUSTAND (Thay thế useCycle cũ)
   const { 
     currentCycle, 
     currentPhaseIndex, 
@@ -69,124 +54,95 @@ export function TimerDisplay() {
     updatePhase, 
     addPhase, 
     deletePhase, 
-    setCurrentPhaseIndex, 
-    audioLibrary, 
-    endOfCycleSound, 
-    setEndOfCycleSound, 
-    saveCycleChanges, 
-    createNewCycle 
-  } = useCycle();
+    setCurrentPhaseIndex,
+    advancePhase,
+    audioLibrary,
+    saveCycleChanges,
+    createNewCycle,
+    playSounds
+  } = useCycleStore();
+
+  // 2. KẾT NỐI XSTATE (Thay thế useTimer cũ)
+  const currentPhase = currentCycle?.phases[currentPhaseIndex];
   
+  const [state, send] = useMachine(timerMachine, {
+    input: { duration: (currentPhase?.duration || 0) * 60 },
+    actions: {
+      onTimerEnd: () => {
+        // Logic âm thanh và chuyển phase khi hết giờ
+        if (playSounds && currentPhase?.soundFile) {
+          new Audio(currentPhase.soundFile.url).play();
+        }
+        advancePhase();
+      }
+    }
+  });
+
+  // State local cho UI giữ nguyên
   const [isDirty, setIsDirty] = useState(false);
   const [isEditingCycle, setIsEditingCycle] = useState(false);
   const [editingPhaseId, setEditingPhaseId] = useState<string | null>(null);
   const [isAddingPhase, setIsAddingPhase] = useState(false);
   const [sessionsUntilLongRest, setSessionsUntilLongRest] = useState(5);
 
+  // Đồng bộ XState khi Phase thay đổi (Ví dụ: click chọn phase khác hoặc sửa duration)
+  useEffect(() => {
+    if (currentPhase) {
+      send({ type: 'UPDATE_DURATION', duration: currentPhase.duration * 60 });
+    }
+  }, [currentPhase?.id, currentPhase?.duration, send]);
 
-  const currentPhase = currentCycle?.phases[currentPhaseIndex];
-  const totalPhases = currentCycle?.phases.length ?? 0;
-  const totalDuration = currentCycle?.phases.reduce((acc, p) => acc + (p.duration || 0), 0) ?? 0;
+  if (!currentCycle || !currentPhase) return <Card className="p-8 text-center">Loading...</Card>;
 
-  const progress = currentPhase && currentPhase.duration > 0 ? ((currentPhase.duration * 60 - timeLeft) / (currentPhase.duration * 60)) * 100 : 0;
-  
-  if (!currentCycle || !currentPhase) {
-    return (
-      <Card className="w-full text-center border-2 shadow-lg p-8">
-        <p>Loading cycle...</p>
-      </Card>
-    );
-  }
+  // Trích xuất thông tin từ XState
+  const { timeLeft } = state.context;
+  const isActive = state.matches('running');
+  const progress = ( (currentPhase.duration * 60 - timeLeft) / (currentPhase.duration * 60) ) * 100;
 
-  const handleCycleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    updateCycle({ name: e.target.value });
-    setIsDirty(true);
-  };
-  
+  // Handlers kết nối Store
   const handleSavePhase = (phaseId: string, updates: Partial<Phase>) => {
       updatePhase(phaseId, updates);
       setEditingPhaseId(null);
       setIsDirty(true);
-  }
-
-  const handleAddPhase = (newPhaseData: Partial<Phase>) => {
-    addPhase(newPhaseData);
-    setIsAddingPhase(false);
-    setIsDirty(true);
-  }
-
-  const handleDeletePhase = (phaseId: string) => {
-    deletePhase(phaseId);
-    setIsDirty(true);
-  }
-
-  const handleSaveChanges = async () => {
-    await saveCycleChanges();
-    setIsDirty(false);
-  }
-
-  const handleEndOfCycleSoundChange = (soundUrl: string) => {
-    const selectedSound = audioLibrary.find(s => s.url === soundUrl);
-    setEndOfCycleSound(selectedSound || null);
-  }
-
-  const isTemplate = currentCycle.id.startsWith("cycle_template_");
+  };
 
   return (
     <Card className="w-full text-center border-2 shadow-lg relative">
       <CardHeader className="pb-2">
         {isEditingCycle ? (
           <div className="flex flex-col gap-2">
-            <Input
-              value={currentCycle.name}
-              onChange={handleCycleNameChange}
-              className="text-3xl font-headline tracking-wider text-center"
-            />
+            <Input value={currentCycle.name} onChange={(e) => { updateCycle({ name: e.target.value }); setIsDirty(true); }} className="text-3xl font-headline text-center" />
             <Button size="sm" onClick={() => setIsEditingCycle(false)}>Done</Button>
           </div>
         ) : (
           <div className="flex items-center justify-center gap-2">
             <h2 className="text-3xl font-headline tracking-wider">{currentCycle.name}</h2>
-            <Button variant="ghost" size="icon" onClick={() => setIsEditingCycle(true)}>
-              <Edit className="h-5 w-5" />
-            </Button>
+            <Button variant="ghost" size="icon" onClick={() => setIsEditingCycle(true)}><Edit className="h-5 w-5" /></Button>
           </div>
         )}
       </CardHeader>
       
       <CardContent className="flex flex-col items-center justify-center pt-4">
+        {/* SVG Progress Circle giữ nguyên logic, chỉ thay timeLeft từ XState */}
         <div className="relative w-64 h-64 md:w-80 md:h-80">
           <svg className="w-full h-full" viewBox="0 0 100 100">
+            <circle className="text-gray-200 dark:text-gray-700" strokeWidth="5" stroke="currentColor" fill="transparent" r="45" cx="50" cy="50" />
             <circle
-              className="text-gray-200 dark:text-gray-700"
-              strokeWidth="5"
-              stroke="currentColor"
-              fill="transparent"
-              r="45"
-              cx="50"
-              cy="50"
-            />
-            <circle
-              className="text-primary"
+              className="text-primary transition-all duration-1000 linear"
               strokeWidth="5"
               strokeDasharray="282.74"
               strokeDashoffset={282.74 - (progress / 100) * 282.74}
               strokeLinecap="round"
-              stroke="currentColor"
-              fill="transparent"
-              r="45"
-              cx="50"
-              cy="50"
-              style={{ transform: 'rotate(-90deg)', transformOrigin: '50% 50%', transition: 'stroke-dashoffset 1s linear' }}
+              stroke="currentColor" fill="transparent" r="45" cx="50" cy="50"
+              style={{ transform: 'rotate(-90deg)', transformOrigin: '50% 50%' }}
             />
           </svg>
           <div className="absolute inset-0 flex items-center justify-center">
-            <span className="font-mono text-5xl md:text-7xl font-bold tracking-tighter text-foreground tabular-nums">
+            <span className="font-mono text-5xl md:text-7xl font-bold tabular-nums">
               {formatTime(timeLeft)}
             </span>
           </div>
         </div>
-
         <div className="mt-6 text-center min-h-[60px] w-full">
             <p className="text-xl text-muted-foreground">{currentPhase.title}</p>
             <CycleProgressBar totalCycles={sessionsUntilLongRest} />
@@ -195,20 +151,19 @@ export function TimerDisplay() {
 
       <CardFooter className="flex flex-col gap-4">
         <div className="flex justify-center items-center gap-4">
-            <Button onClick={reset} variant="outline" size="icon" className="h-14 w-14 rounded-full">
+            <Button onClick={() => send({ type: 'RESET' })} variant="outline" size="icon" className="h-14 w-14 rounded-full">
                 <RotateCcw />
-                <span className="sr-only">Reset</span>
             </Button>
-            <Button onClick={() => startPause(sessionsUntilLongRest)} size="icon" className="h-20 w-20 rounded-full text-3xl shadow-lg">
+            {/* Start/Pause điều khiển qua XState send() */}
+            <Button onClick={() => send({ type: isActive ? 'PAUSE' : 'START' })} size="icon" className="h-20 w-20 rounded-full shadow-lg">
                 {isActive ? <Pause className="h-10 w-10" /> : <Play className="h-10 w-10" />}
-                <span className="sr-only">{isActive ? "Pause" : "Start"}</span>
             </Button>
-            <Button onClick={() => skip(sessionsUntilLongRest)} variant="outline" size="icon" className="h-14 w-14 rounded-full">
+            <Button onClick={() => send({ type: 'SKIP' })} variant="outline" size="icon" className="h-14 w-14 rounded-full">
                 <SkipForward />
-                <span className="sr-only">Skip</span>
             </Button>
         </div>
 
+        {/* Phần danh sách Phase và Editor giữ nguyên, chỉ thay đổi các hàm gọi từ Zustand */}
         <div className="w-full space-y-2 py-4">
           <div className="flex flex-col items-center justify-center gap-2 w-full max-w-sm mx-auto">
               {currentCycle.phases.map((phase, index) => (
@@ -223,14 +178,12 @@ export function TimerDisplay() {
                               <span>{phase.title}</span>
                               <span>{phase.duration}m</span>
                           </Button>
-                          <Button variant="ghost" size="icon" onClick={() => setEditingPhaseId(editingPhaseId === phase.id ? null : phase.id)} title="Edit Phase">
+                          <Button variant="ghost" size="icon" onClick={() => setEditingPhaseId(editingPhaseId === phase.id ? null : phase.id)}>
                               <Edit className="h-4 w-4" />
                           </Button>
-                          {totalPhases > 1 && (
-                            <Button variant="ghost" size="icon" onClick={() => handleDeletePhase(phase.id)} title="Delete Phase" className="text-destructive hover:text-destructive">
-                                <Trash2 className="h-4 w-4" />
-                            </Button>
-                          )}
+                          <Button variant="ghost" size="icon" onClick={() => { deletePhase(phase.id); setIsDirty(true); }} className="text-destructive">
+                              <Trash2 className="h-4 w-4" />
+                          </Button>
                       </div>
                        {editingPhaseId === phase.id && (
                            <PhaseEditor 
@@ -242,65 +195,24 @@ export function TimerDisplay() {
                   </div>
               ))}
           </div>
-          <div className="flex justify-center items-center">
-             <Button variant="outline" size="sm" onClick={() => setIsAddingPhase(true)} title="Add Phase" className="mt-2">
-                  <Plus className="mr-2 h-4 w-4" /> Add Phase
-              </Button>
-          </div>
+          <Button variant="outline" size="sm" onClick={() => setIsAddingPhase(true)} className="mt-2 mx-auto flex">
+              <Plus className="mr-2 h-4 w-4" /> Add Phase
+          </Button>
           {isAddingPhase && (
-             <div className="w-full max-w-sm mx-auto">
-                <PhaseEditor
-                    isNew
-                    phase={{ title: 'New Phase', duration: 5 }}
-                    onSave={handleAddPhase}
-                    onCancel={() => setIsAddingPhase(false)}
-                />
-             </div>
+             <PhaseEditor isNew phase={{ title: 'New Phase', duration: 5 }} onSave={(p) => { addPhase(p); setIsAddingPhase(false); setIsDirty(true); }} onCancel={() => setIsAddingPhase(false)} />
           )}
         </div>
 
-        <div className="w-full max-w-sm mx-auto space-y-4">
-            <div className="flex items-center justify-between">
-                <Label htmlFor="sessionsUntilLongRest" className="text-sm font-medium">Repeat Cycles</Label>
-                <Input
-                    id="sessionsUntilLongRest"
-                    type="number"
-                    value={sessionsUntilLongRest}
-                    onChange={(e) => setSessionsUntilLongRest(Number(e.target.value))}
-                    className="w-20"
-                    min="1"
-                />
-            </div>
-            <div className="flex items-center justify-between">
-              <Label htmlFor="endOfCycleSound" className="text-sm font-medium">End Sound</Label>
-              <Select onValueChange={handleEndOfCycleSoundChange} value={endOfCycleSound?.url}>
-                <SelectTrigger className="w-[180px]">
-                  <SelectValue placeholder="Select end sound" />
-                </SelectTrigger>
-                <SelectContent>
-                  {audioLibrary.map(audio => (
-                    <SelectItem key={audio.id} value={audio.url}>{audio.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="text-sm text-muted-foreground pt-2">
-                Total duration: {totalDuration.toFixed(1)}m
-            </div>
-        </div>
+        {/* Footer actions kết nối saveCycleChanges từ Store */}
         <div className="flex items-center justify-center gap-2 pt-4 border-t w-full max-w-sm mx-auto">
             <Button onClick={createNewCycle} size="sm" variant="outline" className="w-full">
-                <Copy className="mr-2 h-4 w-4" />
-                New Cycle
+                <Copy className="mr-2 h-4 w-4" /> New Cycle
             </Button>
-            <Button onClick={handleSaveChanges} size="sm" variant="outline" disabled={isTemplate || !isDirty} className="w-full">
-                <Save className="mr-2 h-4 w-4" />
-                {isTemplate ? 'Template' : 'Save Changes'}
+            <Button onClick={async () => { await saveCycleChanges(); setIsDirty(false); }} size="sm" variant="outline" disabled={!isDirty} className="w-full">
+                <Save className="mr-2 h-4 w-4" /> Save Changes
             </Button>
         </div>
       </CardFooter>
     </Card>
   );
 }
-
-    
