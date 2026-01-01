@@ -2,10 +2,9 @@
 "use client";
 
 import { useTimer } from "@/contexts/timer-context";
-import { Header } from "./header";
+
 import { TimerDisplay } from "./timer-display";
 import { CycleList } from "./cycle-list";
-import { Footer } from "./footer";
 import { cn } from "@/lib/utils";
 import { useCycle } from "@/contexts/cycle-context";
 
@@ -30,7 +29,7 @@ export function Homepage() {
 
   return (
     <div className={cn("min-h-screen w-full transition-colors duration-1000 flex flex-col", sessionTypeClass())}>
-      <Header />
+
       <main className="flex-grow container mx-auto max-w-6xl px-4 py-8 md:py-12">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
             <div className="lg:col-span-2">
@@ -41,7 +40,7 @@ export function Homepage() {
             </div>
         </div>
       </main>
-      <Footer />
+
     </div>
   );
 }

@@ -21,7 +21,6 @@ import {
 } from "firebase/auth";
 import { AuthContext } from "@/contexts/auth-context";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { SettingsSheet } from "./settings-sheet";
 import { EmailAuthDialog } from "./email-auth-dialog";
 import { toast } from "@/hooks/use-toast";
 
@@ -190,7 +189,6 @@ export function Header() {
           </Button>
         </div>
       </header>
-      <SettingsSheet open={isSheetOpen} onOpenChange={setIsSheetOpen} />
       <EmailAuthDialog
         open={isEmailAuthOpen}
         onOpenChange={setIsEmailAuthOpen}
