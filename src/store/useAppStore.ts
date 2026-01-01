@@ -11,6 +11,7 @@ interface AppStore {
   // --- Settings State ---
   playSounds: boolean;
   theme: 'light' | 'dark' | 'system';
+  audioLibrary: AudioAsset[];
 
   // --- Actions ---
   setCurrentCycle: (cycle: Cycle) => void;
@@ -28,6 +29,10 @@ export const useAppStore = create<AppStore>()(
       currentPhaseIndex: 0,
       playSounds: true,
       theme: 'system',
+      audioLibrary: [
+        { id: 'sound_1', name: 'Instant Win', url: '/sounds/instant-win.wav' },
+        { id: 'sound_2', name: 'Winning Notification', url: '/sounds/winning-notification.wav' },
+      ],
 
       setCurrentCycle: (cycle) => set({ currentCycle: cycle, currentPhaseIndex: 0 }),
       
