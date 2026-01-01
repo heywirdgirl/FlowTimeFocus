@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useCycleStore } from "@/store/useCycleStore"; 
 import { useTimerStore } from "@/store/useTimerStore";
 import { Button } from "@/components/ui/button";
@@ -11,35 +11,13 @@ import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import type { Phase } from "@/types/cycle";
 import { CycleProgressBar } from "./cycle-progress-bar";
+import { PhaseEditor } from "./phase-editor"; // Import the new component
 
 const formatTime = (seconds: number) => {
   const mins = Math.floor(seconds / 60);
   const secs = seconds % 60;
   return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
 };
-
-function PhaseEditor({ phase, onSave, onCancel, isNew }: { phase: Partial<Phase>, onSave: (p: Partial<Phase>) => void, onCancel: () => void, isNew?: boolean }) {
-    const [title, setTitle] = useState(phase?.title || "");
-    const [duration, setDuration] = useState(String(phase?.duration || ""));
-
-    const handleSave = () => {
-        const newDuration = parseFloat(duration);
-        if (title.trim() && !isNaN(newDuration) && newDuration >= 0.1) {
-            onSave({ ...phase, title, duration: newDuration });
-        }
-    }
-
-    return (
-        <div className="p-2 my-2 border rounded-lg bg-background space-y-2">
-            <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Phase Title" />
-            <Input type="number" value={duration} onChange={(e) => setDuration(e.target.value)} placeholder="Duration (min)" step="0.1" />
-            <div className="flex gap-2">
-              <Button onClick={handleSave} size="sm" className="w-full">{isNew ? 'Add' : 'Save'}</Button>
-              <Button onClick={onCancel} size="sm" variant="outline" className="w-full">Cancel</Button>
-            </div>
-        </div>
-    );
-}
 
 export function TimerDisplay() {
   const { 

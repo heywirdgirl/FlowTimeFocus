@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Header } from "@/components/app/header";
 import { Footer } from "@/components/app/footer";
 import { SyncStoreGate } from "@/components/app/syncStoreGate";
+import { ThemeProvider } from '@/components/app/theme-provider';
 
 
 export const metadata: Metadata = {
@@ -20,6 +21,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
         <body>
+          <ThemeProvider>
             {/* SyncStoreGate handles auth and data synchronization */}
             <SyncStoreGate /> 
             <div className="flex flex-col min-h-screen">
@@ -28,6 +30,7 @@ export default function RootLayout({
                 <Footer />
             </div>
             <Toaster />
+          </ThemeProvider>
         </body>
     </html>
   );
