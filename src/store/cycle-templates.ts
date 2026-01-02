@@ -4,20 +4,46 @@ import { Cycle, Phase } from '@/lib/types';
 // Default data for a new phase when added by a user
 export const DEFAULT_PHASE: Omit<Phase, 'id'> = {
     name: 'New Phase',
-    duration: 600, // 10 minutes
+    duration: 10, // Default duration in minutes
     type: 'work',
 };
 
-// Default data for guest users who are not logged in
-export const GUEST_CYCLE: Cycle = {
-    id: 'guest-cycle',
-    name: 'My First Cycle',
-    isTemplate: false,
+// --- Official Templates ---
+// All durations are in minutes. The timer store will convert them to seconds.
+
+const POMODORO_TEMPLATE: Cycle = {
+    id: 'template-pomodoro',
+    name: 'Classic Pomodoro',
+    isTemplate: true,
     phases: [
-        { id: 'p1', name: 'Work', duration: 1500, type: 'work' },
-        { id: 'p2', name: 'Short Break', duration: 300, type: 'break' },
-        { id: 'p3', name: 'Work', duration: 1500, type: 'work' },
-        { id: 'p4', name: 'Long Break', duration: 900, type: 'break' },
+        { id: 'p-w1', name: 'Work', duration: 25, type: 'work' },
+        { id: 'p-b1', name: 'Short Break', duration: 5, type: 'break' },
+        { id: 'p-w2', name: 'Work', duration: 25, type: 'work' },
+        { id: 'p-b2', name: 'Short Break', duration: 5, type: 'break' },
+        { id: 'p-w3', name: 'Work', duration: 25, type: 'work' },
+        { id: 'p-b3', name: 'Short Break', duration: 5, type: 'break' },
+        { id: 'p-w4', name: 'Work', duration: 25, type: 'work' },
+        { id: 'p-b4', name: 'Long Break', duration: 15, type: 'break' },
     ],
-    createdAt: new Date(), // Use client-side date for guests
+    createdAt: new Date(),
 };
+
+const WIMHOF_TEMPLATE: Cycle = {
+    id: 'template-wimhof',
+    name: 'Wim Hof Breathing',
+    isTemplate: true,
+    phases: [
+        { id: 'wh-b1', name: 'Power Breathing', duration: 1.25, type: 'work' }, // 75 seconds
+        { id: 'wh-r1', name: 'Breath Hold', duration: 1.5, type: 'break' },      // 90 seconds
+        { id: 'wh-rec1', name: 'Recovery Hold', duration: 0.25, type: 'work' }, // 15 seconds
+        { id: 'wh-b2', name: 'Power Breathing', duration: 1.25, type: 'work' },
+        { id: 'wh-r2', name: 'Breath Hold', duration: 2, type: 'break' },        // 120 seconds
+        { id: 'wh-rec2', name: 'Recovery Hold', duration: 0.25, type: 'work' },
+        { id: 'wh-b3', name: 'Power Breathing', duration: 1.25, type: 'work' },
+        { id: 'wh-r3', name: 'Breath Hold', duration: 2.5, type: 'break' },      // 150 seconds
+        { id: 'wh-rec3', name: 'Recovery Hold', duration: 0.25, type: 'work' },
+    ],
+    createdAt: new Date(),
+};
+
+export const OFFICIAL_TEMPLATES = [POMODORO_TEMPLATE, WIMHOF_TEMPLATE];
