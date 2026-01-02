@@ -56,7 +56,10 @@ export function TimerDisplay() {
   const { timeLeft } = snapshot.context;
   const isActive = snapshot.matches('running');
 
-  const progress = ((currentPhase.duration * 60 - timeLeft) / (currentPhase.duration * 60)) * 100;
+  const totalDuration = currentPhase.duration * 60;
+  // FIX: Prevent NaN by checking if totalDuration is 0
+  const progress = totalDuration > 0 ? ((totalDuration - timeLeft) / totalDuration) * 100 : 0;
+
 
   const handleSavePhase = (phaseId: string, updates: Partial<Phase>) => {
     updatePhase(phaseId, updates);

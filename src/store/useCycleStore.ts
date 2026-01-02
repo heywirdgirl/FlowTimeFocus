@@ -5,7 +5,7 @@ import { doc, onSnapshot, setDoc, deleteDoc, collection, addDoc, serverTimestamp
 import { db } from "@/lib/firebase";
 import { v4 as uuidv4 } from 'uuid';
 import { OFFICIAL_TEMPLATES, DEFAULT_PHASE } from './cycle-templates';
-import { useTimerStore } from './useTimerStore'; // Import timer store
+// DO NOT import useTimerStore here to prevent circular dependencies
 import type { Cycle, Phase } from '@/lib/types';
 
 // --- State and Store Types ---
@@ -68,6 +68,14 @@ export const useCycleStore = create<CycleStore>()(
                     isGuestMode: true,
                     userId: null
                 });
+                 // On initial load for guest, make sure timer is updated
+                 const firstPhase = guestCycles[0]?.phases[0];
+                 if (firstPhase) {
+                     require('./useTimerStore').useTimerStore.getState().send({ 
+                         type: 'UPDATE_DURATION', 
+                         duration: firstPhase.duration * 60 
+                     });
+                 }
             },
 
             startSyncCycles: (uid) => {
@@ -111,10 +119,10 @@ export const useCycleStore = create<CycleStore>()(
                 const cycle = get().cycles.find((c) => c.id === cycleId) || null;
                 set({ currentCycle: cycle, currentPhaseIndex: 0 });
 
-                // Proactively update the timer store
                 const firstPhase = cycle?.phases[0];
                 if (firstPhase) {
-                    useTimerStore.getState().send({ 
+                    // Use dynamic require to prevent circular dependency
+                    require('./useTimerStore').useTimerStore.getState().send({ 
                         type: 'UPDATE_DURATION', 
                         duration: firstPhase.duration * 60 
                     });
@@ -122,13 +130,15 @@ export const useCycleStore = create<CycleStore>()(
             },
 
             setCurrentPhaseIndex: (index) => {
-                set({ currentPhaseIndex: index });
-
-                // Proactively update the timer store
                 const { currentCycle } = get();
                 const newPhase = currentCycle?.phases[index];
+
+                // Set the state first
+                set({ currentPhaseIndex: index });
+                
                 if (newPhase) {
-                    useTimerStore.getState().send({
+                    // Use dynamic require to prevent circular dependency
+                    require('./useTimerStore').useTimerStore.getState().send({
                         type: 'UPDATE_DURATION',
                         duration: newPhase.duration * 60
                     });
@@ -136,47 +146,59 @@ export const useCycleStore = create<CycleStore>()(
             },
 
             goToNextPhase: () => {
-                set(state => {
-                    if (!state.currentCycle) return {};
-                    const isLastPhase = state.currentPhaseIndex >= state.currentCycle.phases.length - 1;
-                    const nextIndex = isLastPhase ? 0 : state.currentPhaseIndex + 1;
+                const { currentCycle, currentPhaseIndex } = get();
+                if (!currentCycle) return;
 
-                    // Proactively update the timer store
-                    const nextPhase = state.currentCycle.phases[nextIndex];
-                    if (nextPhase) {
-                        useTimerStore.getState().send({ 
-                            type: 'UPDATE_DURATION', 
-                            duration: nextPhase.duration * 60 
-                        });
-                    }
-                    
-                    return { currentPhaseIndex: nextIndex };
-                });
+                const isLastPhase = currentPhaseIndex >= currentCycle.phases.length - 1;
+                const nextIndex = isLastPhase ? 0 : currentPhaseIndex + 1;
+
+                const nextPhase = currentCycle.phases[nextIndex];
+                if (nextPhase) {
+                     // Use dynamic require to prevent circular dependency
+                    require('./useTimerStore').useTimerStore.getState().send({ 
+                        type: 'UPDATE_DURATION', 
+                        duration: nextPhase.duration * 60 
+                    });
+                }
+
+                set({ currentPhaseIndex: nextIndex });
             },
 
             createNewCycle: async () => {
                 const { userId, isGuestMode } = get();
                 const newCycle: Omit<Cycle, 'id' | 'createdAt'> = {
                     name: "My New Cycle",
-                    isTemplate: false,
+                    isPublic: false,
+                    authorId: userId || 'guest',
+                    authorName: 'Guest', // You might want to fetch a real name
+                    likes: 0,
+                    shares: 0,
+                    updatedAt: new Date().toISOString(),
                     phases: [{ ...DEFAULT_PHASE, id: uuidv4() }],
                 };
 
                 if (isGuestMode || !userId) {
-                    const localCycle: Cycle = { ...newCycle, id: `guest-${uuidv4()}`, createdAt: new Date() };
+                    const localCycle: Cycle = { ...newCycle, id: `guest-${uuidv4()}`, createdAt: new Date().toISOString() };
                     set(state => ({ cycles: [...state.cycles, localCycle], currentCycle: localCycle }));
                     return;
                 }
 
-                await addDoc(collection(db, "users", userId, "cycles"), {
+                const docRef = await addDoc(collection(db, "users", userId, "cycles"), {
                     ...newCycle,
                     createdAt: serverTimestamp(),
+                    updatedAt: serverTimestamp(),
                 });
+                // The listener will automatically update the state, but we can set it for faster UI response
+                 set(state => ({ currentCycle: { ...newCycle, id: docRef.id, createdAt: new Date().toISOString() } }));
             },
 
             saveCurrentCycle: async () => {
                 const { userId, isGuestMode, currentCycle } = get();
-                if (isGuestMode || !userId || !currentCycle || currentCycle.isTemplate) return;
+                if (isGuestMode || !userId || !currentCycle) return;
+
+                // This check prevents users from editing official templates if they somehow get loaded into the user's space
+                const cycleInStore = get().cycles.find(c => c.id === currentCycle.id);
+                if(cycleInStore && (cycleInStore as any).isOfficial) return; 
 
                 const { id, ...cycleData } = currentCycle;
                 const cycleRef = doc(db, "users", userId, "cycles", id);
@@ -188,10 +210,10 @@ export const useCycleStore = create<CycleStore>()(
                 if (isGuestMode || !userId) return;
 
                 const cycleToDelete = cycles.find(c => c.id === cycleId);
-                if (cycleToDelete?.isTemplate) return;
+                 if(cycleToDelete && (cycleToDelete as any).isOfficial) return; 
 
                 if (currentCycle?.id === cycleId) {
-                    const newCurrentCycle = cycles.find(c => c.id !== cycleId && !c.isTemplate) || OFFICIAL_TEMPLATES[0];
+                    const newCurrentCycle = cycles.find(c => c.id !== cycleId && !(c as any).isOfficial) || OFFICIAL_TEMPLATES[0];
                     set({ currentCycle: newCurrentCycle, currentPhaseIndex: 0 });
                 }
 
@@ -200,7 +222,7 @@ export const useCycleStore = create<CycleStore>()(
 
             addPhase: () => {
                 set(state => {
-                    if (!state.currentCycle || state.currentCycle.isTemplate) return {};
+                    if (!state.currentCycle || (state.currentCycle as any).isOfficial) return {};
                     const newPhase: Phase = { ...DEFAULT_PHASE, id: uuidv4() };
                     const updatedPhases = [...state.currentCycle.phases, newPhase];
                     const updatedCycle = { ...state.currentCycle, phases: updatedPhases };
@@ -213,7 +235,7 @@ export const useCycleStore = create<CycleStore>()(
 
             updatePhase: (phaseId, updates) => {
                 set(state => {
-                    if (!state.currentCycle || state.currentCycle.isTemplate) return {};
+                    if (!state.currentCycle || (state.currentCycle as any).isOfficial) return {};
                     const updatedPhases = state.currentCycle.phases.map(p => p.id === phaseId ? { ...p, ...updates } : p);
                     const updatedCycle = { ...state.currentCycle, phases: updatedPhases };
                     return {
@@ -225,7 +247,7 @@ export const useCycleStore = create<CycleStore>()(
 
             deletePhase: (phaseId) => {
                 set(state => {
-                    if (!state.currentCycle || state.currentCycle.isTemplate) return {};
+                    if (!state.currentCycle || (state.currentCycle as any).isOfficial) return {};
                     const updatedPhases = state.currentCycle.phases.filter(p => p.id !== phaseId);
                     const updatedCycle = { ...state.currentCycle, phases: updatedPhases };
                     return {
@@ -242,12 +264,12 @@ export const useCycleStore = create<CycleStore>()(
             onRehydrateStorage: () => (state) => {
                 if (state) {
                     state.isLoading = true;
-                    // Ensure playSounds has a default value on rehydration
                     state.playSounds = state.playSounds ?? true;
                 }
             },
-             // Only persist a subset of the state
             partialize: (state) => ({
+                // remove cycles from persisted storage
+                cycles: [],
                 currentCycleId: state.currentCycle?.id,
                 currentPhaseIndex: state.currentPhaseIndex,
                 userId: state.userId,
