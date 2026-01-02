@@ -1,5 +1,5 @@
 
-import { createMachine, assign, sendParent } from 'xstate';
+import { createMachine, assign, sendParent, fromCallback } from 'xstate';
 
 export const timerMachine = createMachine({
   id: 'timer',
@@ -22,8 +22,11 @@ export const timerMachine = createMachine({
     },
     running: {
       invoke: {
-        src: 'ticker',
-        id: 'interval-ticker'
+        id: 'interval-ticker',
+        src: fromCallback(({ sendBack }) => {
+          const id = setInterval(() => sendBack({ type: 'TICK' }), 1000);
+          return () => clearInterval(id); // ✅ Cleanup cực kỳ quan trọng
+        })
       },
       on: {
         TICK: {
@@ -65,16 +68,5 @@ export const timerMachine = createMachine({
       },
     // Add the SKIP event handler with the correct relative target
     SKIP: '.finished' 
-  },
-},
-{
-  actors: {
-    ticker: ({ context, self }) => {
-      const interval = setInterval(() => {
-        self.send({ type: 'TICK' });
-      }, context.interval * 1000);
-
-      return () => clearInterval(interval);
-    },
   },
 });
