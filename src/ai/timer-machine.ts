@@ -1,5 +1,5 @@
 
-import { createMachine, assign, sendParent, fromCallback } from 'xstate';
+import { createMachine, assign, fromCallback } from 'xstate';
 
 export const timerMachine = createMachine({
   id: 'timer',
@@ -25,7 +25,7 @@ export const timerMachine = createMachine({
         id: 'interval-ticker',
         src: fromCallback(({ sendBack }) => {
           const id = setInterval(() => sendBack({ type: 'TICK' }), 1000);
-          return () => clearInterval(id); // ✅ Cleanup cực kỳ quan trọng
+          return () => clearInterval(id);
         })
       },
       on: {
@@ -36,7 +36,6 @@ export const timerMachine = createMachine({
         },
         PAUSE: 'paused',
         STOP: 'idle',
-        END: 'finished' // Transition to finished when timer ends
       },
       always: {
         target: 'finished',
@@ -59,14 +58,15 @@ export const timerMachine = createMachine({
   // Global events that can be handled from any state
   on: {
     UPDATE_DURATION: {
-        target: '.idle', // Go back to idle to reset everything
-        internal: false, // CRITICAL: Force re-entry to apply new duration properly
+        target: '.idle', // CORRECTED: Use absolute target from root
+        internal: false, 
         actions: assign({
           duration: ({ event }) => event.duration,
-          timeLeft: ({ event }) => event.duration, // Reset timeLeft immediately
+          timeLeft: ({ event }) => event.duration, 
         }),
       },
-    // Add the SKIP event handler with the correct relative target
-    SKIP: '.finished' 
+    SKIP: {
+        target: '.finished' // CORRECTED: Use absolute target from root
+    }
   },
 });
