@@ -3,58 +3,62 @@ import { create } from 'zustand';
 import { createActor } from 'xstate';
 import { timerMachine } from '@/ai/timer-machine';
 import { useCycleStore } from './useCycleStore';
-import type { Timer } from '@/lib/types';
+import type { Timer, TimerSnapshot } from '@/lib/types';
 
 // --- State and Store Types ---
 
 interface TimerState {
     timerActor: Timer | null;
-    timeLeft: number;
-    isActive: boolean;
+    snapshot: TimerSnapshot | null; // Store the entire snapshot
     send: (event: any) => void;
     initializeTimer: () => void;
+    stopTimer: () => void;
 }
 
 // --- Store Implementation ---
 
 export const useTimerStore = create<TimerState>((set, get) => ({
     timerActor: null,
-    timeLeft: 0,
-    isActive: false,
+    snapshot: null, // Initialize snapshot as null
     send: (event) => get().timerActor?.send(event),
 
     initializeTimer: () => {
-        get().timerActor?.stop();
+        // Rule 8: Guard for SSR
+        if (typeof window === 'undefined') return;
+
+        const { timerActor } = get();
+        if (timerActor) return; // Already initialized
 
         const { currentCycle, currentPhaseIndex } = useCycleStore.getState();
         const currentPhase = currentCycle?.phases[currentPhaseIndex];
-
-        if (!currentPhase) return;
+        const initialDuration = currentPhase?.duration ?? 25;
 
         const newActor = createActor(timerMachine, {
-            input: { duration: currentPhase.duration * 60 },
-            actions: {
-                onTimerEnd: () => {
-                    const cycleState = useCycleStore.getState();
-                    const phaseOnEnd = cycleState.currentCycle?.phases[cycleState.currentPhaseIndex];
-                    if (cycleState.playSounds && phaseOnEnd?.soundFile?.url) {
-                        new Audio(phaseOnEnd.soundFile.url).play().catch(err => console.error("Audio play failed:", err));
-                    }
-                    cycleState.goToNextPhase();
+            input: { duration: initialDuration * 60 },
+            implementations: {
+                actions: {
+                    onTimerEnd: () => {
+                        // To prevent circular dependencies, we use a dynamic require here.
+                        const cycleStore = require('./useCycleStore').useCycleStore.getState();
+                        const phaseOnEnd = cycleStore.currentCycle?.phases[cycleStore.currentPhaseIndex];
+                        if (cycleStore.playSounds && phaseOnEnd?.soundFile?.url) {
+                            new Audio(phaseOnEnd.soundFile.url).play().catch(err => console.error("Audio play failed:", err));
+                        }
+                        cycleStore.goToNextPhase();
+                    },
                 },
-            },
+            }
         }).start();
 
         newActor.subscribe((snapshot) => {
-            set({ 
-                timeLeft: snapshot.context.timeLeft, 
-                isActive: snapshot.matches('running') 
-            });
+            set({ snapshot }); // Update the store with the new snapshot
         });
 
-        set({ timerActor: newActor });
+        set({ timerActor: newActor, snapshot: newActor.getSnapshot() });
+    },
+
+    stopTimer: () => {
+        get().timerActor?.stop();
+        set({ timerActor: null, snapshot: null });
     },
 }));
-
-// The subscription logic has been removed from this file to prevent circular dependencies.
-// It is now located in 'src/store/store-initializer.ts' and imported in the root layout.

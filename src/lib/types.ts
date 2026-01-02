@@ -1,3 +1,13 @@
+
+import type { Actor, Snapshot } from 'xstate';
+import type { timerMachine } from '@/ai/timer-machine';
+
+// --- XState Timer Actor Types ---
+export type Timer = Actor<typeof timerMachine>;
+export type TimerSnapshot = Snapshot<typeof timerMachine>;
+
+
+// --- Domain-Specific Types ---
 export interface Phase {
   id: string;
   title: string;
