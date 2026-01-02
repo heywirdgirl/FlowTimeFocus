@@ -5,6 +5,7 @@ import { doc, onSnapshot, setDoc, deleteDoc, collection, addDoc, serverTimestamp
 import { db } from "@/lib/firebase";
 import { v4 as uuidv4 } from 'uuid';
 import { OFFICIAL_TEMPLATES, DEFAULT_PHASE } from './cycle-templates';
+import { useTimerStore } from './useTimerStore'; // Import timer store
 import type { Cycle, Phase } from '@/lib/types';
 
 // --- State and Store Types ---
@@ -17,6 +18,7 @@ export interface CycleState {
     isGuestMode: boolean;
     userId: string | null;
     unsubscribe: (() => void) | null;
+    playSounds: boolean; // Add playSounds to state
 }
 
 export interface CycleActions {
@@ -32,6 +34,7 @@ export interface CycleActions {
     addPhase: () => void;
     updatePhase: (phaseId: string, updates: Partial<Phase>) => void;
     deletePhase: (phaseId: string) => void;
+    toggleSounds: () => void; // Add toggleSounds action
 }
 
 export type CycleStore = CycleState & CycleActions;
@@ -46,6 +49,7 @@ const initialState: CycleState = {
     isGuestMode: true,
     userId: null,
     unsubscribe: null,
+    playSounds: true, // Default to true
 };
 
 export const useCycleStore = create<CycleStore>()(
@@ -106,15 +110,47 @@ export const useCycleStore = create<CycleStore>()(
             setCurrentCycle: (cycleId) => {
                 const cycle = get().cycles.find((c) => c.id === cycleId) || null;
                 set({ currentCycle: cycle, currentPhaseIndex: 0 });
+
+                // Proactively update the timer store
+                const firstPhase = cycle?.phases[0];
+                if (firstPhase) {
+                    useTimerStore.getState().send({ 
+                        type: 'UPDATE_DURATION', 
+                        duration: firstPhase.duration * 60 
+                    });
+                }
             },
 
-            setCurrentPhaseIndex: (index) => set({ currentPhaseIndex: index }),
+            setCurrentPhaseIndex: (index) => {
+                set({ currentPhaseIndex: index });
+
+                // Proactively update the timer store
+                const { currentCycle } = get();
+                const newPhase = currentCycle?.phases[index];
+                if (newPhase) {
+                    useTimerStore.getState().send({
+                        type: 'UPDATE_DURATION',
+                        duration: newPhase.duration * 60
+                    });
+                }
+            },
 
             goToNextPhase: () => {
                 set(state => {
                     if (!state.currentCycle) return {};
                     const isLastPhase = state.currentPhaseIndex >= state.currentCycle.phases.length - 1;
-                    return { currentPhaseIndex: isLastPhase ? 0 : state.currentPhaseIndex + 1 };
+                    const nextIndex = isLastPhase ? 0 : state.currentPhaseIndex + 1;
+
+                    // Proactively update the timer store
+                    const nextPhase = state.currentCycle.phases[nextIndex];
+                    if (nextPhase) {
+                        useTimerStore.getState().send({ 
+                            type: 'UPDATE_DURATION', 
+                            duration: nextPhase.duration * 60 
+                        });
+                    }
+                    
+                    return { currentPhaseIndex: nextIndex };
                 });
             },
 
@@ -198,12 +234,26 @@ export const useCycleStore = create<CycleStore>()(
                     };
                 });
             },
+
+            toggleSounds: () => set(state => ({ playSounds: !state.playSounds }))
         }),
         {
             name: 'cycle-storage',
             onRehydrateStorage: () => (state) => {
-                if (state) state.isLoading = true;
+                if (state) {
+                    state.isLoading = true;
+                    // Ensure playSounds has a default value on rehydration
+                    state.playSounds = state.playSounds ?? true;
+                }
             },
+             // Only persist a subset of the state
+            partialize: (state) => ({
+                currentCycleId: state.currentCycle?.id,
+                currentPhaseIndex: state.currentPhaseIndex,
+                userId: state.userId,
+                isGuestMode: state.isGuestMode,
+                playSounds: state.playSounds,
+            }),
         }
     )
 );
