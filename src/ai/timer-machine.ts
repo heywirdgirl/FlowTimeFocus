@@ -1,72 +1,138 @@
+import { setup, assign, fromCallback } from 'xstate';
 
-import { createMachine, assign, fromCallback } from 'xstate';
-
-export const timerMachine = createMachine({
+export const timerMachine = setup({
+  types: {
+    context: {} as {
+      duration: number;
+      timeLeft: number;
+      interval: number;
+    },
+    events: {} as
+      | { type: 'START' }
+      | { type: 'PAUSE' }
+      | { type: 'RESUME' }
+      | { type: 'STOP' }
+      | { type: 'RESET' }
+      | { type: 'TICK' }
+      | { type: 'SKIP' }
+      | { type: 'UPDATE_DURATION'; duration: number },
+    input: {} as { duration: number }
+  },
+  
+  // Định nghĩa actors (thay thế invoke.src trực tiếp)
+  actors: {
+    intervalTicker: fromCallback(({ sendBack }) => {
+      const id = setInterval(() => {
+        sendBack({ type: 'TICK' });
+      }, 1000);
+      
+      return () => clearInterval(id);
+    })
+  },
+  
+  // Định nghĩa guards (thay thế cond)
+  guards: {
+    isTimeUp: ({ context }) => context.timeLeft <= 0
+  },
+  
+  // Định nghĩa actions có thể tái sử dụng
+  actions: {
+    resetTimeLeft: assign({
+      timeLeft: ({ context }) => context.duration
+    }),
+    
+    decrementTime: assign({
+      timeLeft: ({ context }) => context.timeLeft - context.interval
+    }),
+    
+    updateDuration: assign({
+      duration: ({ event }) => {
+        // Type guard để đảm bảo event có property duration
+        if ('duration' in event) {
+          return event.duration;
+        }
+        return 0;
+      },
+      timeLeft: ({ event }) => {
+        if ('duration' in event) {
+          return event.duration;
+        }
+        return 0;
+      }
+    })
+  }
+}).createMachine({
   id: 'timer',
   initial: 'idle',
+  
+  // Context với input từ bên ngoài
   context: ({ input }) => ({
-    duration: input.duration, // Duration in seconds
-    timeLeft: input.duration, // Time left in seconds
-    interval: 1, // Tick interval in seconds
+    duration: input.duration,
+    timeLeft: input.duration,
+    interval: 1
   }),
+  
   states: {
     idle: {
       on: {
         START: 'running',
         RESET: {
           target: 'idle',
-          internal: false, // Force re-entry to reset context
-          actions: assign(({ context }) => ({ timeLeft: context.duration }))
+          reenter: true, // v5: thay thế internal: false
+          actions: 'resetTimeLeft'
         }
       }
     },
+    
     running: {
       invoke: {
         id: 'interval-ticker',
-        src: fromCallback(({ sendBack }) => {
-          const id = setInterval(() => sendBack({ type: 'TICK' }), 1000);
-          return () => clearInterval(id);
-        })
+        src: 'intervalTicker' // Tham chiếu đến actor đã định nghĩa
       },
+      
       on: {
         TICK: {
-          actions: assign({ 
-            timeLeft: ({ context }) => context.timeLeft - context.interval 
-          })
+          actions: 'decrementTime'
         },
         PAUSE: 'paused',
-        STOP: 'idle',
+        STOP: 'idle'
       },
+      
+      // v5: always transitions
       always: {
         target: 'finished',
-        guard: ({ context }) => context.timeLeft <= 0
+        guard: 'isTimeUp'
       }
     },
+    
     paused: {
       on: {
         RESUME: 'running',
         STOP: 'idle'
       }
     },
+    
     finished: {
-      entry: 'onTimerEnd', // Custom action when timer finishes
+      entry: ({ context }) => {
+        console.log('Timer finished!', context);
+        // Có thể thêm custom logic ở đây
+      },
       on: {
-        RESET: 'idle' // Allow resetting from the finished state
+        RESET: 'idle'
       }
     }
   },
-  // Global events that can be handled from any state
+  
+  // Global events - có thể xử lý từ bất kỳ state nào
   on: {
     UPDATE_DURATION: {
-        target: '.idle', // CORRECTED: Use absolute target from root
-        internal: false, 
-        actions: assign({
-          duration: ({ event }) => event.duration,
-          timeLeft: ({ event }) => event.duration, 
-        }),
-      },
+      target: '.idle', // Absolute target từ root
+      reenter: true,
+      actions: 'updateDuration'
+    },
+    
     SKIP: {
-        target: '.finished' // CORRECTED: Use absolute target from root
+      target: '.finished'
     }
-  },
+  }
 });
