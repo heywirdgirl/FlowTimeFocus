@@ -10,6 +10,19 @@ export const DEFAULT_PHASE: Omit<Phase, 'id'> = {
 
 // --- Official Templates ---
 // All durations are in minutes. The timer store will convert them to seconds.
+const MEDI_TEMPLATE: Cycle = {
+    id: 'template-meditation',
+    name: 'meditation teainning',
+    isTemplate: true,
+    phases: [
+        { id: 'md-b1', name: 'start', duration: 1.00, type: 'work' }, // 75 seconds
+        { id: 'rl-r1', name: 'Breath Hold', duration: 1.00, type: 'break' },      // 90 seconds
+        { id: 'md-rec2', name: 'phase 2', duration: 2.00, type: 'work' }, // 15 seconds
+        { id: 'rl-b2', name: 'relax 2.00', duration: 2.00, type: 'work' },
+
+    ],
+    createdAt: new Date(),
+};
 
 const POMODORO_TEMPLATE: Cycle = {
     id: 'template-pomodoro',
