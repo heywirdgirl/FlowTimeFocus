@@ -12,7 +12,7 @@ export const DEFAULT_PHASE: Omit<Phase, 'id'> = {
 // All durations are in minutes. The timer store will convert them to seconds.
 const MEDI_TEMPLATE: Cycle = {
     id: 'template-meditation',
-    name: 'meditation teainning',
+    name: 'meditation trainning',
     isTemplate: true,
     phases: [
         { id: 'md-b1', name: 'start', duration: 1.00, type: 'work' }, // 75 seconds
