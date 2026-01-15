@@ -111,9 +111,6 @@ export function TimerDisplay() {
 
       <CardFooter className="flex flex-col gap-4">
         <div className="flex justify-center items-center gap-4">
-          <Button onClick={() => send({ type: 'RESET' })} variant="outline" size="icon" className="h-14 w-14 rounded-full">
-            <RotateCcw />
-          </Button>
           <Button
             onClick={() => {
               if (snapshot.matches('running')) {
@@ -128,9 +125,6 @@ export function TimerDisplay() {
             className="h-20 w-20 rounded-full shadow-lg"
           >
             {isActive ? <Pause className="h-10 w-10" /> : <Play className="h-10 w-10" />}
-          </Button>
-          <Button onClick={() => send({ type: 'SKIP' })} variant="outline" size="icon" className="h-14 w-14 rounded-full">
-            <SkipForward />
           </Button>
         </div>
 
