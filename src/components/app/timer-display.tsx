@@ -10,7 +10,6 @@ import { Play, Pause, RotateCcw, SkipForward, Edit, Plus, Trash2, Save, Copy } f
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import type { Phase } from "@/lib/types";
-import { CycleProgressBar } from "./cycle-progress-bar";
 import { PhaseEditor } from "./phase-editor"; // Import the new component
 
 const formatTime = (seconds: number) => {
@@ -102,10 +101,6 @@ export function TimerDisplay() {
               {formatTime(timeLeft)}
             </span>
           </div>
-        </div>
-        <div className="mt-6 text-center min-h-[60px] w-full">
-          <p className="text-xl text-muted-foreground">{currentPhase.title}</p>
-          <CycleProgressBar totalCycles={sessionsUntilLongRest} />
         </div>
       </CardContent>
 
