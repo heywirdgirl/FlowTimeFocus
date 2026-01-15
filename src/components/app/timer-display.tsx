@@ -45,8 +45,6 @@ export function TimerDisplay() {
   const [isEditingCycle, setIsEditingCycle] = useState(false);
   const [editingPhaseId, setEditingPhaseId] = useState<string | null>(null);
   const [isAddingPhase, setIsAddingPhase] = useState(false);
-  const [sessionsUntilLongRest, setSessionsUntilLongRest] = useState(5);
-
   // Guard until the snapshot is available
   if (!snapshot || !currentCycle || !currentPhase) {
     return <Card className="p-8 text-center">Loading Timer...</Card>;
