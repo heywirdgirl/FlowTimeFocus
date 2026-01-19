@@ -5,7 +5,6 @@ import { doc, onSnapshot, setDoc, deleteDoc, collection, addDoc, serverTimestamp
 import { db } from "@/lib/firebase";
 import { v4 as uuidv4 } from 'uuid';
 import { OFFICIAL_TEMPLATES, DEFAULT_PHASE } from './cycle-templates';
-// DO NOT import useTimerStore here to prevent circular dependencies
 import type { Cycle, Phase } from '@/lib/types';
 
 // --- State and Store Types ---
@@ -18,7 +17,7 @@ export interface CycleState {
     isGuestMode: boolean;
     userId: string | null;
     unsubscribe: (() => void) | null;
-    playSounds: boolean; // Add playSounds to state
+    playSounds: boolean; 
 }
 
 export interface CycleActions {
@@ -27,14 +26,13 @@ export interface CycleActions {
     stopSyncCycles: () => void;
     setCurrentCycle: (cycleId: string) => void;
     setCurrentPhaseIndex: (index: number) => void;
-    goToNextPhase: () => void;
     createNewCycle: () => Promise<void>;
     saveCurrentCycle: () => Promise<void>;
     deleteCycle: (cycleId: string) => Promise<void>;
     addPhase: () => void;
     updatePhase: (phaseId: string, updates: Partial<Phase>) => void;
     deletePhase: (phaseId: string) => void;
-    toggleSounds: () => void; // Add toggleSounds action
+    toggleSounds: () => void; 
 }
 
 export type CycleStore = CycleState & CycleActions;
@@ -49,7 +47,7 @@ const initialState: CycleState = {
     isGuestMode: true,
     userId: null,
     unsubscribe: null,
-    playSounds: true, // Default to true
+    playSounds: true, 
 };
 
 export const useCycleStore = create<CycleStore>()(
@@ -68,12 +66,12 @@ export const useCycleStore = create<CycleStore>()(
                     isGuestMode: true,
                     userId: null
                 });
-                 // On initial load for guest, make sure timer is updated
                  const firstPhase = guestCycles[0]?.phases[0];
                  if (firstPhase) {
                      require('./useTimerStore').useTimerStore.getState().send({ 
-                         type: 'UPDATE_DURATION', 
-                         duration: firstPhase.duration * 60 
+                         type: 'SELECT_PHASE', 
+                         duration: firstPhase.duration * 60,
+                         title: firstPhase.title
                      });
                  }
             },
@@ -121,10 +119,10 @@ export const useCycleStore = create<CycleStore>()(
 
                 const firstPhase = cycle?.phases[0];
                 if (firstPhase) {
-                    // Use dynamic require to prevent circular dependency
                     require('./useTimerStore').useTimerStore.getState().send({ 
-                        type: 'UPDATE_DURATION', 
-                        duration: firstPhase.duration * 60 
+                        type: 'SELECT_PHASE', 
+                        duration: firstPhase.duration * 60, 
+                        title: firstPhase.title 
                     });
                 }
             },
@@ -133,35 +131,15 @@ export const useCycleStore = create<CycleStore>()(
                 const { currentCycle } = get();
                 const newPhase = currentCycle?.phases[index];
 
-                // Set the state first
                 set({ currentPhaseIndex: index });
                 
                 if (newPhase) {
-                    // Use dynamic require to prevent circular dependency
                     require('./useTimerStore').useTimerStore.getState().send({
-                        type: 'UPDATE_DURATION',
-                        duration: newPhase.duration * 60
+                        type: 'SELECT_PHASE',
+                        duration: newPhase.duration * 60,
+                        title: newPhase.title
                     });
                 }
-            },
-
-            goToNextPhase: () => {
-                const { currentCycle, currentPhaseIndex } = get();
-                if (!currentCycle) return;
-
-                const isLastPhase = currentPhaseIndex >= currentCycle.phases.length - 1;
-                const nextIndex = isLastPhase ? 0 : currentPhaseIndex + 1;
-
-                const nextPhase = currentCycle.phases[nextIndex];
-                if (nextPhase) {
-                     // Use dynamic require to prevent circular dependency
-                    require('./useTimerStore').useTimerStore.getState().send({ 
-                        type: 'UPDATE_DURATION', 
-                        duration: nextPhase.duration * 60 
-                    });
-                }
-
-                set({ currentPhaseIndex: nextIndex });
             },
 
             createNewCycle: async () => {
@@ -170,7 +148,7 @@ export const useCycleStore = create<CycleStore>()(
                     name: "My New Cycle",
                     isPublic: false,
                     authorId: userId || 'guest',
-                    authorName: 'Guest', // You might want to fetch a real name
+                    authorName: 'Guest',
                     likes: 0,
                     shares: 0,
                     updatedAt: new Date().toISOString(),
@@ -188,7 +166,6 @@ export const useCycleStore = create<CycleStore>()(
                     createdAt: serverTimestamp(),
                     updatedAt: serverTimestamp(),
                 });
-                // The listener will automatically update the state, but we can set it for faster UI response
                  set(state => ({ currentCycle: { ...newCycle, id: docRef.id, createdAt: new Date().toISOString() } }));
             },
 
@@ -196,7 +173,6 @@ export const useCycleStore = create<CycleStore>()(
                 const { userId, isGuestMode, currentCycle } = get();
                 if (isGuestMode || !userId || !currentCycle) return;
 
-                // This check prevents users from editing official templates if they somehow get loaded into the user's space
                 const cycleInStore = get().cycles.find(c => c.id === currentCycle.id);
                 if(cycleInStore && (cycleInStore as any).isOfficial) return; 
 
@@ -206,6 +182,7 @@ export const useCycleStore = create<CycleStore>()(
             },
 
             deleteCycle: async (cycleId) => {
+                require('./useTimerStore').useTimerStore.getState().send({ type: 'STOP_FOR_EDIT' });
                 const { userId, isGuestMode, cycles, currentCycle } = get();
                 if (isGuestMode || !userId) return;
 
@@ -234,6 +211,7 @@ export const useCycleStore = create<CycleStore>()(
             },
 
             updatePhase: (phaseId, updates) => {
+                require('./useTimerStore').useTimerStore.getState().send({ type: 'STOP_FOR_EDIT' });
                 set(state => {
                     if (!state.currentCycle || (state.currentCycle as any).isOfficial) return {};
                     const updatedPhases = state.currentCycle.phases.map(p => p.id === phaseId ? { ...p, ...updates } : p);
@@ -246,6 +224,7 @@ export const useCycleStore = create<CycleStore>()(
             },
 
             deletePhase: (phaseId) => {
+                require('./useTimerStore').useTimerStore.getState().send({ type: 'STOP_FOR_EDIT' });
                 set(state => {
                     if (!state.currentCycle || (state.currentCycle as any).isOfficial) return {};
                     const updatedPhases = state.currentCycle.phases.filter(p => p.id !== phaseId);
@@ -268,7 +247,6 @@ export const useCycleStore = create<CycleStore>()(
                 }
             },
             partialize: (state) => ({
-                // remove cycles from persisted storage
                 cycles: [],
                 currentCycleId: state.currentCycle?.id,
                 currentPhaseIndex: state.currentPhaseIndex,
