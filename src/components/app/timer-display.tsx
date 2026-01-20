@@ -108,7 +108,7 @@ export function TimerDisplay() {
             onClick={() => {
               if (snapshot.matches('running')) {
                 send({ type: 'PAUSE' });
-              } else if (snapshot.matches('paused')) {
+              } else {
                 send({ type: 'RESUME' });
               } 
             }}
