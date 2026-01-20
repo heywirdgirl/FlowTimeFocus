@@ -110,9 +110,7 @@ export function TimerDisplay() {
                 send({ type: 'PAUSE' });
               } else if (snapshot.matches('paused')) {
                 send({ type: 'RESUME' });
-              } else {
-                send({ type: 'START' });
-              }
+              } 
             }}
             size="icon"
             className="h-20 w-20 rounded-full shadow-lg"
