@@ -10,7 +10,6 @@ import { Play, Pause, RotateCcw, SkipForward, Edit, Plus, Trash2, Save, Copy } f
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import type { Phase } from "@/lib/types";
-import { CycleProgressBar } from "./cycle-progress-bar";
 import { PhaseEditor } from "./phase-editor"; // Import the new component
 
 const formatTime = (seconds: number) => {
@@ -46,8 +45,6 @@ export function TimerDisplay() {
   const [isEditingCycle, setIsEditingCycle] = useState(false);
   const [editingPhaseId, setEditingPhaseId] = useState<string | null>(null);
   const [isAddingPhase, setIsAddingPhase] = useState(false);
-  const [sessionsUntilLongRest, setSessionsUntilLongRest] = useState(5);
-
   // Guard until the snapshot is available
   if (!snapshot || !currentCycle || !currentPhase) {
     return <Card className="p-8 text-center">Loading Timer...</Card>;
@@ -103,34 +100,22 @@ export function TimerDisplay() {
             </span>
           </div>
         </div>
-        <div className="mt-6 text-center min-h-[60px] w-full">
-          <p className="text-xl text-muted-foreground">{currentPhase.title}</p>
-          <CycleProgressBar totalCycles={sessionsUntilLongRest} />
-        </div>
       </CardContent>
 
       <CardFooter className="flex flex-col gap-4">
         <div className="flex justify-center items-center gap-4">
-          <Button onClick={() => send({ type: 'RESET' })} variant="outline" size="icon" className="h-14 w-14 rounded-full">
-            <RotateCcw />
-          </Button>
           <Button
             onClick={() => {
               if (snapshot.matches('running')) {
                 send({ type: 'PAUSE' });
-              } else if (snapshot.matches('paused')) {
-                send({ type: 'RESUME' });
               } else {
-                send({ type: 'START' });
-              }
+                send({ type: 'RESUME' });
+              } 
             }}
             size="icon"
             className="h-20 w-20 rounded-full shadow-lg"
           >
             {isActive ? <Pause className="h-10 w-10" /> : <Play className="h-10 w-10" />}
-          </Button>
-          <Button onClick={() => send({ type: 'SKIP' })} variant="outline" size="icon" className="h-14 w-14 rounded-full">
-            <SkipForward />
           </Button>
         </div>
 
