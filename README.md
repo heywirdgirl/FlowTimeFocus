@@ -1,5 +1,5 @@
 
-# Flow Time App
+# Flow Time App v1
 
 This is a Next.js application designed for time management using a highly configurable "flow time" or Pomodoro-like technique. It uses Zustand for state management, XState for the timer logic, and Firebase for backend data persistence and authentication.
 
