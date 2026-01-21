@@ -108,8 +108,12 @@ export function TimerDisplay() {
             onClick={() => {
               if (snapshot.matches('running')) {
                 send({ type: 'PAUSE' });
-              } else {
+              } 
+              else  if (snapshot.matches('paused')) {
                 send({ type: 'RESUME' });
+              } 
+              else {
+                send({ type: 'START' });
               } 
             }}
             size="icon"

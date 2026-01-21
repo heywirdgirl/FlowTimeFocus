@@ -10,6 +10,7 @@ export const timerMachine = setup({
     events: {} as
       | { type: 'TICK' }
       | { type: 'PAUSE' } // Vẫn cần Pause nếu người dùng muốn nghỉ giữa chừng
+      | { type: 'START' }
       | { type: 'RESUME' }
       | { type: 'STOP_FOR_EDIT' } // Sự kiện khi nhấn Edit/Delete
       | { type: 'SELECT_PHASE'; duration: number; title: string }, // Sự kiện chọn/auto-next phase
@@ -65,7 +66,7 @@ export const timerMachine = setup({
       // Ở trạng thái này, chỉ chờ SELECT_PHASE để bắt đầu
       // Hoặc có thể thêm nút Start thủ công nếu muốn chạy lại phase hiện tại
       on: {
-        RESUME: 'running' // Cho phép chạy lại nếu đang dừng
+        START: 'running',
       }
     },
 
