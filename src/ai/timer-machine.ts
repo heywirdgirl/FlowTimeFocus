@@ -5,7 +5,6 @@ export const timerMachine = setup({
     context: {} as {
       duration: number;
       timeLeft: number;
-      title: string; // Nên giữ title để hiển thị đồng bộ
     },
     events: {} as
       | { type: 'TICK' }
@@ -13,8 +12,8 @@ export const timerMachine = setup({
       | { type: 'START' }
       | { type: 'RESUME' }
       | { type: 'STOP_FOR_EDIT' } // Sự kiện khi nhấn Edit/Delete
-      | { type: 'SELECT_PHASE'; duration: number; title: string }, // Sự kiện chọn/auto-next phase
-    input: {} as { duration: number; title: string }
+      | { type: 'SELECT_PHASE'; duration: number;  }, // Sự kiện chọn/auto-next phase
+    input: {} as { duration: number; }
   },
 
   actors: {
@@ -31,7 +30,7 @@ export const timerMachine = setup({
     updateContext: assign({
       duration: ({ event }) => 'duration' in event ? event.duration : 0,
       timeLeft: ({ event }) => 'duration' in event ? event.duration : 0,
-      title: ({ event }) => 'title' in event ? event.title : '',
+
     })
   }
 }).createMachine({
@@ -41,7 +40,7 @@ export const timerMachine = setup({
   context: ({ input }) => ({
     duration: input.duration,
     timeLeft: input.duration,
-    title: input.title,
+
   }),
 
   // GLOBAL EVENTS: Có thể gọi từ bất kỳ đâu
@@ -96,16 +95,7 @@ export const timerMachine = setup({
     },
 
     finished: {
-      // Trạng thái tạm thời (Transient State)
-      // Máy sẽ nằm đây chờ Store gửi lệnh SELECT_PHASE tiếp theo
-      entry: ({ context }) => {
-        // 1. Phát tín hiệu cho UI biết đã xong
-        console.log(`Phase ${context.title} completed`);
-        // Side-effect thực tế sẽ nằm ở Store (xem phần dưới)
-      }
-      // Không cần 'on' event gì ở đây vì:
-      // - Nếu Store gửi 'SELECT_PHASE' -> Global transition sẽ bắt lấy và đưa về 'running'
-      // - Nếu hết Cycle -> Store không gửi gì -> Máy nằm im (hoặc Store gửi STOP_FOR_EDIT để về idle)
+
     }
   }
 });
