@@ -1,62 +1,71 @@
+import { v4 as uuidv4 } from 'uuid';
+import type { Cycle, Phase } from '@/lib/types';
 
-import { Cycle, Phase } from '@/lib/types';
-
-// Default data for a new phase when added by a user
+// --- Default Data ---
 export const DEFAULT_PHASE: Omit<Phase, 'id'> = {
-    name: 'New Phase',
-    duration: 10, // Default duration in minutes
-    type: 'work',
+    title: 'New Phase',
+    duration: 10,
+    soundFile: null,
 };
+
+// --- Helper function to create official cycles ---
+// Giúp giảm bớt việc viết lặp lại các trường metadata của Cycle
+const createOfficialCycle = (data: Partial<Cycle> & { phases: Phase[] }): Cycle => ({
+    id: data.id || uuidv4(),
+    name: data.name || 'Untitled Cycle',
+    phases: data.phases,
+    isPublic: true,
+    authorId: 'system-official',
+    authorName: 'Gemini Focus',
+    likes: 0,
+    shares: 0,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    ...data
+});
 
 // --- Official Templates ---
-// All durations are in minutes. The timer store will convert them to seconds.
-const MEDI_TEMPLATE: Cycle = {
+
+const MEDI_TEMPLATE = createOfficialCycle({
     id: 'template-meditation',
-    name: 'meditation trainning',
-    isTemplate: true,
+    name: 'Meditation Training',
     phases: [
-        { id: 'md-b1', name: 'start', duration: 1.00, type: 'work' }, // 75 seconds
-        { id: 'rl-r1', name: 'Breath Hold', duration: 1.00, type: 'break' },      // 90 seconds
-        { id: 'md-rec2', name: 'phase 2', duration: 2.00, type: 'work' }, // 15 seconds
-        { id: 'rl-b2', name: 'relax 2.00', duration: 2.00, type: 'work' },
-
+        { id: 'md-b1', title: 'Start', duration: 1.0, soundFile: null },
+        { id: 'rl-r1', title: 'Breath Hold', duration: 1.0, soundFile: null },
+        { id: 'md-rec2', title: 'Phase 2', duration: 2.0, soundFile: null },
+        { id: 'rl-b2', title: 'Relax', duration: 2.0, soundFile: null },
     ],
-    createdAt: new Date(),
-};
+});
 
-const POMODORO_TEMPLATE: Cycle = {
+const POMODORO_TEMPLATE = createOfficialCycle({
     id: 'template-pomodoro',
     name: 'Classic Pomodoro',
-    isTemplate: true,
     phases: [
-        { id: 'p-w1', name: 'Work', duration: 25, type: 'work' },
-        { id: 'p-b1', name: 'Short Break', duration: 5, type: 'break' },
-        { id: 'p-w2', name: 'Work', duration: 25, type: 'work' },
-        { id: 'p-b2', name: 'Short Break', duration: 5, type: 'break' },
-        { id: 'p-w3', name: 'Work', duration: 25, type: 'work' },
-        { id: 'p-b3', name: 'Short Break', duration: 5, type: 'break' },
-        { id: 'p-w4', name: 'Work', duration: 25, type: 'work' },
-        { id: 'p-b4', name: 'Long Break', duration: 15, type: 'break' },
+        { id: 'p-w1', title: 'Work', duration: 25, soundFile: null },
+        { id: 'p-b1', title: 'Short Break', duration: 5, soundFile: null },
+        { id: 'p-w2', title: 'Work', duration: 25, soundFile: null },
+        { id: 'p-b2', title: 'Short Break', duration: 5, soundFile: null },
+        { id: 'p-w3', title: 'Work', duration: 25, soundFile: null },
+        { id: 'p-b3', title: 'Short Break', duration: 5, soundFile: null },
+        { id: 'p-w4', title: 'Work', duration: 25, soundFile: null },
+        { id: 'p-b4', title: 'Long Break', duration: 15, soundFile: null },
     ],
-    createdAt: new Date(),
-};
+});
 
-const WIMHOF_TEMPLATE: Cycle = {
+const WIMHOF_TEMPLATE = createOfficialCycle({
     id: 'template-wimhof',
     name: 'Wim Hof Breathing',
-    isTemplate: true,
     phases: [
-        { id: 'wh-b1', name: 'Power Breathing', duration: 1.25, type: 'work' }, // 75 seconds
-        { id: 'wh-r1', name: 'Breath Hold', duration: 1.5, type: 'break' },      // 90 seconds
-        { id: 'wh-rec1', name: 'Recovery Hold', duration: 0.25, type: 'work' }, // 15 seconds
-        { id: 'wh-b2', name: 'Power Breathing', duration: 1.25, type: 'work' },
-        { id: 'wh-r2', name: 'Breath Hold', duration: 2, type: 'break' },        // 120 seconds
-        { id: 'wh-rec2', name: 'Recovery Hold', duration: 0.25, type: 'work' },
-        { id: 'wh-b3', name: 'Power Breathing', duration: 1.25, type: 'work' },
-        { id: 'wh-r3', name: 'Breath Hold', duration: 2.5, type: 'break' },      // 150 seconds
-        { id: 'wh-rec3', name: 'Recovery Hold', duration: 0.25, type: 'work' },
+        { id: 'wh-b1', title: 'Power Breathing', duration: 1.25, soundFile: null },
+        { id: 'wh-r1', title: 'Breath Hold', duration: 1.5, soundFile: null },
+        { id: 'wh-rec1', title: 'Recovery Hold', duration: 0.25, soundFile: null },
+        { id: 'wh-b2', title: 'Power Breathing', duration: 1.25, soundFile: null },
+        { id: 'wh-r2', title: 'Breath Hold', duration: 2.0, soundFile: null },
+        { id: 'wh-rec2', title: 'Recovery Hold', duration: 0.25, soundFile: null },
+        { id: 'wh-b3', title: 'Power Breathing', duration: 1.25, soundFile: null },
+        { id: 'wh-r3', title: 'Breath Hold', duration: 2.5, soundFile: null },
+        { id: 'wh-rec3', title: 'Recovery Hold', duration: 0.25, soundFile: null },
     ],
-    createdAt: new Date(),
-};
+});
 
-export const OFFICIAL_TEMPLATES = [MEDI_TEMPLATE,POMODORO_TEMPLATE, WIMHOF_TEMPLATE];
+export const OFFICIAL_TEMPLATES = [MEDI_TEMPLATE, POMODORO_TEMPLATE, WIMHOF_TEMPLATE];
