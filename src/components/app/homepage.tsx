@@ -1,6 +1,7 @@
 
 "use client";
 
+import { useEffect } from "react";
 import { TimerDisplay } from "./timer-display";
 import { CycleList } from "./cycle-list";
 import { cn } from "@/lib/utils";
@@ -9,8 +10,14 @@ import { useTimerStore } from "@/store/useTimerStore";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export function Homepage() {
-  const { isActive } = useTimerStore();
+  const initializeTimer = useTimerStore((state) => state.initializeTimer);
+  const isActive = useTimerStore((state) => state.snapshot?.matches('running') ?? false);
   const { currentCycle, currentPhaseIndex, isLoading } = useCycleStore();
+
+  useEffect(() => {
+    initializeTimer();
+  }, [initializeTimer]);
+
 
   // Show a loading skeleton if data isn't ready yet
   if (isLoading || !currentCycle) {
