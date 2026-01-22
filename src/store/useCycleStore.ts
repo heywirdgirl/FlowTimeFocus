@@ -33,6 +33,9 @@ export interface CycleActions {
     updatePhase: (phaseId: string, updates: Partial<Phase>) => void;
     deletePhase: (phaseId: string) => void;
     toggleSounds: () => void; 
+    updateCycle: (updates: Partial<Cycle>) => void; // Thêm dòng này
+    
+
 }
 
 export type CycleStore = CycleState & CycleActions;
@@ -235,6 +238,19 @@ export const useCycleStore = create<CycleStore>()(
                     };
                 });
             },
+            
+
+updateCycle: (updates) => {
+    set(state => {
+        if (!state.currentCycle) return {};
+        const updatedCycle = { ...state.currentCycle, ...updates };
+        return {
+            currentCycle: updatedCycle,
+            cycles: state.cycles.map(c => c.id === updatedCycle.id ? updatedCycle : c)
+        };
+    });
+},
+
 
             toggleSounds: () => set(state => ({ playSounds: !state.playSounds }))
         }),
