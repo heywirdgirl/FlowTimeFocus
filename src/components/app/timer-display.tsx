@@ -137,9 +137,11 @@ export function TimerDisplay() {
                     <span>{phase.title}</span>
                     <span>{phase.duration}m</span>
                   </Button>
-                  <Button variant="ghost" size="icon" onClick={() => setEditingPhaseId(editingPhaseId === phase.id ? null : editingPhaseId)}>
+                  <Button variant="ghost" size="icon" onClick={() => setEditingPhaseId(editingPhaseId === phase.id ? null : phase.id)} >
                     <Edit className="h-4 w-4" />
                   </Button>
+                  
+                  
                   <Button variant="ghost" size="icon" onClick={() => { deletePhase(phase.id); setIsDirty(true); }} className="text-destructive">
                     <Trash2 className="h-4 w-4" />
                   </Button>
