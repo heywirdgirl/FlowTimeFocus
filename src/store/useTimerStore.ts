@@ -40,12 +40,11 @@ export const useTimerStore = create<TimerState>((set, get) => ({
         const { currentCycle, currentPhaseIndex, playSounds } = useCycleStore.getState();
         const initialPhase = currentCycle?.phases[currentPhaseIndex];
         const initialDuration = initialPhase?.duration ?? 25;
-        const initialTitle = initialPhase?.title ?? "Ready?";
 
         const newActor = createActor(timerMachine, {
             input: {
                 duration: initialDuration * 60,
-                title: initialTitle,
+
             }
         }).start();
 
@@ -77,8 +76,7 @@ export const useTimerStore = create<TimerState>((set, get) => ({
                     const nextPhase = currentCycle.phases[nextIndex];
                     cycleStore.setCurrentPhaseIndex(nextIndex); // This will send the SELECT_PHASE event
                 } else {
-                    // End of the cycle
-                    console.log("Cycle finished!");
+
                     // Here you could loop, or just stop. We'll stop.
                     newActor.send({ type: 'STOP_FOR_EDIT' }); 
                     // Optionally, reset to the first phase visually
