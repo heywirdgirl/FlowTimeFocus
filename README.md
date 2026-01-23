@@ -18,17 +18,13 @@ src
 │   ├── app
 │   │   ├── client-initializer.tsx
 │   │   ├── cycle-list.tsx
-│   │   ├── cycle-progress-bar.tsx
 │   │   ├── email-auth-dialog.tsx
 │   │   ├── footer.tsx
 │   │   ├── header.tsx
 │   │   ├── homepage.tsx
 │   │   ├── phase-editor.tsx
-│   │   ├── sortable-phase-card.tsx
 │   │   ├── syncStoreGate.tsx
-│   │   ├── task-manager.tsx
 │   │   ├── theme-provider.tsx
-│   │   ├── theme-toggle.tsx
 │   │   └── timer-display.tsx
 │   └── ui
 │       ├── accordion.tsx
@@ -48,8 +44,8 @@ src
     ├── cycle-templates.ts
     ├── store-initializer.ts
     ├── use-auth-store.ts
-    ├── useCycleStore.ts
     ├── use-setting-store.ts
+    ├── useCycleStore.ts
     └── useTimerStore.ts
 ```
 
