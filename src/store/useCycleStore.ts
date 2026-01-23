@@ -72,7 +72,7 @@ export const useCycleStore = create<CycleStore>()(
                  const firstPhase = guestCycles[0]?.phases[0];
                  if (firstPhase) {
                      require('./useTimerStore').useTimerStore.getState().send({ 
-                         type: 'SELECT_PHASE', 
+                         type: 'SELECT_CYCLE', 
                          duration: firstPhase.duration * 60,
                          title: firstPhase.title
                      });
@@ -123,7 +123,7 @@ export const useCycleStore = create<CycleStore>()(
                 const firstPhase = cycle?.phases[0];
                 if (firstPhase) {
                     require('./useTimerStore').useTimerStore.getState().send({ 
-                        type: 'SELECT_PHASE', 
+                        type: 'SELECT_CYCLE', 
                         duration: firstPhase.duration * 60
                     });
                 }
