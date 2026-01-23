@@ -12,7 +12,8 @@ export const timerMachine = setup({
       | { type: 'START' }
       | { type: 'RESUME' }
       | { type: 'STOP_FOR_EDIT' } // Sự kiện khi nhấn Edit/Delete
-      | { type: 'SELECT_PHASE'; duration: number;  }, // Sự kiện chọn/auto-next phase
+      | { type: 'SELECT_PHASE'; duration: number;  } // Sự kiện chọn/auto-next phase
+      | { type: 'SELECT_CYCLE'; duration: number; }, // Sự kiện chọn cycle mới
     input: {} as { duration: number; }
   },
 
@@ -53,6 +54,13 @@ export const timerMachine = setup({
       actions: 'updateContext'
     },
     
+    // Logic: Khi chọn 1 cycle mới, nạp phase đầu tiên vào nhưng KHÔNG chạy
+    SELECT_CYCLE: {
+        target: '.idle',
+        reenter: true, // Đảm bảo thoát khỏi các trạng thái khác
+        actions: 'updateContext'
+    },
+
     // Logic: Khi nhấn Edit/Delete, dừng mọi thứ về Idle
     STOP_FOR_EDIT: {
       target: '.idle',
