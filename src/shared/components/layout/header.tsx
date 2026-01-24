@@ -4,23 +4,33 @@
 import { useState } from "react";
 import Link from "next/link";
 import { CircleUser, Cog, Menu, LogOut, Mail } from "lucide-react";
-import { Button, DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger, Sheet, SheetContent, SheetTrigger, Avatar, AvatarFallback, AvatarImage } from "@/shared/components/ui";
+import { Button } from "@/shared/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/shared/components/ui/dropdown-menu";
+import { Sheet, SheetContent, SheetTrigger } from "@/shared/components/ui/sheet";
+import { Avatar, AvatarFallback, AvatarImage } from "@/shared/components/ui/avatar";
 import {
   getAuth,
   GoogleAuthProvider,
   signInWithPopup,
   signOut,
 } from "firebase/auth";
-import { useAuthStore } from "@/store/use-auth-store"; // Changed import
+import { useAuthStore } from "@/store/use-auth-store";
 import { EmailAuthDialog } from "@/components/app/email-auth-dialog";
-import { toast } from "@/shared/hooks";
+import { toast } from "@/shared/hooks/use-toast";
 
 export function Header() {
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [isEmailAuthOpen, setIsEmailAuthOpen] = useState(false);
   const [emailAuthMode, setEmailAuthMode] = useState<'signIn' | 'signUp'>('signIn');
   const auth = getAuth();
-  const user = useAuthStore((state) => state.user); // Changed to use Zustand store
+  const user = useAuthStore((state) => state.user);
 
   const handleGoogleSignIn = async () => {
     const provider = new GoogleAuthProvider();
