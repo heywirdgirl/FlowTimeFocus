@@ -1,4 +1,4 @@
-import { useAuthStore } from './store/auth-store';
+import { useAuthStore } from '../store/auth-store';
 
 /**
  * A custom hook to access authentication state and actions.

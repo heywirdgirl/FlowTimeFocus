@@ -1,4 +1,4 @@
-import { useCycleStore } from './store/cycle-store';
+import { useCycleStore } from '../store/cycle-store';
 
 /**
  * Custom hook for cycles business logic

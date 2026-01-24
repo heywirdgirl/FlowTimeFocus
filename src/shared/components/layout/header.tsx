@@ -21,8 +21,8 @@ import {
   signInWithPopup,
   signOut,
 } from "firebase/auth";
-import { useAuthStore } from "@/store/use-auth-store";
-import { EmailAuthDialog } from "@/components/app/email-auth-dialog";
+import { useAuthStore } from "@/features/auth/store/auth-store";
+import { EmailAuthDialog } from "@/features/auth";
 import { toast } from "@/shared/hooks/use-toast";
 
 export function Header() {

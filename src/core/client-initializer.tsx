@@ -13,7 +13,7 @@ export function ClientInitializer({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     // Initialize stores
     useTimerStore.getState().initializeTimer();
-    useCycleStore.getState().loadCycles();
+    useCycleStore.getState().loadGuestData();
   }, []);
 
   return <>{children}</>;

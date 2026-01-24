@@ -1,4 +1,4 @@
-import { useSettingsStore } from './store/settings-store';
+import { useSettingsStore } from '../store/settings-store';
 
 /**
  * Convenient hook for accessing and modifying user settings.

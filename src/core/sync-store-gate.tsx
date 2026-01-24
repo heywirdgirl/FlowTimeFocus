@@ -12,8 +12,8 @@ import { useCycleStore } from "@/features/cycles";
 export function SyncStoreGate() {
   const user = useAuthStore((s) => s.user);
   const isInitialized = useAuthStore((s) => s.isInitialized);
-  const startSync = useCycleStore((s) => s.startSyncCycles);
-  const stopSync = useCycleStore((s) => s.stopSyncCycles);
+  const startSync = useCycleStore((s) => s.startSync);
+  const stopSync = useCycleStore((s) => s.stopSync);
 
   useEffect(() => {
     const unsubscribe = useAuthStore.getState().initialize();
