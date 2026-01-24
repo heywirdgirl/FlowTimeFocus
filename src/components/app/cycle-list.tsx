@@ -1,12 +1,12 @@
 
 "use client";
 
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/shared/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/shared/components/ui/card";
 import { useCycleStore } from "@/store/useCycleStore";
 import { useTimerStore } from "@/store/useTimerStore";
 import { Play, Trash } from "lucide-react";
-import { ScrollArea } from "../ui/scroll-area";
+import { ScrollArea } from "@/shared/components/ui/scroll-area";
 
 export function CycleList() {
     const {

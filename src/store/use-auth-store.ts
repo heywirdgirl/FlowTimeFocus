@@ -1,6 +1,6 @@
 
 import { create } from 'zustand';
-import { auth } from '@/lib/firebase';
+import { auth } from "@/shared/lib/firebase";
 import { onAuthStateChanged, User } from 'firebase/auth';
 
 interface AuthState {

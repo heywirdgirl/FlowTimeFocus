@@ -4,10 +4,10 @@
 import { useEffect } from "react";
 import { TimerDisplay } from "./timer-display";
 import { CycleList } from "./cycle-list";
-import { cn } from "@/lib/utils";
+import { cn } from "@/shared/lib/utils";
 import { useCycleStore } from "@/store/useCycleStore";
 import { useTimerStore } from "@/store/useTimerStore";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Skeleton } from "@/shared/components/ui/skeleton";
 
 export function Homepage() {
   const initializeTimer = useTimerStore((state) => state.initializeTimer);

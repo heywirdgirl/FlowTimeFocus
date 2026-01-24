@@ -3,7 +3,7 @@ import { create } from 'zustand';
 import { createActor, Actor } from 'xstate';
 import { timerMachine } from '@/ai/timer-machine';
 import { useCycleStore } from './useCycleStore';
-import type { Timer, TimerSnapshot } from '@/lib/types';
+import type { Timer, TimerSnapshot } from "@/shared/types";
 
 // --- State and Store Types ---
 

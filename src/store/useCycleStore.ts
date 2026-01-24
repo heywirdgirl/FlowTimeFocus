@@ -2,10 +2,10 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { doc, onSnapshot, setDoc, deleteDoc, collection, addDoc, serverTimestamp, query, orderBy } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import { db } from "@/shared/lib/firebase";
 import { v4 as uuidv4 } from 'uuid';
 import { OFFICIAL_TEMPLATES, DEFAULT_PHASE } from './cycle-templates';
-import type { Cycle, Phase } from '@/lib/types';
+import type { Cycle, Phase } from "@/shared/types";
 
 // --- State and Store Types ---
 
