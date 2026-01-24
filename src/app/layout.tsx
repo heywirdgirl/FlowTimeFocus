@@ -2,12 +2,10 @@
 import type {Metadata} from 'next';
 import './globals.css';
 
-import { Toaster } from "@/components/ui/toaster";
-import { Header } from "@/components/app/header";
-import { Footer } from "@/components/app/footer";
-import { SyncStoreGate } from "@/components/app/syncStoreGate";
-import { ThemeProvider } from '@/components/app/theme-provider';
-import { ClientInitializer } from '@/components/app/client-initializer'; // Import the new client component
+import { Toaster } from "@/shared/components/ui/toaster";
+import { Header, Footer } from "@/shared/components/layout";
+import { ClientInitializer, SyncStoreGate } from '@/core';
+import { ThemeProvider } from '@/features/theme';
 
 export const metadata: Metadata = {
   title: 'FlowTime Focus',
@@ -22,16 +20,16 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
         <body>
-          <ClientInitializer /> {/* Add the initializer here */}
           <ThemeProvider>
-            {/* SyncStoreGate handles auth and data synchronization */}
             <SyncStoreGate /> 
-            <div className="flex flex-col min-h-screen">
-                <Header />
-                <main className="flex-grow">{children}</main>
-                <Footer />
-            </div>
-            <Toaster />
+            <ClientInitializer>
+              <div className="flex flex-col min-h-screen">
+                  <Header />
+                  <main className="flex-grow">{children}</main>
+                  <Footer />
+              </div>
+              <Toaster />
+            </ClientInitializer>
           </ThemeProvider>
         </body>
     </html>
