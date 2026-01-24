@@ -11,11 +11,11 @@ src
 ├── app
 │   ├── favicon.ico
 │   ├── globals.css
-│   ├── homepage.tsx
 │   ├── layout.tsx
 │   └── page.tsx
 ├── core
 │   ├── client-initializer.tsx
+│   ├── index.ts
 │   └── sync-store-gate.tsx
 ├── features
 │   ├── auth
@@ -49,6 +49,8 @@ src
 │   │   ├── store
 │   │   │   └── settings-store.ts
 │   │   └── types.ts
+│   ├── theme
+│   │   └── index.ts
 │   └── timer
 │       ├── components
 │       │   └── timer-display.tsx
@@ -65,6 +67,7 @@ src
     │   ├── layout
     │   │   ├── footer.tsx
     │   │   ├── header.tsx
+    │   │   ├── homepage.tsx
     │   │   └── index.ts
     │   ├── theme
     │   │   ├── index.ts
@@ -103,8 +106,8 @@ src
     │       ├── table.tsx
     │       ├── tabs.tsx
     │       ├── textarea.tsx
-    │       ├── toaster.tsx
     │       ├── toast.tsx
+    │       ├── toaster.tsx
     │       └── tooltip.tsx
     ├── hooks
     │   ├── index.ts
@@ -115,7 +118,6 @@ src
     │   ├── index.ts
     │   ├── placeholder-images.json
     │   ├── placeholder-images.ts
-    │   ├── types.ts
     │   └── utils.ts
     └── types
         └── index.ts
@@ -123,23 +125,24 @@ src
 
 ### Core Concepts of the New Structure:
 
-*   **`src/app`**: Contains global styles, layout, and the main entry point of the application (`page.tsx`). It also includes the `homepage.tsx` which is the main page of the app.
+*   **`src/app`**: Contains global styles, layout, and the main entry point of the application (`page.tsx`).
 *   **`src/core`**: Holds the essential, application-wide logic that needs to be initialized or configured at the root of the project.
     *   `client-initializer.tsx`: Initializes client-side services and libraries.
     *   `sync-store-gate.tsx`: Manages the synchronization of the Zustand store with Firebase.
-*   **`src/features`**: Each feature of the application (e.g., `auth`, `cycles`, `timer`) is a self-contained module. Each feature folder typically contains its own `components`, `hooks`, and `store`.
+*   **`src/features`**: Each feature of the application (e.g., `auth`, `cycles`, `timer`, `theme`) is a self-contained module. Each feature folder typically contains its own `components`, `hooks`, and `store`.
 *   **`src/shared`**: Contains code that is shared across multiple features. This includes reusable UI `components` (from Shadcn UI), `hooks`, `lib` (like Firebase configuration), and `types`.
 
 ## Main File Functionalities
 
 ### `src/app/layout.tsx` & `src/app/page.tsx`
-These files are the main entry points for the application's UI. `layout.tsx` sets up the global page structure and providers like `ThemeProvider`. `page.tsx` renders the primary `Homepage` component.
+These files are the main entry points for the application's UI. `layout.tsx` sets up the global page structure and providers like `ThemeProvider`. `page.tsx` renders the primary `Homepage` component, which is now located in `src/shared/components/layout`.
 
 ### `src/features`
 This directory contains the core features of the application.
 
 *   **`features/auth`**: Manages user authentication, including the UI for login (`email-auth-dialog.tsx`), authentication hooks (`use-auth.ts`), and the authentication store (`auth-store.ts`).
 *   **`features/cycles`**: Manages the "flow time" cycles. It includes components for listing and editing cycles (`cycle-list.tsx`, `phase-editor.tsx`), hooks for interacting with cycles (`use-cycles.ts`), and the cycle store (`cycle-store.ts`).
+*   **`features/theme`**: Manages the application's theme (light/dark mode).
 *   **`features/timer`**: This is where the timer logic resides.
     *   **`machines/timer-machine.ts`**: Defines the core logic of the timer using an **XState state machine**. It handles states like `idle`, `running`, `paused`, and `finished`.
     *   **`store/timer-store.ts`**: Manages the state of the timer itself, powered by the XState state machine.
