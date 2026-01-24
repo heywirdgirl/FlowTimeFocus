@@ -1,7 +1,5 @@
-import { Homepage } from '@/components/app/homepage';
+import { Homepage } from '@/shared/components/layout';
 
-export default function Home() {
-  return (
-    <Homepage />
-  );
+export default function Page() {
+  return <Homepage />;
 }

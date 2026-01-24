@@ -4,9 +4,8 @@ import './globals.css';
 
 import { Toaster } from "@/shared/components/ui/toaster";
 import { Header, Footer } from "@/shared/components/layout";
-import { SyncStoreGate } from "@/core/sync-store-gate";
+import { ClientInitializer, SyncStoreGate } from '@/core';
 import { ThemeProvider } from '@/features/theme';
-import { ClientInitializer } from '@/core/client-initializer';
 
 export const metadata: Metadata = {
   title: 'FlowTime Focus',
