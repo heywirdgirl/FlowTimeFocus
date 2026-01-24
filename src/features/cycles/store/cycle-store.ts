@@ -14,7 +14,7 @@ export interface CycleActions {
     createNewCycle: () => Promise<void>;
     saveCurrentCycle: () => Promise<void>;
     deleteCycle: (cycleId: string) => Promise<void>;
-    addPhase: (cycleId: string) => void;
+    addPhase: (cycleId: string, newPhaseData: Partial<Phase>) => void;
     updatePhase: (cycleId: string, phaseId: string, updates: Partial<Phase>) => void;
     deletePhase: (cycleId: string, phaseId: string) => void;
     toggleSounds: () => void; 
@@ -142,11 +142,15 @@ export const useCycleStore = create<CycleStore>()(
                 await deleteCycleFromDb(user.uid, cycleId);
             },
 
-            addPhase: (cycleId) => {
+            addPhase: (cycleId, newPhaseData) => {
                 set(state => {
                     const cycle = state.cycles.find(c => c.id === cycleId);
                     if (!cycle) return {};
-                    const newPhase: Phase = { ...DEFAULT_PHASE, id: uuidv4() };
+                    const newPhase: Phase = { 
+                        ...DEFAULT_PHASE, 
+                        ...newPhaseData,
+                        id: uuidv4(),
+                     };
                     const updatedPhases = [...cycle.phases, newPhase];
                     const updatedCycle = { ...cycle, phases: updatedPhases, updatedAt: Date.now() };
                     return {
