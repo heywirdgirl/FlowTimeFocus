@@ -22,7 +22,8 @@ export interface CycleActions {
     setCycles: (cycles: Cycle[]) => void;
     setLoading: (isLoading: boolean) => void;
     setError: (error: string | null) => void;
-    canDeletePhase: (cycleId: string) => boolean; // ✅ NEW: Helper to check if phase can be deleted
+    canDeletePhase: (cycleId: string) => boolean;
+    canDeleteCycle: () => boolean;
 }
 
 export type CycleStore = CycleState & CycleActions;
@@ -121,6 +122,10 @@ export const useCycleStore = create<CycleStore>()(
             },
 
             deleteCycle: async (cycleId) => {
+                if (get().cycles.length <= 1) {
+                    console.warn('Cannot delete the last cycle');
+                    return;
+                }
                 require('@/features/timer').useTimerStore.getState().send({ type: 'STOP_FOR_EDIT' });
                 const { cycles, currentCycleId } = get();
                 const user = require('@/features/auth').useAuthStore.getState().user;
@@ -163,38 +168,30 @@ export const useCycleStore = create<CycleStore>()(
                 });
             },
 
-            // ✅ ENHANCED: Prevent deletion of last phase
             deletePhase: (cycleId, phaseId) => {
                 set(state => {
                     const cycle = state.cycles.find(c => c.id === cycleId);
                     if (!cycle) return {};
                     
-                    // 🛡️ GUARD: Cannot delete if only 1 phase remains
                     if (cycle.phases.length <= 1) {
                         console.warn('Cannot delete the last phase of a cycle. A cycle must have at least one phase.');
-                        return {}; // No state change
+                        return {};
                     }
                     
-                    // Stop timer before deletion
                     require('@/features/timer').useTimerStore.getState().send({ type: 'STOP_FOR_EDIT' });
                     
                     const updatedPhases = cycle.phases.filter(p => p.id !== phaseId);
                     const updatedCycle = { ...cycle, phases: updatedPhases, updatedAt: Date.now() };
                     
-                    // ✅ Adjust currentPhaseIndex if necessary
                     const { currentPhaseIndex } = state;
                     const deletedPhaseIndex = cycle.phases.findIndex(p => p.id === phaseId);
                     let newPhaseIndex = currentPhaseIndex;
                     
-                    // If we deleted the current phase, move to the previous one (or stay at 0)
                     if (deletedPhaseIndex === currentPhaseIndex) {
                         newPhaseIndex = Math.max(0, currentPhaseIndex - 1);
-                    }
-                    // If we deleted a phase before the current one, decrement index
-                    else if (deletedPhaseIndex < currentPhaseIndex) {
+                    } else if (deletedPhaseIndex < currentPhaseIndex) {
                         newPhaseIndex = currentPhaseIndex - 1;
                     }
-                    // Ensure index is within bounds
                     newPhaseIndex = Math.min(newPhaseIndex, updatedPhases.length - 1);
                     
                     return {
@@ -204,11 +201,12 @@ export const useCycleStore = create<CycleStore>()(
                 });
             },
 
-            // ✅ NEW: Helper method to check if phase can be deleted
             canDeletePhase: (cycleId) => {
                 const cycle = get().cycles.find(c => c.id === cycleId);
                 return cycle ? cycle.phases.length > 1 : false;
             },
+
+            canDeleteCycle: () => get().cycles.length > 1,
 
             updateCycle: (cycleId, updates) => {
                 set(state => {
