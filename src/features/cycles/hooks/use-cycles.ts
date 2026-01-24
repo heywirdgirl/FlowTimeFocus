@@ -23,6 +23,11 @@ export function useCycles() {
     
     // Actions
     selectCycle: store.setCurrentCycle,
+    setCurrentPhaseIndex: store.setCurrentPhaseIndex,
+    addPhaseToCycle: store.addPhase,
+    updatePhaseInCycle: store.updatePhase,
+    deletePhaseFromCycle: store.deletePhase,
+    saveCyclesToStorage: store.saveCurrentCycle,
     nextPhase: () => {
       if (!currentCycle) return;
       const nextIndex = store.currentPhaseIndex + 1;
