@@ -15,11 +15,11 @@ export interface CycleActions {
     createNewCycle: () => Promise<void>;
     saveCurrentCycle: () => Promise<void>;
     deleteCycle: (cycleId: string) => Promise<void>;
-    addPhase: () => void;
-    updatePhase: (phaseId: string, updates: Partial<Phase>) => void;
-    deletePhase: (phaseId: string) => void;
+    addPhase: (cycleId: string) => void;
+    updatePhase: (cycleId: string, phaseId: string, updates: Partial<Phase>) => void;
+    deletePhase: (cycleId: string, phaseId: string) => void;
     toggleSounds: () => void; 
-    updateCycle: (updates: Partial<Cycle>) => void;
+    updateCycle: (cycleId: string, updates: Partial<Cycle>) => void;
     setCycles: (cycles: Cycle[]) => void;
     setLoading: (isLoading: boolean) => void;
     setError: (error: string | null) => void;
@@ -49,14 +49,6 @@ export const useCycleStore = create<CycleStore>()(
                     currentPhaseIndex: 0,
                     isLoading: false,
                 });
-                 const firstPhase = guestCycles[0]?.phases[0];
-                 if (firstPhase) {
-                     require('@/features/timer').useTimerStore.getState().send({ 
-                         type: 'SELECT_CYCLE', 
-                         duration: firstPhase.duration * 60,
-                         title: firstPhase.title
-                     });
-                 }
             },
 
             startSync: (uid) => {
@@ -147,53 +139,53 @@ export const useCycleStore = create<CycleStore>()(
                 await deleteCycleFromDb(user.uid, cycleId);
             },
 
-            addPhase: () => {
+            addPhase: (cycleId) => {
                 set(state => {
-                    const currentCycle = state.cycles.find(c => c.id === state.currentCycleId);
-                    if (!currentCycle) return {};
+                    const cycle = state.cycles.find(c => c.id === cycleId);
+                    if (!cycle) return {};
                     const newPhase: Phase = { ...DEFAULT_PHASE, id: uuidv4() };
-                    const updatedPhases = [...currentCycle.phases, newPhase];
-                    const updatedCycle = { ...currentCycle, phases: updatedPhases };
+                    const updatedPhases = [...cycle.phases, newPhase];
+                    const updatedCycle = { ...cycle, phases: updatedPhases };
                     return {
-                        cycles: state.cycles.map(c => c.id === updatedCycle.id ? updatedCycle : c)
+                        cycles: state.cycles.map(c => c.id === cycleId ? updatedCycle : c)
                     };
                 });
             },
 
-            updatePhase: (phaseId, updates) => {
+            updatePhase: (cycleId, phaseId, updates) => {
                 require('@/features/timer').useTimerStore.getState().send({ type: 'STOP_FOR_EDIT' });
                 set(state => {
-                    const currentCycle = state.cycles.find(c => c.id === state.currentCycleId);
-                    if (!currentCycle) return {};
-                    const updatedPhases = currentCycle.phases.map(p => p.id === phaseId ? { ...p, ...updates } : p);
-                    const updatedCycle = { ...currentCycle, phases: updatedPhases };
+                    const cycle = state.cycles.find(c => c.id === cycleId);
+                    if (!cycle) return {};
+                    const updatedPhases = cycle.phases.map(p => p.id === phaseId ? { ...p, ...updates } : p);
+                    const updatedCycle = { ...cycle, phases: updatedPhases };
                     return {
-                        cycles: state.cycles.map(c => c.id === updatedCycle.id ? updatedCycle : c)
+                        cycles: state.cycles.map(c => c.id === cycleId ? updatedCycle : c)
                     };
                 });
             },
 
-            deletePhase: (phaseId) => {
+            deletePhase: (cycleId, phaseId) => {
                 require('@/features/timer').useTimerStore.getState().send({ type: 'STOP_FOR_EDIT' });
                 set(state => {
-                    const currentCycle = state.cycles.find(c => c.id === state.currentCycleId);
-                    if (!currentCycle) return {};
-                    const updatedPhases = currentCycle.phases.filter(p => p.id !== phaseId);
-                    const updatedCycle = { ...currentCycle, phases: updatedPhases };
+                    const cycle = state.cycles.find(c => c.id === cycleId);
+                    if (!cycle) return {};
+                    const updatedPhases = cycle.phases.filter(p => p.id !== phaseId);
+                    const updatedCycle = { ...cycle, phases: updatedPhases };
                     return {
-                        cycles: state.cycles.map(c => c.id === updatedCycle.id ? updatedCycle : c)
+                        cycles: state.cycles.map(c => c.id === cycleId ? updatedCycle : c)
                     };
                 });
             },
             
 
-updateCycle: (updates) => {
+updateCycle: (cycleId, updates) => {
     set(state => {
-        const currentCycle = state.cycles.find(c => c.id === state.currentCycleId);
-        if (!currentCycle) return {};
-        const updatedCycle = { ...currentCycle, ...updates };
+        const cycle = state.cycles.find(c => c.id === cycleId);
+        if (!cycle) return {};
+        const updatedCycle = { ...cycle, ...updates };
         return {
-            cycles: state.cycles.map(c => c.id === updatedCycle.id ? updatedCycle : c)
+            cycles: state.cycles.map(c => c.id === cycleId ? updatedCycle : c)
         };
     });
 },
