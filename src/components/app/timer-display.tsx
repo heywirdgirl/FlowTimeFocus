@@ -4,12 +4,12 @@
 import { useEffect, useState } from "react";
 import { useCycleStore } from "@/store/useCycleStore"; 
 import { useTimerStore } from "@/store/useTimerStore";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
+import { Button } from "@/shared/components/ui/button";
+import { Card, CardContent, CardFooter, CardHeader } from "@/shared/components/ui/card";
 import { Play, Pause, RotateCcw, SkipForward, Edit, Plus, Trash2, Save, Copy } from "lucide-react";
-import { Input } from "@/components/ui/input";
-import { cn } from "@/lib/utils";
-import type { Phase } from "@/lib/types";
+import { Input } from "@/shared/components/ui/input";
+import { cn } from "@/shared/lib/utils";
+import type { Phase } from "@/shared/types";
 import { PhaseEditor } from "./phase-editor"; // Import the new component
 
 const formatTime = (seconds: number) => {

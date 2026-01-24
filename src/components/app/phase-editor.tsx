@@ -3,8 +3,8 @@
 
 import { useState } from "react";
 import type { Phase } from "@/types/cycle";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
+import { Input } from "@/shared/components/ui/input";
+import { Button } from "@/shared/components/ui/button";
 
 interface PhaseEditorProps {
   phase: Partial<Phase>;

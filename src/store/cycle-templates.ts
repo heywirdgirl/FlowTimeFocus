@@ -1,5 +1,5 @@
 import { v4 as uuidv4 } from 'uuid';
-import type { Cycle, Phase } from '@/lib/types';
+import type { Cycle, Phase } from "@/shared/types";
 
 // --- Default Data ---
 export const DEFAULT_PHASE: Omit<Phase, 'id'> = {
