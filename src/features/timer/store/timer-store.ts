@@ -1,95 +1,103 @@
-
 import { create } from 'zustand';
-import { createActor, Actor } from 'xstate';
-import { timerMachine } from '@/ai/timer-machine';
-import { useCycleStore } from './useCycleStore';
-import type { Timer, TimerSnapshot } from "@/shared/types";
+import { createActor } from 'xstate';
+import { timerMachine } from '../machines/timer-machine';
+import { useCycleStore } from '@/features/cycles';
+import type { TimerState, TimerEvent } from '../types';
 
-// --- State and Store Types ---
-
-interface TimerState {
-    timerActor: Actor<typeof timerMachine> | null;
-    snapshot: TimerSnapshot | null;
-    send: (event: any) => void;
-    initializeTimer: () => void;
-    stopTimer: () => void;
-}
-
-// --- Store Implementation ---
-
+/**
+ * Timer store using Zustand
+ * Manages XState actor lifecycle and auto-next logic
+ */
 export const useTimerStore = create<TimerState>((set, get) => ({
-    timerActor: null,
-    snapshot: null,
-    send: (event) => {
-        const { timerActor } = get();
-        if (timerActor) {
-            timerActor.send(event);
-        } else {
-            console.warn("Timer not initialized, cannot send event:", event);
-            // Initialize and then send
-            get().initializeTimer();
-            // This is tricky because actor creation is async. A better approach
-            // is to ensure initialization happens reliably on app start.
-            // For now, we'll log a warning and the next user action will work.
+  timerActor: null,
+  snapshot: null,
+
+  /**
+   * Send an event to the timer state machine
+   */
+  send: (event: TimerEvent) => {
+    const { timerActor } = get();
+    if (timerActor) {
+      timerActor.send(event);
+    } else {
+      console.warn("Timer not initialized, cannot send event:", event);
+      // Auto-initialize and retry would be complex here
+      // Better to ensure initialization happens on app start
+      get().initializeTimer();
+    }
+  },
+
+  /**
+   * Initialize the timer actor with the current phase
+   * Sets up subscription for auto-next logic
+   */
+  initializeTimer: () => {
+    // Guard: only run on client-side and if not already initialized
+    if (typeof window === 'undefined' || get().timerActor) return;
+
+    const { cycles, currentCycleId, currentPhaseIndex, playSounds } = useCycleStore.getState();
+    const currentCycle = cycles.find(c => c.id === currentCycleId);
+    const initialPhase = currentCycle?.phases[currentPhaseIndex];
+    const initialDuration = initialPhase?.duration ?? 25;
+
+    // Create and start the actor
+    const newActor = createActor(timerMachine, {
+      input: {
+        duration: initialDuration * 60, // Convert minutes to seconds
+      }
+    }).start();
+
+    // Subscribe to state changes
+    newActor.subscribe((snapshot) => {
+      // Update Zustand store with latest snapshot
+      set({ snapshot });
+
+      // THE "BRAIN": Auto-next logic when phase finishes
+      if (snapshot.matches('finished')) {
+        const cycleStore = useCycleStore.getState();
+        const { cycles, currentCycleId, currentPhaseIndex } = cycleStore;
+
+        // Safety check
+        if (!currentCycle) {
+          newActor.send({ type: 'STOP_FOR_EDIT' });
+          return;
         }
-    },
+        
+        // Play completion sound for the finished phase
+        const completedPhase = currentCycle.phases[currentPhaseIndex];
+        if (cycleStore.playSounds && completedPhase?.soundFile?.url) {
+          new Audio(completedPhase.soundFile.url)
+            .play()
+            .catch(err => console.error("Audio play failed:", err));
+        }
 
-    initializeTimer: () => {
-        if (typeof window === 'undefined' || get().timerActor) return;
+        const nextIndex = currentPhaseIndex + 1;
+        const isLastPhase = nextIndex >= currentCycle.phases.length;
 
-        const { currentCycle, currentPhaseIndex, playSounds } = useCycleStore.getState();
-        const initialPhase = currentCycle?.phases[currentPhaseIndex];
-        const initialDuration = initialPhase?.duration ?? 25;
+        if (!isLastPhase) {
+          // Auto-advance to next phase
+          cycleStore.setCurrentPhaseIndex(nextIndex);
+          // Note: setCurrentPhaseIndex will send SELECT_PHASE event
+        } else {
+          // Cycle complete - stop and reset to first phase
+          newActor.send({ type: 'STOP_FOR_EDIT' }); 
+          cycleStore.setCurrentPhaseIndex(0);
+        }
+      }
+    });
 
-        const newActor = createActor(timerMachine, {
-            input: {
-                duration: initialDuration * 60,
+    // Update store with initialized actor
+    set({ 
+      timerActor: newActor, 
+      snapshot: newActor.getSnapshot() 
+    });
+  },
 
-            }
-        }).start();
-
-        newActor.subscribe((snapshot) => {
-            // Update the store with the latest snapshot
-            set({ snapshot });
-
-            // The "Brain": Auto-next logic when a phase finishes
-            if (snapshot.matches('finished')) {
-                const cycleStore = useCycleStore.getState();
-                const { currentCycle, currentPhaseIndex } = cycleStore;
-
-                if (!currentCycle) {
-                    newActor.send({ type: 'STOP_FOR_EDIT' });
-                    return;
-                }
-                
-                // Play sound for the completed phase
-                const completedPhase = currentCycle.phases[currentPhaseIndex];
-                if (cycleStore.playSounds && completedPhase?.soundFile?.url) {
-                    new Audio(completedPhase.soundFile.url).play().catch(err => console.error("Audio play failed:", err));
-                }
-
-                const nextIndex = currentPhaseIndex + 1;
-                const isLastPhase = nextIndex >= currentCycle.phases.length;
-
-                if (!isLastPhase) {
-                    // Go to the next phase
-                    const nextPhase = currentCycle.phases[nextIndex];
-                    cycleStore.setCurrentPhaseIndex(nextIndex); // This will send the SELECT_PHASE event
-                } else {
-
-                    // Here you could loop, or just stop. We'll stop.
-                    newActor.send({ type: 'STOP_FOR_EDIT' }); 
-                    // Optionally, reset to the first phase visually
-                    cycleStore.setCurrentPhaseIndex(0);
-                }
-            }
-        });
-
-        set({ timerActor: newActor, snapshot: newActor.getSnapshot() });
-    },
-
-    stopTimer: () => {
-        get().timerActor?.stop();
-        set({ timerActor: null, snapshot: null });
-    },
+  /**
+   * Stop the timer and clean up resources
+   */
+  stopTimer: () => {
+    get().timerActor?.stop();
+    set({ timerActor: null, snapshot: null });
+  },
 }));

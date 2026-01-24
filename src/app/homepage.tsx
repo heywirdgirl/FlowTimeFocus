@@ -1,26 +1,17 @@
-
 "use client";
 
-import { useEffect } from "react";
-import { TimerDisplay } from "./timer-display";
-import { CycleList } from "./cycle-list";
+import { TimerDisplay } from "@/features/timer";
+import { CycleList } from "@/features/cycles";
 import { cn } from "@/shared/lib/utils";
-import { useCycleStore } from "@/store/useCycleStore";
-import { useTimerStore } from "@/store/useTimerStore";
+import { useCycles } from "@/features/cycles";
+import { useTimerStore } from "@/features/timer";
 import { Skeleton } from "@/shared/components/ui/skeleton";
 
 export function Homepage() {
-  const initializeTimer = useTimerStore((state) => state.initializeTimer);
   const isActive = useTimerStore((state) => state.snapshot?.matches('running') ?? false);
-  const { currentCycle, currentPhaseIndex, isLoading } = useCycleStore();
+  const { currentCycle, currentPhase, isLoading } = useCycles();
 
-  useEffect(() => {
-    initializeTimer();
-  }, [initializeTimer]);
-
-
-  // Show a loading skeleton if data isn't ready yet
-  if (isLoading || !currentCycle) {
+  if (isLoading || !currentCycle || !currentPhase) {
     return (
         <div className="min-h-screen w-full bg-background flex flex-col">
             <main className="flex-grow container mx-auto max-w-6xl px-4 py-8 md:py-12">
@@ -38,25 +29,14 @@ export function Homepage() {
     );
   }
 
-  const currentPhase = currentCycle.phases[currentPhaseIndex];
-
-  // This should not happen if the loading logic is correct, but as a fallback:
-  if (!currentPhase) {
-    return <div>Error: Current phase could not be loaded.</div>;
-  }
-
   const sessionTypeClass = () => {
     if (!isActive) return 'bg-background';
-
-    // Use the 'type' property for more reliable styling
     if (currentPhase.type === 'work') {
       return 'bg-session-focus-bg dark:bg-session-focus-bg-dark';
     }
     if (currentPhase.type === 'break') {
       return 'bg-session-rest-bg dark:bg-session-rest-bg-dark';
     }
-    
-    // Fallback for other types
     return 'bg-accent/20';
   };
 
@@ -71,7 +51,10 @@ export function Homepage() {
               <CycleList />
             </div>
         </div>
-      </main>
+      </a_string_var = """Hello World!"""
+      a_second_one = '''How's life?'''
+      another = "Yo!"
+      main>
     </div>
   );
 }
