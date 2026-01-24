@@ -5,7 +5,6 @@ import { cycleTemplates, DEFAULT_PHASE } from './cycle-templates';
 import type { Cycle, Phase, CycleState } from "../types";
 import { startSyncCycles, stopSyncCycles, saveCycle, deleteCycle as deleteCycleFromDb, createNewCycleInDb } from './firebase-sync';
 
-
 export interface CycleActions {
     loadGuestData: () => void;
     startSync: (uid: string) => void;
@@ -23,7 +22,7 @@ export interface CycleActions {
     setCycles: (cycles: Cycle[]) => void;
     setLoading: (isLoading: boolean) => void;
     setError: (error: string | null) => void;
-
+    canDeletePhase: (cycleId: string) => boolean; // ✅ NEW: Helper to check if phase can be deleted
 }
 
 export type CycleStore = CycleState & CycleActions;
@@ -94,7 +93,7 @@ export const useCycleStore = create<CycleStore>()(
             },
 
             createNewCycle: async () => {
-                const { cycles, currentCycleId } = get();
+                const { cycles } = get();
                 const newCycle: Cycle = {
                     id: uuidv4(),
                     name: "My New Cycle",
@@ -110,7 +109,6 @@ export const useCycleStore = create<CycleStore>()(
                 }
 
                 await createNewCycleInDb(user.uid, newCycle);
-                // The sync will add the cycle to the store
             },
 
             saveCurrentCycle: async () => {
@@ -145,7 +143,7 @@ export const useCycleStore = create<CycleStore>()(
                     if (!cycle) return {};
                     const newPhase: Phase = { ...DEFAULT_PHASE, id: uuidv4() };
                     const updatedPhases = [...cycle.phases, newPhase];
-                    const updatedCycle = { ...cycle, phases: updatedPhases };
+                    const updatedCycle = { ...cycle, phases: updatedPhases, updatedAt: Date.now() };
                     return {
                         cycles: state.cycles.map(c => c.id === cycleId ? updatedCycle : c)
                     };
@@ -158,38 +156,70 @@ export const useCycleStore = create<CycleStore>()(
                     const cycle = state.cycles.find(c => c.id === cycleId);
                     if (!cycle) return {};
                     const updatedPhases = cycle.phases.map(p => p.id === phaseId ? { ...p, ...updates } : p);
-                    const updatedCycle = { ...cycle, phases: updatedPhases };
+                    const updatedCycle = { ...cycle, phases: updatedPhases, updatedAt: Date.now() };
                     return {
                         cycles: state.cycles.map(c => c.id === cycleId ? updatedCycle : c)
                     };
                 });
             },
 
+            // ✅ ENHANCED: Prevent deletion of last phase
             deletePhase: (cycleId, phaseId) => {
-                require('@/features/timer').useTimerStore.getState().send({ type: 'STOP_FOR_EDIT' });
                 set(state => {
                     const cycle = state.cycles.find(c => c.id === cycleId);
                     if (!cycle) return {};
+                    
+                    // 🛡️ GUARD: Cannot delete if only 1 phase remains
+                    if (cycle.phases.length <= 1) {
+                        console.warn('Cannot delete the last phase of a cycle. A cycle must have at least one phase.');
+                        return {}; // No state change
+                    }
+                    
+                    // Stop timer before deletion
+                    require('@/features/timer').useTimerStore.getState().send({ type: 'STOP_FOR_EDIT' });
+                    
                     const updatedPhases = cycle.phases.filter(p => p.id !== phaseId);
-                    const updatedCycle = { ...cycle, phases: updatedPhases };
+                    const updatedCycle = { ...cycle, phases: updatedPhases, updatedAt: Date.now() };
+                    
+                    // ✅ Adjust currentPhaseIndex if necessary
+                    const { currentPhaseIndex } = state;
+                    const deletedPhaseIndex = cycle.phases.findIndex(p => p.id === phaseId);
+                    let newPhaseIndex = currentPhaseIndex;
+                    
+                    // If we deleted the current phase, move to the previous one (or stay at 0)
+                    if (deletedPhaseIndex === currentPhaseIndex) {
+                        newPhaseIndex = Math.max(0, currentPhaseIndex - 1);
+                    }
+                    // If we deleted a phase before the current one, decrement index
+                    else if (deletedPhaseIndex < currentPhaseIndex) {
+                        newPhaseIndex = currentPhaseIndex - 1;
+                    }
+                    // Ensure index is within bounds
+                    newPhaseIndex = Math.min(newPhaseIndex, updatedPhases.length - 1);
+                    
+                    return {
+                        cycles: state.cycles.map(c => c.id === cycleId ? updatedCycle : c),
+                        currentPhaseIndex: newPhaseIndex
+                    };
+                });
+            },
+
+            // ✅ NEW: Helper method to check if phase can be deleted
+            canDeletePhase: (cycleId) => {
+                const cycle = get().cycles.find(c => c.id === cycleId);
+                return cycle ? cycle.phases.length > 1 : false;
+            },
+
+            updateCycle: (cycleId, updates) => {
+                set(state => {
+                    const cycle = state.cycles.find(c => c.id === cycleId);
+                    if (!cycle) return {};
+                    const updatedCycle = { ...cycle, ...updates, updatedAt: Date.now() };
                     return {
                         cycles: state.cycles.map(c => c.id === cycleId ? updatedCycle : c)
                     };
                 });
             },
-            
-
-updateCycle: (cycleId, updates) => {
-    set(state => {
-        const cycle = state.cycles.find(c => c.id === cycleId);
-        if (!cycle) return {};
-        const updatedCycle = { ...cycle, ...updates };
-        return {
-            cycles: state.cycles.map(c => c.id === cycleId ? updatedCycle : c)
-        };
-    });
-},
-
 
             toggleSounds: () => set(state => ({ playSounds: !state.playSounds })),
             setCycles: (cycles) => set({ cycles }),

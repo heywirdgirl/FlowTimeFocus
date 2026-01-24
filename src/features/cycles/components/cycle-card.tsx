@@ -12,7 +12,7 @@ interface CycleCardProps {
 }
 
 export function CycleCard({ cycle, isActive }: CycleCardProps) {
-    const { selectCycle, deleteCycle } = useCycles();
+    const { setCurrentCycle, deleteCycle } = useCycles();
 
     const handleDelete = () => {
         if (isActive) {
@@ -30,7 +30,7 @@ export function CycleCard({ cycle, isActive }: CycleCardProps) {
                 <p className="font-semibold">{cycle.name}</p>
             </div>
             <div className="flex items-center">
-                <Button size="icon" variant="ghost" onClick={() => selectCycle(cycle.id)}>
+                <Button size="icon" variant="ghost" onClick={() => setCurrentCycle(cycle.id)}>
                     <Play className="h-5 w-5" />
                     <span className="sr-only">Run {cycle.name}</span>
                 </Button>
