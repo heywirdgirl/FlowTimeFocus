@@ -1,6 +1,6 @@
 
 import type { Actor, Snapshot } from 'xstate';
-import type { timerMachine } from '@/ai/timer-machine';
+import type { timerMachine } from "@/features/timer";
 
 // --- XState Timer Actor Types ---
 export type Timer = Actor<typeof timerMachine>;
@@ -14,6 +14,7 @@ export interface Phase {
   duration: number; // in minutes
   soundFile: { url: string; name?: string; type?: string } | null;
   removable?: boolean;
+  type: 'work' | 'break';
 }
 
 export interface Cycle {

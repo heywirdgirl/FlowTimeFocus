@@ -1,5 +1,19 @@
 import { setup, assign, fromCallback } from 'xstate';
 
+/**
+ * Timer state machine for managing Pomodoro/Flow Time cycles
+ * 
+ * States:
+ * - idle: Waiting to start
+ * - running: Timer is actively counting down
+ * - paused: Timer is paused, can be resumed
+ * - finished: Timer has completed
+ * 
+ * Global Events (can be called from any state):
+ * - SELECT_PHASE: Start a new phase immediately
+ * - SELECT_CYCLE: Load a new cycle (but don't start)
+ * - STOP_FOR_EDIT: Stop timer for editing
+ */
 export const timerMachine = setup({
   types: {
     context: {} as {
@@ -8,16 +22,19 @@ export const timerMachine = setup({
     },
     events: {} as
       | { type: 'TICK' }
-      | { type: 'PAUSE' } // Vẫn cần Pause nếu người dùng muốn nghỉ giữa chừng
+      | { type: 'PAUSE' }
       | { type: 'START' }
       | { type: 'RESUME' }
-      | { type: 'STOP_FOR_EDIT' } // Sự kiện khi nhấn Edit/Delete
-      | { type: 'SELECT_PHASE'; duration: number;  } // Sự kiện chọn/auto-next phase
-      | { type: 'SELECT_CYCLE'; duration: number; }, // Sự kiện chọn cycle mới
-    input: {} as { duration: number; }
+      | { type: 'STOP_FOR_EDIT' }
+      | { type: 'SELECT_PHASE'; duration: number }
+      | { type: 'SELECT_CYCLE'; duration: number },
+    input: {} as { duration: number }
   },
 
   actors: {
+    /**
+     * Interval ticker that sends TICK events every second
+     */
     intervalTicker: fromCallback(({ sendBack }) => {
       const id = setInterval(() => sendBack({ type: 'TICK' }), 1000);
       return () => clearInterval(id);
@@ -25,13 +42,19 @@ export const timerMachine = setup({
   },
 
   actions: {
+    /**
+     * Decrement time by 1 second
+     */
     decrementTime: assign({
       timeLeft: ({ context }) => context.timeLeft - 1
     }),
+    
+    /**
+     * Update context with new duration and reset timeLeft
+     */
     updateContext: assign({
       duration: ({ event }) => 'duration' in event ? event.duration : 0,
       timeLeft: ({ event }) => 'duration' in event ? event.duration : 0,
-
     })
   }
 }).createMachine({
@@ -41,37 +64,42 @@ export const timerMachine = setup({
   context: ({ input }) => ({
     duration: input.duration,
     timeLeft: input.duration,
-
   }),
 
-  // GLOBAL EVENTS: Có thể gọi từ bất kỳ đâu
+  // GLOBAL EVENTS: Can be triggered from any state
   on: {
-    // Logic: Khi nhận phase mới (do user chọn hoặc auto-next), 
-    // cập nhật context VÀ chuyển ngay sang trạng thái 'running'
+    /**
+     * SELECT_PHASE: User selects a phase or auto-next triggers
+     * Updates context AND starts running immediately
+     */
     SELECT_PHASE: {
       target: '.running', 
-      reenter: true, // Reset lại timer nếu đang chạy
+      reenter: true, // Reset timer if already running
       actions: 'updateContext'
     },
     
-    // Logic: Khi chọn 1 cycle mới, nạp phase đầu tiên vào nhưng KHÔNG chạy
+    /**
+     * SELECT_CYCLE: User selects a new cycle
+     * Load first phase but DON'T auto-start
+     */
     SELECT_CYCLE: {
-        target: '.idle',
-        reenter: true, // Đảm bảo thoát khỏi các trạng thái khác
-        actions: 'updateContext'
+      target: '.idle',
+      reenter: true, // Ensure exit from other states
+      actions: 'updateContext'
     },
 
-    // Logic: Khi nhấn Edit/Delete, dừng mọi thứ về Idle
+    /**
+     * STOP_FOR_EDIT: User clicks Edit/Delete
+     * Stop everything and return to idle
+     */
     STOP_FOR_EDIT: {
       target: '.idle',
-      reenter: true // Đảm bảo thoát khỏi running/paused
+      reenter: true // Ensure exit from running/paused
     }
   },
 
   states: {
     idle: {
-      // Ở trạng thái này, chỉ chờ SELECT_PHASE để bắt đầu
-      // Hoặc có thể thêm nút Start thủ công nếu muốn chạy lại phase hiện tại
       on: {
         START: 'running',
       }
@@ -88,7 +116,7 @@ export const timerMachine = setup({
         },
         PAUSE: 'paused',
       },
-      // Tự động kiểm tra hết giờ
+      // Auto-check for completion
       always: {
         target: 'finished',
         guard: ({ context }) => context.timeLeft <= 0
@@ -98,12 +126,11 @@ export const timerMachine = setup({
     paused: {
       on: {
         RESUME: 'running',
-        // SELECT_PHASE ở Global sẽ tự động xử lý việc chọn phase khác khi đang pause
       }
     },
 
     finished: {
-
+      // Terminal state - waiting for next action
     }
   }
 });

@@ -4,9 +4,9 @@ import './globals.css';
 
 import { Toaster } from "@/shared/components/ui/toaster";
 import { Header, Footer } from "@/shared/components/layout";
-import { SyncStoreGate } from "@/components/app/syncStoreGate";
-import { ThemeProvider } from '@/shared/components/theme';
-import { ClientInitializer } from '@/components/app/client-initializer'; // Import the new client component
+import { SyncStoreGate } from "@/core/sync-store-gate";
+import { ThemeProvider } from '@/features/theme';
+import { ClientInitializer } from '@/core/client-initializer';
 
 export const metadata: Metadata = {
   title: 'FlowTime Focus',
@@ -21,16 +21,16 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
         <body>
-          <ClientInitializer /> {/* Add the initializer here */}
           <ThemeProvider>
-            {/* SyncStoreGate handles auth and data synchronization */}
             <SyncStoreGate /> 
-            <div className="flex flex-col min-h-screen">
-                <Header />
-                <main className="flex-grow">{children}</main>
-                <Footer />
-            </div>
-            <Toaster />
+            <ClientInitializer>
+              <div className="flex flex-col min-h-screen">
+                  <Header />
+                  <main className="flex-grow">{children}</main>
+                  <Footer />
+              </div>
+              <Toaster />
+            </ClientInitializer>
           </ThemeProvider>
         </body>
     </html>
