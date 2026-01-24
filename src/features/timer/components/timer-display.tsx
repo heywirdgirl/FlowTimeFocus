@@ -61,6 +61,12 @@ export function TimerDisplay() {
     setIsDirty(true);
   };
 
+  const handleAddPhase = (newPhaseData: Partial<Phase>) => {
+    addPhaseToCycle(currentCycle.id, newPhaseData);
+    setIsAddingPhase(false);
+    setIsDirty(true);
+  };
+
   const totalDuration = currentPhase.duration * 60;
   const safeProgress = totalDuration > 0 ? progress : 0;
 
@@ -224,11 +230,7 @@ export function TimerDisplay() {
             <PhaseEditor
               isNew
               phase={{ title: 'New Phase', duration: 5, type: 'work' }}
-              onSave={(p) => {
-                addPhaseToCycle(currentCycle.id, p);
-                setIsAddingPhase(false);
-                setIsDirty(true);
-              }}
+              onSave={handleAddPhase}
               onCancel={() => setIsAddingPhase(false)}
             />
           )}
