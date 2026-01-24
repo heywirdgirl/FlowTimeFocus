@@ -51,10 +51,7 @@ export function Homepage() {
               <CycleList />
             </div>
         </div>
-      </a_string_var = """Hello World!"""
-      a_second_one = '''How's life?'''
-      another = "Yo!"
-      main>
+      </main>
     </div>
   );
 }
