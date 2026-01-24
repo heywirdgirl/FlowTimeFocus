@@ -24,7 +24,8 @@ export function useCycles() {
     // Computed
     isLastPhase: store.currentPhaseIndex === (currentCycle?.phases.length ?? 0) - 1,
     totalPhases: currentCycle?.phases.length ?? 0,
-    canDeletePhase: (cycleId: string) => store.canDeletePhase(cycleId), // ✅ NEW
+    canDeletePhase: (cycleId: string) => store.canDeletePhase(cycleId),
+    canDeleteCycle: () => store.canDeleteCycle(),
     
     // Cycle actions
     setCurrentCycle: store.setCurrentCycle,
