@@ -1,5 +1,3 @@
-import { Homepage } from '@/shared/components/layout';
-
 export default function Page() {
-  return <Homepage />;
+  return <h1>Social Feed</h1>;
 }
