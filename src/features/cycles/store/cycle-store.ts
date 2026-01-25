@@ -11,7 +11,7 @@ export interface CycleActions {
     stopSync: () => void;
     setCurrentCycle: (cycleId: string) => void;
     setCurrentPhaseIndex: (index: number) => void;
-    createNewCycle: () => Promise<void>;
+    createCycle: (cycleToClone?: Cycle) => Promise<void>;
     saveCurrentCycle: () => Promise<void>;
     deleteCycle: (cycleId: string) => Promise<void>;
     addPhase: (cycleId: string, newPhaseData: Partial<Phase>) => void;
@@ -93,15 +93,27 @@ export const useCycleStore = create<CycleStore>()(
                 }
             },
 
-            createNewCycle: async () => {
+            createCycle: async (cycleToClone) => {
                 const { cycles } = get();
-                const newCycle: Cycle = {
-                    id: uuidv4(),
-                    name: "My New Cycle",
-                    phases: [{ ...DEFAULT_PHASE, id: uuidv4() }],
-                    createdAt: Date.now(),
-                    updatedAt: Date.now(),
-                };
+                let newCycle: Cycle;
+
+                if (cycleToClone) {
+                    newCycle = {
+                        ...cycleToClone,
+                        id: uuidv4(),
+                        name: `${cycleToClone.name} (Copy)`,
+                        createdAt: Date.now(),
+                        updatedAt: Date.now(),
+                    };
+                } else {
+                    newCycle = {
+                        id: uuidv4(),
+                        name: "My New Cycle",
+                        phases: [{ ...DEFAULT_PHASE, id: uuidv4() }],
+                        createdAt: Date.now(),
+                        updatedAt: Date.now(),
+                    };
+                }
 
                 const user = require('@/features/auth').useAuthStore.getState().user;
                 if (!user || user.isGuest) {
