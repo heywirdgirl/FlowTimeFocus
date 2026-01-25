@@ -9,7 +9,7 @@ import { CycleCard } from "./cycle-card";
 import { calculateTotalDuration } from "../utils/cycle-helpers";
 
 export function CycleList() {
-    const { cycles, currentCycle, isLoading, createCycle } = useCycles();
+    const { cycles, currentCycle, isLoading } = useCycles();
     const { isActive } = useTimerStore();
 
     const totalTimeToday = cycles.reduce((acc, cycle) => acc + calculateTotalDuration(cycle), 0);
@@ -46,9 +46,6 @@ export function CycleList() {
                         )}
                     </div>
                 </ScrollArea>
-                <Button variant="outline" className="w-full" onClick={() => createCycle()}>
-                    Create New Cycle
-                </Button>
             </CardContent>
         </Card>
     );
