@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useCycles } from "@/features/cycles";
 import { useTimer } from "../hooks/use-timer";
+import { useAuth } from "@/features/auth";
 import { Button } from "@/shared/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader } from "@/shared/components/ui/card";
 import { Input } from "@/shared/components/ui/input";
@@ -33,6 +34,8 @@ export function TimerDisplay() {
     initializeTimer, 
     stopTimer 
   } = useTimer();
+
+  const { user } = useAuth();
 
   // Component state
   const [isDirty, setIsDirty] = useState(false);
@@ -69,6 +72,7 @@ export function TimerDisplay() {
 
   const totalDuration = currentPhase.duration * 60;
   const safeProgress = totalDuration > 0 ? progress : 0;
+  const isGuest = !user || user.isGuest;
 
   return (
     <Card className="w-full text-center border-2 shadow-lg relative">
@@ -239,12 +243,12 @@ export function TimerDisplay() {
         {/* Action Buttons */}
         <div className="flex items-center justify-center gap-2 pt-4 border-t w-full max-w-sm mx-auto">
           <Button
-            onClick={createCycle}
+            onClick={() => createCycle(currentCycle)}
             size="sm"
             variant="outline"
             className="w-full"
           >
-            <Copy className="mr-2 h-4 w-4" /> New Cycle
+            <Copy className="mr-2 h-4 w-4" /> Clone Cycle
           </Button>
           <Button
             onClick={async () => {
@@ -253,7 +257,7 @@ export function TimerDisplay() {
             }}
             size="sm"
             variant="outline"
-            disabled={!isDirty}
+            disabled={!isDirty || isGuest}
             className="w-full"
           >
             <Save className="mr-2 h-4 w-4" /> Save Changes

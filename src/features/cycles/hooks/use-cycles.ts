@@ -29,7 +29,7 @@ export function useCycles() {
     
     // Cycle actions
     setCurrentCycle: store.setCurrentCycle,
-    createCycle: store.createNewCycle,
+    createCycle: store.createCycle,
     updateCycle: store.updateCycle,
     deleteCycle: store.deleteCycle,
     saveCyclesToStorage: store.saveCurrentCycle,
