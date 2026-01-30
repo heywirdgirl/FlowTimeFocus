@@ -9,10 +9,16 @@ The project is organized following the principles of feature-driven design, whic
 ```
 src
 ├── app
+│   ├── dashboard
+│   │   ├── [userId]
+│   │   │   └── page.tsx
+│   │   ├── layout.tsx
+│   │   └── page.tsx
 │   ├── favicon.ico
 │   ├── globals.css
 │   ├── layout.tsx
-│   └── page.tsx
+│   └── social
+│       └── page.tsx
 ├── core
 │   ├── client-initializer.tsx
 │   ├── index.ts
@@ -49,6 +55,24 @@ src
 │   │   ├── store
 │   │   │   └── settings-store.ts
 │   │   └── types.ts
+│   ├── social
+│   │   ├── components
+│   │   │   ├── comment-form.tsx
+│   │   │   ├── comment-list.tsx
+│   │   │   ├── cycle-card.tsx
+│   │   │   ├── cycle-detail-modal.tsx
+│   │   │   ├── cycle-grid.tsx
+│   │   │   ├── featured-templates.tsx
+│   │   │   ├── feed-page.tsx
+│   │   │   ├── filter-bar.tsx
+│   │   │   └── hero-section.tsx
+│   │   ├── hooks
+│   │   │   ├── use-clone-cycle.ts
+│   │   │   └── use-public-cycles.ts
+│   │   ├── index.ts
+│   │   ├── services
+│   │   │   └── feed-service.ts
+│   │   └── types.ts
 │   ├── theme
 │   │   └── index.ts
 │   └── timer
@@ -62,13 +86,15 @@ src
 │       ├── store
 │       │   └── timer-store.ts
 │       └── types.ts
+├── middleware.ts
 └── shared
     ├── components
     │   ├── layout
     │   │   ├── footer.tsx
     │   │   ├── header.tsx
     │   │   ├── homepage.tsx
-    │   │   └── index.ts
+    │   │   ├── index.ts
+    │   │   └── landing-page.tsx
     │   ├── theme
     │   │   ├── index.ts
     │   │   └── theme-provider.tsx
@@ -106,9 +132,10 @@ src
     │       ├── table.tsx
     │       ├── tabs.tsx
     │       ├── textarea.tsx
-    │       ├── toast.tsx
     │       ├── toaster.tsx
+    │       ├── toast.tsx
     │       └── tooltip.tsx
+    ├── config
     ├── hooks
     │   ├── index.ts
     │   ├── use-mobile.tsx
@@ -125,23 +152,24 @@ src
 
 ### Core Concepts of the New Structure:
 
-*   **`src/app`**: Contains global styles, layout, and the main entry point of the application (`page.tsx`).
+*   **`src/app`**: Contains global styles, layout, and the main entry point of the application (`page.tsx`). It also contains the different routes of the application, such as `dashboard` and `social`.
 *   **`src/core`**: Holds the essential, application-wide logic that needs to be initialized or configured at the root of the project.
     *   `client-initializer.tsx`: Initializes client-side services and libraries.
     *   `sync-store-gate.tsx`: Manages the synchronization of the Zustand store with Firebase.
-*   **`src/features`**: Each feature of the application (e.g., `auth`, `cycles`, `timer`, `theme`) is a self-contained module. Each feature folder typically contains its own `components`, `hooks`, and `store`.
+*   **`src/features`**: Each feature of the application (e.g., `auth`, `cycles`, `timer`, `theme`, `social`) is a self-contained module. Each feature folder typically contains its own `components`, `hooks`, and `store`.
 *   **`src/shared`**: Contains code that is shared across multiple features. This includes reusable UI `components` (from Shadcn UI), `hooks`, `lib` (like Firebase configuration), and `types`.
 
 ## Main File Functionalities
 
-### `src/app/layout.tsx` & `src/app/page.tsx`
-These files are the main entry points for the application's UI. `layout.tsx` sets up the global page structure and providers like `ThemeProvider`. `page.tsx` renders the primary `Homepage` component, which is now located in `src/shared/components/layout`.
+### `src/app/layout.tsx` & `src/app/social/page.tsx`
+These files are the main entry points for the application's UI. `layout.tsx` sets up the global page structure and providers like `ThemeProvider`. `src/app/social/page.tsx` renders the `FeedPage` component, which is the main page for the social feed.
 
 ### `src/features`
 This directory contains the core features of the application.
 
 *   **`features/auth`**: Manages user authentication, including the UI for login (`email-auth-dialog.tsx`), authentication hooks (`use-auth.ts`), and the authentication store (`auth-store.ts`).
 *   **`features/cycles`**: Manages the "flow time" cycles. It includes components for listing and editing cycles (`cycle-list.tsx`, `phase-editor.tsx`), hooks for interacting with cycles (`use-cycles.ts`), and the cycle store (`cycle-store.ts`).
+*   **`features/social`**: Manages the social feed where users can share and discover productivity cycles.
 *   **`features/theme`**: Manages the application's theme (light/dark mode).
 *   **`features/timer`**: This is where the timer logic resides.
     *   **`machines/timer-machine.ts`**: Defines the core logic of the timer using an **XState state machine**. It handles states like `idle`, `running`, `paused`, and `finished`.
