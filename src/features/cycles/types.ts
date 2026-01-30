@@ -18,9 +18,15 @@ export interface Cycle {
   name: string;
   phases: Phase[];
   userId?: string;
-  createdAt?: number;
-  updatedAt?: number;
+  createdAt?: any;
+  updatedAt?: any;
 }
+
+export const DEFAULT_PHASE: Omit<Phase, 'id'> = {
+  title: 'Focus',
+  duration: 25,
+};
+
 
 export interface CycleState {
   cycles: Cycle[];

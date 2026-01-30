@@ -1,258 +1,167 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
 import { v4 as uuidv4 } from 'uuid';
-import { cycleTemplates, DEFAULT_PHASE } from './cycle-templates';
-import type { Cycle, Phase, CycleState } from "../types";
-import { startSyncCycles, stopSyncCycles, saveCycle, deleteCycle as deleteCycleFromDb, createNewCycleInDb } from './firebase-sync';
+import { Cycle, Phase, DEFAULT_PHASE } from '../types';
+import { cycleTemplates } from './cycle-templates';
+import { 
+  deleteCycleFromDb, 
+  createNewCycleInDb, 
+  startSyncCycles, 
+  stopSyncCycles 
+} from './firebase-sync';
+import { toast } from '@/shared/hooks/use-toast';
 
-export interface CycleActions {
-    loadGuestData: () => void;
-    startSync: (uid: string) => void;
-    stopSync: () => void;
-    setCurrentCycle: (cycleId: string) => void;
-    setCurrentPhaseIndex: (index: number) => void;
-    createCycle: (cycleToClone?: Cycle) => Promise<void>;
-    saveCurrentCycle: () => Promise<void>;
-    deleteCycle: (cycleId: string) => Promise<void>;
-    addPhase: (cycleId: string, newPhaseData: Partial<Phase>) => void;
-    updatePhase: (cycleId: string, phaseId: string, updates: Partial<Phase>) => void;
-    deletePhase: (cycleId: string, phaseId: string) => void;
-    toggleSounds: () => void; 
-    updateCycle: (cycleId: string, updates: Partial<Cycle>) => void;
-    setCycles: (cycles: Cycle[]) => void;
-    setLoading: (isLoading: boolean) => void;
-    setError: (error: string | null) => void;
-    canDeletePhase: (cycleId: string) => boolean;
-    canDeleteCycle: () => boolean;
+export interface CycleStore {
+  cycles: Cycle[];
+  currentCycleId: string | null;
+  currentPhaseIndex: number;
+  loading: boolean;
+  error: string | null;
+  setCycles: (cycles: Cycle[]) => void;
+  setCurrentCycle: (cycleId: string) => void;
+  setLoading: (loading: boolean) => void;
+  setError: (error: string | null) => void;
+  deleteCycle: (cycleId: string) => Promise<void>;
+  createCycle: (cycleToClone?: Cycle) => Promise<void>;
+  updateCycle: (cycle: Cycle) => void;
+  loadGuestData: () => void;
+  startSync: (uid: string) => void;
+  stopSync: () => void;
+  get: () => CycleStore;
 }
 
-export type CycleStore = CycleState & CycleActions;
+export const useCycleStore = create<CycleStore>((set, get) => ({
+  cycles: [],
+  currentCycleId: null,
+  currentPhaseIndex: 0,
+  loading: true,
+  error: null,
+  setCycles: (cycles) => set({ cycles }),
+  setCurrentCycle: (cycleId) => {
+    const { cycles } = get();
+    const cycleExists = cycles.some((c) => c.id === cycleId);
+    if (cycleExists) {
+      set({ currentCycleId: cycleId, currentPhaseIndex: 0 });
+    } else {
+      console.warn(`Attempted to set non-existent cycleId: ${cycleId}`);
+      if (cycles.length > 0) {
+        set({ currentCycleId: cycles[0].id, currentPhaseIndex: 0 });
+      }
+    }
+  },
+  setLoading: (loading) => set({ loading }),
+  setError: (error) => set({ error }),
+  deleteCycle: async (cycleId) => {
+    if (get().cycles.length <= 1) {
+        toast({ title: "Cannot delete the last cycle", variant: "destructive" });
+        return;
+    }
+    
+    try {
+        const timerStore = require('@/features/timer').useTimerStore.getState();
+        timerStore.send({ type: 'STOP_FOR_EDIT' });
+        
+        const { cycles, currentCycleId } = get();
+        const user = require('@/features/auth').useAuthStore.getState().user;
 
-const initialState: Omit<CycleState, 'cycles' | 'currentCycleId'> = {
-    currentPhaseIndex: 0,
-    playSounds: true,
-};
-
-export const useCycleStore = create<CycleStore>()(
-    persist(
-        (set, get) => ({
-            cycles: [],
-            currentCycleId: null,
-            ...initialState,
-
-            // --- ACTIONS ---
-            loadGuestData: () => {
-                const guestCycles = cycleTemplates.map(template => ({ ...template, createdAt: Date.now() }));
-                set({
-                    cycles: guestCycles,
-                    currentCycleId: guestCycles[0]?.id || null,
-                    currentPhaseIndex: 0,
-                    isLoading: false,
-                });
-            },
-
-            startSync: (uid) => {
-                startSyncCycles(uid, {
-                    setCycles: get().setCycles,
-                    setLoading: get().setLoading,
-                    setError: get().setError,
-                    get
-                });
-            },
-
-            stopSync: () => {
-                stopSyncCycles();
-                get().loadGuestData();
-            },
-
-            setCurrentCycle: (cycleId) => {
-                const cycle = get().cycles.find((c) => c.id === cycleId) || null;
-                set({ currentCycleId: cycle?.id || null, currentPhaseIndex: 0 });
-
-                const firstPhase = cycle?.phases[0];
-                if (firstPhase) {
-                    require('@/features/timer').useTimerStore.getState().send({ 
-                        type: 'SELECT_CYCLE', 
-                        duration: firstPhase.duration * 60
-                    });
-                }
-            },
-
-            setCurrentPhaseIndex: (index) => {
-                const { cycles, currentCycleId } = get();
-                const currentCycle = cycles.find(c => c.id === currentCycleId);
-                const newPhase = currentCycle?.phases[index];
-
-                set({ currentPhaseIndex: index });
-                
-                if (newPhase) {
-                    require('@/features/timer').useTimerStore.getState().send({
-                        type: 'SELECT_PHASE',
-                        duration: newPhase.duration * 60
-                    });
-                }
-            },
-
-            createCycle: async (cycleToClone) => {
-                const { cycles } = get();
-                let newCycle: Cycle;
-
-                if (cycleToClone) {
-                    newCycle = {
-                        ...cycleToClone,
-                        id: uuidv4(),
-                        name: `${cycleToClone.name} (Copy)`,
-                        createdAt: Date.now(),
-                        updatedAt: Date.now(),
-                    };
-                } else {
-                    newCycle = {
-                        id: uuidv4(),
-                        name: "My New Cycle",
-                        phases: [{ ...DEFAULT_PHASE, id: uuidv4() }],
-                        createdAt: Date.now(),
-                        updatedAt: Date.now(),
-                    };
-                }
-
-                const user = require('@/features/auth').useAuthStore.getState().user;
-                if (!user || user.isGuest) {
-                    set({ cycles: [...cycles, newCycle], currentCycleId: newCycle.id });
-                    return;
-                }
-
-                await createNewCycleInDb(user.uid, newCycle);
-            },
-
-            saveCurrentCycle: async () => {
-                const { cycles, currentCycleId } = get();
-                const currentCycle = cycles.find(c => c.id === currentCycleId);
-                const user = require('@/features/auth').useAuthStore.getState().user;
-
-                if (!user || user.isGuest || !currentCycle) return;
-                await saveCycle(user.uid, currentCycle);
-            },
-
-            deleteCycle: async (cycleId) => {
-                if (get().cycles.length <= 1) {
-                    console.warn('Cannot delete the last cycle');
-                    return;
-                }
-                require('@/features/timer').useTimerStore.getState().send({ type: 'STOP_FOR_EDIT' });
-                const { cycles, currentCycleId } = get();
-                const user = require('@/features/auth').useAuthStore.getState().user;
-
-                if (currentCycleId === cycleId) {
-                    const newCurrentCycle = cycles.find(c => c.id !== cycleId) || cycleTemplates[0];
-                    set({ currentCycleId: newCurrentCycle.id, currentPhaseIndex: 0 });
-                }
-
-                if (!user || user.isGuest) {
-                    set({ cycles: cycles.filter(c => c.id !== cycleId) });
-                    return;
-                }
-                await deleteCycleFromDb(user.uid, cycleId);
-            },
-
-            addPhase: (cycleId, newPhaseData) => {
-                set(state => {
-                    const cycle = state.cycles.find(c => c.id === cycleId);
-                    if (!cycle) return {};
-                    const newPhase: Phase = { 
-                        ...DEFAULT_PHASE, 
-                        ...newPhaseData,
-                        id: uuidv4(),
-                     };
-                    const updatedPhases = [...cycle.phases, newPhase];
-                    const updatedCycle = { ...cycle, phases: updatedPhases, updatedAt: Date.now() };
-                    return {
-                        cycles: state.cycles.map(c => c.id === cycleId ? updatedCycle : c)
-                    };
-                });
-            },
-
-            updatePhase: (cycleId, phaseId, updates) => {
-                require('@/features/timer').useTimerStore.getState().send({ type: 'STOP_FOR_EDIT' });
-                set(state => {
-                    const cycle = state.cycles.find(c => c.id === cycleId);
-                    if (!cycle) return {};
-                    const updatedPhases = cycle.phases.map(p => p.id === phaseId ? { ...p, ...updates } : p);
-                    const updatedCycle = { ...cycle, phases: updatedPhases, updatedAt: Date.now() };
-                    return {
-                        cycles: state.cycles.map(c => c.id === cycleId ? updatedCycle : c)
-                    };
-                });
-            },
-
-            deletePhase: (cycleId, phaseId) => {
-                set(state => {
-                    const cycle = state.cycles.find(c => c.id === cycleId);
-                    if (!cycle) return {};
-                    
-                    if (cycle.phases.length <= 1) {
-                        console.warn('Cannot delete the last phase of a cycle. A cycle must have at least one phase.');
-                        return {};
-                    }
-                    
-                    require('@/features/timer').useTimerStore.getState().send({ type: 'STOP_FOR_EDIT' });
-                    
-                    const updatedPhases = cycle.phases.filter(p => p.id !== phaseId);
-                    const updatedCycle = { ...cycle, phases: updatedPhases, updatedAt: Date.now() };
-                    
-                    const { currentPhaseIndex } = state;
-                    const deletedPhaseIndex = cycle.phases.findIndex(p => p.id === phaseId);
-                    let newPhaseIndex = currentPhaseIndex;
-                    
-                    if (deletedPhaseIndex === currentPhaseIndex) {
-                        newPhaseIndex = Math.max(0, currentPhaseIndex - 1);
-                    } else if (deletedPhaseIndex < currentPhaseIndex) {
-                        newPhaseIndex = currentPhaseIndex - 1;
-                    }
-                    newPhaseIndex = Math.min(newPhaseIndex, updatedPhases.length - 1);
-                    
-                    return {
-                        cycles: state.cycles.map(c => c.id === cycleId ? updatedCycle : c),
-                        currentPhaseIndex: newPhaseIndex
-                    };
-                });
-            },
-
-            canDeletePhase: (cycleId) => {
-                const cycle = get().cycles.find(c => c.id === cycleId);
-                return cycle ? cycle.phases.length > 1 : false;
-            },
-
-            canDeleteCycle: () => get().cycles.length > 1,
-
-            updateCycle: (cycleId, updates) => {
-                set(state => {
-                    const cycle = state.cycles.find(c => c.id === cycleId);
-                    if (!cycle) return {};
-                    const updatedCycle = { ...cycle, ...updates, updatedAt: Date.now() };
-                    return {
-                        cycles: state.cycles.map(c => c.id === cycleId ? updatedCycle : c)
-                    };
-                });
-            },
-
-            toggleSounds: () => set(state => ({ playSounds: !state.playSounds })),
-            setCycles: (cycles) => set({ cycles }),
-            setLoading: (isLoading) => set({ isLoading }),
-            setError: (error) => set({ error }),
-        }),
-        {
-            name: 'cycle-storage',
-            onRehydrateStorage: () => (state) => {
-                if (state) {
-                    state.setLoading(true);
-                    state.playSounds = state.playSounds ?? true;
-                }
-            },
-            partialize: (state) => ({
-                currentCycleId: state.currentCycleId,
-                currentPhaseIndex: state.currentPhaseIndex,
-                playSounds: state.playSounds,
-            }),
+        if (currentCycleId === cycleId) {
+            const newCurrentCycle = cycles.find(c => c.id !== cycleId) || cycleTemplates[0];
+            set({ currentCycleId: newCurrentCycle.id, currentPhaseIndex: 0 });
         }
-    )
-);
+
+        if (!user || user.isGuest) {
+            set({ cycles: cycles.filter(c => c.id !== cycleId) });
+            return;
+        }
+        
+        console.log("Deleting cycle from Firebase:", cycleId);
+        await deleteCycleFromDb(user.uid, cycleId);
+        toast({ title: "Cycle deleted successfully" });
+        
+    } catch (error) {
+        console.error("❌ Error in deleteCycle:", error);
+        
+        set({ 
+            error: error instanceof Error ? error.message : "Failed to delete cycle" 
+        });
+        
+        toast({ title: "Failed to delete cycle", variant: "destructive" });
+    }
+  },
+  createCycle: async (cycleToClone) => {
+    try {
+        const { cycles } = get();
+        let newCycle: Cycle;
+
+        if (cycleToClone) {
+            newCycle = {
+                ...cycleToClone,
+                id: uuidv4(),
+                name: `${cycleToClone.name} (Copy)`,
+                phases: cycleToClone.phases.map(p => ({
+                    ...p,
+                    id: uuidv4()
+                })),
+                createdAt: Date.now(),
+                updatedAt: Date.now(),
+            };
+        } else {
+            newCycle = {
+                id: uuidv4(),
+                name: "My New Cycle",
+                phases: [{ ...DEFAULT_PHASE, id: uuidv4() }],
+                createdAt: Date.now(),
+                updatedAt: Date.now(),
+            };
+        }
+
+        const user = require('@/features/auth').useAuthStore.getState().user;
+        
+        if (!user || user.isGuest) {
+            set({ cycles: [...cycles, newCycle], currentCycleId: newCycle.id });
+            return;
+        }
+
+        console.log("Creating cycle in Firebase:", newCycle.name);
+        await createNewCycleInDb(user.uid, newCycle);
+        toast({ title: "Cycle created successfully" });
+        
+    } catch (error) {
+        console.error("❌ Error in createCycle:", error);
+        set({ 
+            error: error instanceof Error ? error.message : "Failed to create cycle" 
+        });
+        toast({ title: "Failed to create cycle", variant: "destructive" });
+    }
+  },
+  updateCycle: (updatedCycle) => {
+    set((state) => ({
+      cycles: state.cycles.map((cycle) =>
+        cycle.id === updatedCycle.id ? updatedCycle : cycle
+      ),
+    }));
+  },
+  loadGuestData: () => {
+    const { cycles } = get();
+    if (cycles.length === 0) {
+      console.log("Loading default cycles for guest user.");
+      set({
+        cycles: cycleTemplates,
+        currentCycleId: cycleTemplates.length > 0 ? cycleTemplates[0].id : null,
+        loading: false,
+      });
+    }
+  },
+  startSync: (uid) => {
+    startSyncCycles(uid, {
+      setCycles: get().setCycles,
+      setLoading: get().setLoading,
+      setError: get().setError,
+      get: get().get,
+    });
+  },
+  stopSync: () => {
+    stopSyncCycles();
+    set({ cycles: [], currentCycleId: null, loading: false }); // Reset state on logout
+  },
+  get: () => get(),
+}));
