@@ -9,7 +9,14 @@ const CATEGORIES = [
   { value: 'custom', label: 'Custom' },
 ];
 
-export function FilterBar({ category, onCategoryChange, searchQuery, onSearchChange }) {
+interface FilterBarProps {
+  category: string;
+  onCategoryChange: (category: string) => void;
+  searchQuery: string;
+  onSearchChange: (query: string) => void;
+}
+
+export function FilterBar({ category, onCategoryChange, searchQuery, onSearchChange }: FilterBarProps) {
   return (
     <div className="flex flex-col md:flex-row gap-4 mb-8">
       {/* Search */}

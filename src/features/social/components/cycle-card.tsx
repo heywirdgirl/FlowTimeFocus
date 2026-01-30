@@ -1,70 +1,47 @@
-import { Avatar, AvatarFallback, AvatarImage } from "@/shared/components/ui/avatar";
-import { Badge } from "@/shared/components/ui/badge";
-import { Button } from "@/shared/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/shared/components/ui/card";
-import { Clock, Copy } from "lucide-react";
-import { formatDistanceToNow } from "date-fns";
+import { Button } from "@/shared/components/ui/button";
+import { Badge } from "@/shared/components/ui/badge";
+import type { PublicCycle, Phase } from "../types";
+import { calculateTotalDuration } from "@/features/cycles/utils/cycle-helpers";
 
-export function CycleCard({ cycle, onClone, onViewDetails }) {
+interface CycleCardProps {
+  cycle: PublicCycle;
+  onClone: (cycleId: string) => void;
+  onViewDetails: (cycleId: string) => void;
+}
+
+export function CycleCard({ cycle, onClone, onViewDetails }: CycleCardProps) {
   return (
-    <Card className="hover:shadow-lg transition-shadow">
+    <Card>
       <CardHeader>
-        {/* Author info */}
-        <div className="flex items-center gap-2 mb-2">
-          <Avatar>
-            <AvatarImage src={cycle.authorAvatar} />
-            <AvatarFallback>{cycle.authorName[0]}</AvatarFallback>
-          </Avatar>
-          <div>
-            <p className="font-semibold">{cycle.authorName}</p>
-            <p className="text-sm text-muted-foreground">@{cycle.authorUsername}</p>
-          </div>
-        </div>
-        
-        {/* Cycle title */}
         <CardTitle>{cycle.name}</CardTitle>
         <CardDescription>{cycle.description}</CardDescription>
       </CardHeader>
-      
-      <CardContent>
-        {/* Category badge */}
-        <Badge>{cycle.category}</Badge>
-        
-        {/* Phase preview */}
-        <div className="mt-4 space-y-1">
-          {cycle.phases.slice(0, 3).map(phase => (
-            <div key={phase.id} className="flex items-center gap-2 text-sm">
-              <Clock className="h-3 w-3" />
-              <span>{phase.title} - {phase.duration}m</span>
-            </div>
-          ))}
-          {cycle.phases.length > 3 && (
-            <p className="text-xs text-muted-foreground">
-              +{cycle.phases.length - 3} more phases
-            </p>
-          )}
+      <CardContent className="space-y-2">
+        <div className="flex items-center space-x-2 text-sm text-muted-foreground">
+          <span>By {cycle.authorName}</span>
+          <span>·</span>
+          <span>{new Date(cycle.publishedAt).toLocaleDateString()}</span>
         </div>
-        
-        {/* Stats */}
-        <div className="mt-4 flex items-center gap-4 text-sm text-muted-foreground">
-          <span className="flex items-center gap-1">
-            <Copy className="h-4 w-4" />
-            {cycle.clones} clones
-          </span>
-          <span>
-            {formatDistanceToNow(cycle.publishedAt)} ago
-          </span>
+        <div className="flex flex-wrap gap-2">
+          {cycle.phases.slice(0, 3).map((phase: Phase) => (
+            <Badge key={phase.id} variant="secondary">{phase.title}</Badge>
+          ))}
+          {cycle.phases.length > 3 && <Badge variant="outline">...</Badge>}
         </div>
       </CardContent>
-      
-      <CardFooter className="flex gap-2">
-        <Button onClick={() => onViewDetails(cycle.id)} variant="outline" className="flex-1">
-          Preview
-        </Button>
-        <Button onClick={() => onClone(cycle.id)} className="flex-1">
-          <Copy className="mr-2 h-4 w-4" />
-          Clone
-        </Button>
+      <CardFooter className="flex justify-between">
+        <div className="text-sm font-semibold">
+          {calculateTotalDuration(cycle as any)} min
+        </div>
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={() => onViewDetails(cycle.id)}>
+            Details
+          </Button>
+          <Button size="sm" onClick={() => onClone(cycle.id)}>
+            Clone
+          </Button>
+        </div>
       </CardFooter>
     </Card>
   );

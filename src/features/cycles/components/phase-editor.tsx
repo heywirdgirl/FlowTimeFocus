@@ -1,19 +1,19 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
 import type { Phase } from "../types";
 import { Input } from "@/shared/components/ui/input";
 import { Button } from "@/shared/components/ui/button";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { validatePhase } from '../utils/cycle-helpers';
-
 
 const phaseSchema = z.object({
   title: z.string().min(1, "Title is required"),
   duration: z.coerce.number().min(0.1, "Duration must be at least 0.1 minutes"),
 });
+
+type PhaseFormData = z.infer<typeof phaseSchema>;
 
 interface PhaseEditorProps {
   phase: Partial<Phase>;
@@ -23,20 +23,27 @@ interface PhaseEditorProps {
 }
 
 export function PhaseEditor({ phase, onSave, onCancel, isNew }: PhaseEditorProps) {
-    const { register, handleSubmit, formState: { errors, isValid }, control, reset } = useForm<Partial<Phase>>({
+    const { handleSubmit, formState: { errors, isValid }, control, reset } = useForm<PhaseFormData>({
         resolver: zodResolver(phaseSchema),
-        defaultValues: phase,
+        defaultValues: {
+            title: phase.title || '',
+            duration: phase.duration || 0,
+        },
         mode: 'onChange',
     });
 
     useEffect(() => {
-        reset(phase);
+        reset({
+            title: phase.title || '',
+            duration: phase.duration || 0,
+        });
     }, [phase, reset]);
 
-    const handleSave = (data: Partial<Phase>) => {
-        if (validatePhase(data)) {
-            onSave(data);
-        }
+    const handleSave = (data: PhaseFormData) => {
+        onSave({
+            ...phase,
+            ...data,
+        });
     }
 
     return (

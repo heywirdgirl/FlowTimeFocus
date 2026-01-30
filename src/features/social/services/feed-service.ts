@@ -1,9 +1,10 @@
 import { collection, query, where, orderBy, limit, getDocs, getDoc, doc, updateDoc, increment, setDoc, addDoc } from 'firebase/firestore';
 import { db } from '@/shared/lib/firebase';
 import { v4 as uuidv4 } from 'uuid';
+import type { OfficialTemplate, PublicCycle, PrivateCycle } from '../types';
 
 // Fetch featured templates
-export async function fetchFeaturedTemplates() {
+export async function fetchFeaturedTemplates(): Promise<OfficialTemplate[]> {
   const q = query(
     collection(db, 'officialTemplates'),
     where('featured', '==', true),
@@ -11,34 +12,37 @@ export async function fetchFeaturedTemplates() {
   );
   
   const snapshot = await getDocs(q);
-  return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+  return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as OfficialTemplate[];
 }
 
 // Fetch public cycles (with filters)
-export async function fetchPublicCycles(category, searchQuery) {
-  let q = query(
-    collection(db, 'publicCycles'),
-    orderBy('publishedAt', 'desc'),
-    limit(20)
-  );
-  
+export async function fetchPublicCycles(category: string, searchQuery: string): Promise<PublicCycle[]> {
+  let q;
+  const cyclesCollection = collection(db, 'publicCycles');
+
   if (category && category !== 'all') {
     q = query(
-      collection(db, 'publicCycles'),
+      cyclesCollection,
       where('category', '==', category),
+      orderBy('publishedAt', 'desc'),
+      limit(20)
+    );
+  } else {
+    q = query(
+      cyclesCollection,
       orderBy('publishedAt', 'desc'),
       limit(20)
     );
   }
   
   const snapshot = await getDocs(q);
-  let cycles = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+  let cycles = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as PublicCycle[];
   
   // Client-side search filter
   if (searchQuery) {
     cycles = cycles.filter(c => 
       c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      c.description.toLowerCase().includes(searchQuery.toLowerCase())
+      (c.description && c.description.toLowerCase().includes(searchQuery.toLowerCase()))
     );
   }
   
@@ -46,13 +50,16 @@ export async function fetchPublicCycles(category, searchQuery) {
 }
 
 // Clone cycle to user's account
-export async function cloneCycle(userId, cycleId) {
+export async function cloneCycle(userId: string, cycleId: string): Promise<PrivateCycle> {
   // 1. Fetch public cycle
   const cycleDoc = await getDoc(doc(db, 'publicCycles', cycleId));
-  const publicCycle = cycleDoc.data();
+  if (!cycleDoc.exists()) {
+    throw new Error("Cycle not found");
+  }
+  const publicCycle = cycleDoc.data() as PublicCycle;
   
   // 2. Create private copy
-  const newCycle = {
+  const newCycle: PrivateCycle = {
     id: uuidv4(),
     name: `${publicCycle.name} (Copy)`,
     description: publicCycle.description,

@@ -9,15 +9,18 @@ export const DEFAULT_PHASE: Omit<Phase, 'id'> = {
 };
 
 // --- Helper function to create official cycles ---
-const createOfficialCycle = (data: Partial<Cycle> & { phases: Phase[] }): Cycle => ({
-    id: data.id || uuidv4(),
-    name: data.name || 'Untitled Cycle',
-    phases: data.phases,
-    userId: 'system-official',
-    createdAt: Date.now(),
-    updatedAt: Date.now(),
-    ...data,
-});
+const createOfficialCycle = (data: Partial<Cycle> & { phases: Phase[] }): Cycle => {
+    const { phases, ...rest } = data;
+    return {
+        id: data.id || uuidv4(),
+        name: data.name || 'Untitled Cycle',
+        phases: phases,
+        userId: 'system-official',
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+        ...rest,
+    };
+};
 
 // --- Official Templates ---
 

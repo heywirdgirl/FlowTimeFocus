@@ -18,9 +18,11 @@ export interface CycleStore {
   error: string | null;
   setCycles: (cycles: Cycle[]) => void;
   setCurrentCycle: (cycleId: string) => void;
+  setCurrentPhaseIndex: (index: number) => void;
   setLoading: (loading: boolean) => void;
   setError: (error: string | null) => void;
   deleteCycle: (cycleId: string) => Promise<void>;
+  canDeleteCycle: () => boolean;
   createCycle: (cycleToClone?: Cycle) => Promise<void>;
   updateCycle: (cycle: Cycle) => void;
   loadGuestData: () => void;
@@ -48,10 +50,11 @@ export const useCycleStore = create<CycleStore>((set, get) => ({
       }
     }
   },
+  setCurrentPhaseIndex: (index) => set({ currentPhaseIndex: index }),
   setLoading: (loading) => set({ loading }),
   setError: (error) => set({ error }),
   deleteCycle: async (cycleId) => {
-    if (get().cycles.length <= 1) {
+    if (!get().canDeleteCycle()) {
         toast({ title: "Cannot delete the last cycle", variant: "destructive" });
         return;
     }
@@ -87,6 +90,7 @@ export const useCycleStore = create<CycleStore>((set, get) => ({
         toast({ title: "Failed to delete cycle", variant: "destructive" });
     }
   },
+  canDeleteCycle: () => get().cycles.length > 1,
   createCycle: async (cycleToClone) => {
     try {
         const { cycles } = get();

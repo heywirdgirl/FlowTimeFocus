@@ -1,6 +1,5 @@
 "use client";
 
-import { Button } from "@/shared/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/shared/components/ui/card";
 import { useCycles } from "../hooks/use-cycles";
 import { useTimerStore } from "@/features/timer";
@@ -10,7 +9,8 @@ import { calculateTotalDuration } from "../utils/cycle-helpers";
 
 export function CycleList() {
     const { cycles, currentCycle, isLoading } = useCycles();
-    const { isActive } = useTimerStore();
+    const snapshot = useTimerStore(s => s.snapshot);
+    const isActive = snapshot?.matches('running') || false;
 
     const totalTimeToday = cycles.reduce((acc, cycle) => acc + calculateTotalDuration(cycle), 0);
 

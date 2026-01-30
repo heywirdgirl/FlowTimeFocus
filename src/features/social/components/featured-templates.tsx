@@ -2,14 +2,19 @@ import { Badge } from "@/shared/components/ui/badge";
 import { Button } from "@/shared/components/ui/button";
 import { Card, CardHeader, CardTitle, CardDescription, CardFooter } from "@/shared/components/ui/card";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/shared/components/ui/carousel";
+import type { OfficialTemplate } from "../types";
 
-export function FeaturedTemplates({ templates }) {
+interface FeaturedTemplatesProps {
+  templates: OfficialTemplate[];
+}
+
+export function FeaturedTemplates({ templates }: FeaturedTemplatesProps) {
   return (
     <section className="mb-12">
       <h2 className="text-2xl font-bold mb-4">Official Templates</h2>
       <Carousel className="w-full">
         <CarouselContent>
-          {templates.map(template => (
+          {templates.map((template: OfficialTemplate) => (
             <CarouselItem key={template.id} className="md:basis-1/3">
               <Card>
                 <CardHeader>

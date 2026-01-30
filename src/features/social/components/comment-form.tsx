@@ -1,24 +1,31 @@
+import { useState } from "react";
 import { Button } from "@/shared/components/ui/button";
 import { Textarea } from "@/shared/components/ui/textarea";
-import { useState } from "react";
 
-export function CommentForm({ cycleId, onCommentAdded }) {
-  const [text, setText] = useState("");
+interface CommentFormProps {
+  cycleId: string;
+  onCommentAdded: () => void;
+}
 
-  const handleSubmit = (e) => {
+export function CommentForm({ cycleId, onCommentAdded }: CommentFormProps) {
+  const [comment, setComment] = useState("");
+
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: add comment
-    setText("");
+    // Logic to add comment
+    console.log({ cycleId, comment });
+    setComment("");
+    onCommentAdded();
   };
 
   return (
-    <form onSubmit={handleSubmit} className="mt-4">
-      <Textarea 
+    <form onSubmit={handleSubmit} className="space-y-2">
+      <Textarea
+        value={comment}
+        onChange={(e) => setComment(e.target.value)}
         placeholder="Add a comment..."
-        value={text}
-        onChange={(e) => setText(e.target.value)}
       />
-      <Button type="submit" className="mt-2">Post Comment</Button>
+      <Button type="submit">Post Comment</Button>
     </form>
   );
 }

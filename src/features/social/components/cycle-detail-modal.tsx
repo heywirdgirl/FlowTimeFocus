@@ -4,10 +4,18 @@ import { Copy } from "lucide-react";
 import { useEffect, useState } from "react";
 import { CommentList } from "./comment-list";
 import { CommentForm } from "./comment-form";
+import type { PublicCycle, Comment, Phase } from "../types";
 
-export function CycleDetailModal({ cycleId, open, onOpenChange, onClone }) {
-  const [cycle, setCycle] = useState(null);
-  const [comments, setComments] = useState([]);
+interface CycleDetailModalProps {
+  cycleId: string;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onClone: (cycleId: string) => void;
+}
+
+export function CycleDetailModal({ cycleId, open, onOpenChange, onClone }: CycleDetailModalProps) {
+  const [cycle, setCycle] = useState<PublicCycle | null>(null);
+  const [comments, setComments] = useState<Comment[]>([]);
   
   useEffect(() => {
     if (open && cycleId) {
@@ -27,7 +35,7 @@ export function CycleDetailModal({ cycleId, open, onOpenChange, onClone }) {
         {/* Full phase list */}
         <div className="space-y-2">
           <h3 className="font-semibold">Phases</h3>
-          {cycle?.phases.map((phase, index) => (
+          {cycle?.phases.map((phase: Phase, index: number) => (
             <div key={phase.id} className="flex items-center gap-4 p-3 border rounded">
               <span className="font-mono text-sm text-muted-foreground">
                 {index + 1}

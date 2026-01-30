@@ -1,5 +1,6 @@
 import { useCycleStore } from '../store/cycle-store';
 import type { Cycle, Phase } from '../types';
+import { v4 as uuidv4 } from 'uuid';
 
 /**
  * Custom hook for cycles business logic
@@ -10,6 +11,53 @@ export function useCycles() {
   
   const currentCycle = store.cycles.find(c => c.id === store.currentCycleId) || null;
   const currentPhase = currentCycle?.phases[store.currentPhaseIndex] || null;
+
+  const updateCycle = (updatedCycle: Cycle) => {
+    store.updateCycle(updatedCycle);
+  };
+
+  const addPhase = (cycleId: string, phase: Omit<Phase, 'id'>) => {
+    const targetCycle = store.cycles.find(c => c.id === cycleId);
+    if (targetCycle) {
+      const newPhase = { ...phase, id: uuidv4() };
+      const updatedCycle = {
+        ...targetCycle,
+        phases: [...targetCycle.phases, newPhase],
+      };
+      updateCycle(updatedCycle);
+    }
+  };
+
+  const updatePhase = (cycleId: string, updatedPhase: Phase) => {
+    const targetCycle = store.cycles.find(c => c.id === cycleId);
+    if (targetCycle) {
+      const updatedPhases = targetCycle.phases.map(p => 
+        p.id === updatedPhase.id ? updatedPhase : p
+      );
+      const updatedCycle = {
+        ...targetCycle,
+        phases: updatedPhases,
+      };
+      updateCycle(updatedCycle);
+    }
+  };
+
+  const deletePhase = (cycleId: string, phaseId: string) => {
+    const targetCycle = store.cycles.find(c => c.id === cycleId);
+    if (targetCycle) {
+      const updatedPhases = targetCycle.phases.filter(p => p.id !== phaseId);
+      const updatedCycle = {
+        ...targetCycle,
+        phases: updatedPhases,
+      };
+      updateCycle(updatedCycle);
+    }
+  };
+
+  const canDeletePhase = (cycleId: string) => {
+    const targetCycle = store.cycles.find(c => c.id === cycleId);
+    return targetCycle ? targetCycle.phases.length > 1 : false;
+  };
   
   return {
     // State
@@ -17,28 +65,26 @@ export function useCycles() {
     currentCycle,
     currentPhase,
     currentPhaseIndex: store.currentPhaseIndex,
-    playSounds: store.playSounds,
-    isLoading: store.isLoading,
+    isLoading: store.loading,
     error: store.error,
     
     // Computed
     isLastPhase: store.currentPhaseIndex === (currentCycle?.phases.length ?? 0) - 1,
     totalPhases: currentCycle?.phases.length ?? 0,
-    canDeletePhase: (cycleId: string) => store.canDeletePhase(cycleId),
     canDeleteCycle: () => store.canDeleteCycle(),
+    canDeletePhase,
     
     // Cycle actions
     setCurrentCycle: store.setCurrentCycle,
     createCycle: store.createCycle,
-    updateCycle: store.updateCycle,
+    updateCycle,
     deleteCycle: store.deleteCycle,
-    saveCyclesToStorage: store.saveCurrentCycle,
     
     // Phase actions
     setCurrentPhaseIndex: store.setCurrentPhaseIndex,
-    addPhaseToCycle: store.addPhase,
-    updatePhaseInCycle: store.updatePhase,
-    deletePhaseFromCycle: store.deletePhase,
+    addPhaseToCycle: addPhase,
+    updatePhaseInCycle: updatePhase,
+    deletePhaseFromCycle: deletePhase,
     
     // Phase navigation
     nextPhase: () => {
@@ -54,9 +100,6 @@ export function useCycles() {
         store.setCurrentPhaseIndex(prevIndex);
       }
     },
-    
-    // Settings
-    toggleSounds: store.toggleSounds,
     
     // Data sync
     loadGuestData: store.loadGuestData,

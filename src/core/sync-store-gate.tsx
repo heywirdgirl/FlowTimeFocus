@@ -14,6 +14,7 @@ export function SyncStoreGate() {
   const isInitialized = useAuthStore((s) => s.isInitialized);
   const startSync = useCycleStore((s) => s.startSync);
   const stopSync = useCycleStore((s) => s.stopSync);
+  const loadGuestData = useCycleStore((s) => s.loadGuestData);
 
   useEffect(() => {
     const unsubscribe = useAuthStore.getState().initialize();
@@ -23,12 +24,13 @@ export function SyncStoreGate() {
   useEffect(() => {
     if (!isInitialized) return;
 
-    if (user?.uid) {
-      startSync(user.uid);
+    if (user?.id) {
+      startSync(user.id);
     } else {
       stopSync();
+      loadGuestData();
     }
-  }, [user, isInitialized, startSync, stopSync]);
+  }, [user, isInitialized, startSync, stopSync, loadGuestData]);
 
   return null;
 }
