@@ -1,5 +1,15 @@
 import { useTimerStore } from '../store/timer-store';
-import type { TimerEvent } from '../types';
+
+// All possible events that can be sent to the timer machine
+export type TimerEvent = 
+  | { type: 'START' }
+  | { type: 'PAUSE' }
+  | { type: 'RESUME' }
+  | { type: 'STOP' } 
+  | { type: 'STOP_FOR_EDIT' } 
+  | { type: 'SELECT_PHASE'; duration: number }
+  | { type: 'SELECT_CYCLE'; duration: number };
+
 
 /**
  * Custom hook for timer business logic

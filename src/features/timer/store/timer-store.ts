@@ -1,8 +1,17 @@
 import { create } from 'zustand';
-import { createActor } from 'xstate';
+import { createActor, type ActorRefFrom, type SnapshotFrom } from 'xstate';
 import { timerMachine } from '../machines/timer-machine';
 import { useCycleStore } from '@/features/cycles';
-import type { TimerState, TimerEvent } from '../types';
+import type { TimerEvent } from '../hooks/use-timer';
+
+// The state of the timer store
+export interface TimerState {
+  timerActor: ActorRefFrom<typeof timerMachine> | null;
+  snapshot: SnapshotFrom<typeof timerMachine> | null;
+  send: (event: TimerEvent) => void;
+  initializeTimer: () => void;
+  stopTimer: () => void;
+}
 
 export const useTimerStore = create<TimerState>((set, get) => ({
   timerActor: null,

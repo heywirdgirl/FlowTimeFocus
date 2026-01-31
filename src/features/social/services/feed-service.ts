@@ -1,7 +1,12 @@
 import { collection, query, where, orderBy, limit, getDocs, getDoc, doc, updateDoc, increment, setDoc, addDoc } from 'firebase/firestore';
 import { db } from '@/shared/lib/firebase';
 import { v4 as uuidv4 } from 'uuid';
-import type { OfficialTemplate, PublicCycle, PrivateCycle } from '../types';
+import type { Cycle as PublicCycle, Cycle as PrivateCycle } from '@/schemas';
+
+// Represents a template curated by the platform owners
+export interface OfficialTemplate extends PublicCycle {
+  featured?: boolean; 
+}
 
 // Fetch featured templates
 export async function fetchFeaturedTemplates(): Promise<OfficialTemplate[]> {

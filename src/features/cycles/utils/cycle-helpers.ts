@@ -1,7 +1,7 @@
 /**
  * Helper functions for cycle operations
  */
-import { Cycle, Phase } from '../types';
+import type { Cycle, Phase } from '@/schemas';
 
 export function validatePhase(phase: Partial<Phase>): boolean {
   return !!(phase.title && phase.duration && phase.duration > 0);

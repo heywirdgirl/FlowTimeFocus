@@ -1,6 +1,5 @@
 import { create } from 'zustand';
 import { v4 as uuidv4 } from 'uuid';
-import { Cycle, Phase, DEFAULT_PHASE } from '../types';
 import { cycleTemplates } from './cycle-templates';
 import { 
   deleteCycleFromDb, 
@@ -9,6 +8,14 @@ import {
   stopSyncCycles 
 } from './firebase-sync';
 import { toast } from '@/shared/hooks/use-toast';
+import type { Cycle, Phase } from '@/schemas';
+
+// Default phase for new cycles
+export const DEFAULT_PHASE: Omit<Phase, 'id'> = {
+  title: 'Pomodoro',
+  duration: 25, 
+  type: 'work',
+};
 
 export interface CycleStore {
   cycles: Cycle[];

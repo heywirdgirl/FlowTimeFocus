@@ -1,14 +1,35 @@
 import { create } from 'zustand';
-import { onAuthStateChanged } from 'firebase/auth';
+import { onAuthStateChanged, type User as FirebaseUser } from 'firebase/auth';
 import { auth } from '@/shared/lib/firebase';
-import type { AuthState } from '../types';
-import { mapFirebaseUser } from '../types';
+import type { PublicProfile } from '@/schemas';
+
+// Helper to map Firebase user to our app's PublicProfile schema
+function mapFirebaseUser(user: FirebaseUser | null): PublicProfile | null {
+  if (!user) return null;
+
+  // Note: Firestore security rules should enforce that `username` and `displayName`
+  // are properly set during user creation/update.
+  return {
+    uid: user.uid,
+    username: user.displayName || 'Anonymous', // Fallback, should be set in profile
+    displayName: user.displayName || 'Anonymous', // Fallback
+    avatarUrl: user.photoURL || undefined,
+    bio: undefined, // Not available from Firebase Auth user object
+  };
+}
+
+// Interface for the store's state and actions
+interface AuthState {
+  user: PublicProfile | null;
+  isGuest: boolean;
+  isLoading: boolean;
+  isInitialized: boolean;
+  error: string | null;
+  initialize: () => () => void; // Action to start the auth listener
+}
 
 /**
  * Zustand store for authentication state management.
- *
- * This store handles the user's authentication status, providing a reactive way to
- * track the current user, loading states, and initialization.
  */
 export const useAuthStore = create<AuthState>((set, get) => ({
   user: null,
@@ -18,41 +39,39 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   error: null,
 
   /**
-   * Initializes the authentication listener.
-   *
-   * This method sets up a listener with Firebase Authentication to respond to changes
-   * in the user's sign-in state. It should be called once when the app loads.
-   *
-   * @returns A function to unsubscribe from the auth state listener.
+   * Initializes the Firebase Auth state listener.
    */
   initialize: () => {
-    // Prevent setting up multiple listeners
     if (get().isInitialized) {
       console.warn('Auth listener is already initialized.');
       return () => {}; // Return a no-op unsubscribe function
     }
 
-    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
-      const user = mapFirebaseUser(firebaseUser);
-      set({
-        user,
-        isGuest: !user,
-        isLoading: false,
-        error: null, // Clear any previous errors on auth state change
-      });
-    }, (error) => {
-      console.error('Firebase Auth Error:', error);
-      set({
-        user: null,
-        isGuest: true,
-        isLoading: false,
-        error: 'Failed to initialize authentication.', // Set a user-friendly error
-      });
-    });
+    const unsubscribe = onAuthStateChanged(
+      auth,
+      (firebaseUser) => {
+        const user = mapFirebaseUser(firebaseUser);
+        set({
+          user,
+          isGuest: !user,
+          isLoading: false,
+          error: null,
+        });
+      },
+      (error) => {
+        console.error('Firebase Auth Error:', error);
+        set({
+          user: null,
+          isGuest: true,
+          isLoading: false,
+          error: 'Failed to initialize authentication.',
+        });
+      }
+    );
 
     set({ isInitialized: true, isLoading: true });
 
-    // Return the unsubscribe function to be called on cleanup
+    // Return the unsubscribe function for cleanup
     return unsubscribe;
   },
 }));

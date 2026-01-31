@@ -1,7 +1,15 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { SettingsState, SettingsActions } from '../types';
 
+interface SettingsState {
+  theme: 'dark' | 'light';
+  playSounds: boolean;
+}
+
+interface SettingsActions {
+  setTheme: (theme: 'dark' | 'light') => void;
+  toggleSounds: () => void;
+}
 
 export const useSettingsStore = create<SettingsState & SettingsActions>()(
   persist(

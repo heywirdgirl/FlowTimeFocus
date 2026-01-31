@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { fetchPublicCycles } from '../services/feed-service';
-import type { PublicCycle } from '../types';
+import type { Cycle as PublicCycle } from '@/schemas';
 
 export function usePublicCycles(category: string, searchQuery: string) {
   const [cycles, setCycles] = useState<PublicCycle[]>([]);

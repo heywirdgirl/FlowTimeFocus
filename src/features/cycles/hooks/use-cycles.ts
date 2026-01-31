@@ -1,5 +1,5 @@
 import { useCycleStore } from '../store/cycle-store';
-import type { Cycle, Phase } from '../types';
+import type { Cycle, Phase } from '@/schemas';
 import { v4 as uuidv4 } from 'uuid';
 
 /**
