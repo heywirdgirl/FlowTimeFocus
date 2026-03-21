@@ -75,26 +75,18 @@ const DialogClose = React.forwardRef<HTMLButtonElement, React.ButtonHTMLAttribut
 )
 DialogClose.displayName = "DialogClose"
 
+// ✅ FIX: DialogOverlay không còn dùng Transition.Child độc lập.
+// Animation được xử lý bên trong DialogContent nơi có <Transition> bao ngoài.
 const DialogOverlay = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
   ({ className, ...props }, ref) => (
-    <Transition.Child
-      as={React.Fragment}
-      enter="ease-out duration-200"
-      enterFrom="opacity-0"
-      enterTo="opacity-100"
-      leave="ease-in duration-200"
-      leaveFrom="opacity-100"
-      leaveTo="opacity-0"
-    >
-      <div
-        ref={ref}
-        className={cn(
-          "fixed inset-0 z-50 bg-black/80",
-          className
-        )}
-        {...props}
-      />
-    </Transition.Child>
+    <div
+      ref={ref}
+      className={cn(
+        "fixed inset-0 z-50 bg-black/80",
+        className
+      )}
+      {...props}
+    />
   )
 )
 DialogOverlay.displayName = "DialogOverlay"
@@ -108,7 +100,19 @@ const DialogContent = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTML
       <HeadlessDialog open={context.open} onClose={() => context.setOpen(false)} as={React.Fragment}>
         <Transition show={context.open} as={React.Fragment}>
           <div className="fixed inset-0 z-50 flex items-center justify-center">
-            <DialogOverlay />
+            {/* ✅ Overlay animation nằm trong Transition nên Transition.Child hoạt động đúng */}
+            <Transition.Child
+              as={React.Fragment}
+              enter="ease-out duration-200"
+              enterFrom="opacity-0"
+              enterTo="opacity-100"
+              leave="ease-in duration-200"
+              leaveFrom="opacity-100"
+              leaveTo="opacity-0"
+            >
+              <DialogOverlay />
+            </Transition.Child>
+
             <Transition.Child
               as={React.Fragment}
               enter="ease-out duration-200"
