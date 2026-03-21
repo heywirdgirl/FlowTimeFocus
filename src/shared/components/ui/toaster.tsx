@@ -11,13 +11,26 @@ import {
 } from "@/shared/components/ui/toast"
 
 export function Toaster() {
-  const { toasts } = useToast()
+  const { toasts, dismiss } = useToast()
 
   return (
     <ToastProvider>
-      {toasts.map(function ({ id, title, description, action, ...props }) {
+      <ToastViewport />
+      {toasts.map(function ({ id, title, description, action, variant, ...props }) {
         return (
-          <Toast key={id} {...props}>
+          <Toast
+            key={id}
+            id={id}
+            title={title}
+            description={description}
+            action={action}
+            variant={variant}
+            open={true}
+            onOpenChange={(open) => {
+              if (!open) dismiss(id)
+            }}
+            {...props}
+          >
             <div className="grid gap-1">
               {title && <ToastTitle>{title}</ToastTitle>}
               {description && (
