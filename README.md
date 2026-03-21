@@ -98,6 +98,7 @@ src
     │       ├── scroll-area.tsx
     │       ├── select.tsx
     │       ├── separator.tsx
+    │       ├── sheet-new.tsx
     │       ├── sheet.tsx
     │       ├── sidebar.tsx
     │       ├── skeleton.tsx
