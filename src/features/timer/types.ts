@@ -37,6 +37,8 @@ export type TimerSnapshot = SnapshotFrom<typeof timerMachine>;
 export interface TimerState {
   timerActor: TimerActor | null;
   snapshot: TimerSnapshot | null;
+  /** Cleanup function for the timerEvents subscription. Internal — do not call directly. */
+  _unsubscribeEvents?: () => void;
   send: (event: TimerEvent) => void;
   initializeTimer: () => void;
   stopTimer: () => void;
