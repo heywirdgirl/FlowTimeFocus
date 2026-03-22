@@ -23,8 +23,8 @@ export function SyncStoreGate() {
   useEffect(() => {
     if (!isInitialized) return;
 
-    if (user?.uid) {
-      startSync(user.uid);
+    if (user?.id) {
+      startSync(user.id);
     } else {
       stopSync();
     }

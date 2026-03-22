@@ -11,7 +11,7 @@ export const startSyncCycles = (uid: string, store: Pick<CycleStore, 'setCycles'
 
     store.setLoading(true);
 
-    const q = query(collection(db, "users", uid, "cycles"), orderBy("createdAt", "desc"));
+    const q = query(collection(db, "users", uid, "privateCycles"), orderBy("createdAt", "desc"));
     unsubscribe = onSnapshot(q, (snapshot) => {
         if (snapshot.empty) {
             console.log("User has no cycles, creating a default one.");
@@ -19,7 +19,7 @@ export const startSyncCycles = (uid: string, store: Pick<CycleStore, 'setCycles'
             if (defaultTemplate) {
                 const newCycleData = { ...defaultTemplate, createdAt: serverTimestamp() };
                 delete (newCycleData as any).id;
-                addDoc(collection(db, "users", uid, "cycles"), newCycleData);
+                addDoc(collection(db, "users", uid, "privateCycles"), newCycleData);
             }
         } else {
             const cycles = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Cycle));
@@ -42,15 +42,15 @@ export const stopSyncCycles = () => {
 
 export const saveCycle = async (uid: string, cycle: Cycle) => {
     const { id, ...cycleData } = cycle;
-    const cycleRef = doc(db, "users", uid, "cycles", id);
+    const cycleRef = doc(db, "users", uid, "privateCycles", id);
     await setDoc(cycleRef, { ...cycleData, updatedAt: serverTimestamp() }, { merge: true });
 };
 
 export const createNewCycleInDb = async (uid: string, cycle: Cycle) => {
     const { id, ...cycleData } = cycle;
-    await addDoc(collection(db, "users", uid, "cycles"), { ...cycleData, createdAt: serverTimestamp(), updatedAt: serverTimestamp() });
+    await addDoc(collection(db, "users", uid, "privateCycles"), { ...cycleData, createdAt: serverTimestamp(), updatedAt: serverTimestamp() });
 };
 
 export const deleteCycle = async (uid: string, cycleId: string) => {
-    await deleteDoc(doc(db, "users", uid, "cycles", cycleId));
+    await deleteDoc(doc(db, "users", uid, "privateCycles", cycleId));
 };
