@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { createActor } from 'xstate';
 import { timerMachine } from '../machines/timer-machine';
 import { useCycleStore } from '@/features/cycles';
+import { timerEvents } from '@/shared/lib/timer-events';
 import type { TimerState, TimerEvent } from '../types';
 
 export const useTimerStore = create<TimerState>((set, get) => ({
@@ -32,23 +33,28 @@ export const useTimerStore = create<TimerState>((set, get) => ({
       }
     }).start();
 
+    // Forward cycle-store timer commands to the XState actor.
+    // This replaces the require()-based calls in cycle-store and breaks
+    // the cycle-store ↔ timer-store circular dependency.
+    const unsubscribeEvents = timerEvents.subscribe((command) => {
+      newActor.send(command);
+    });
+
     newActor.subscribe((snapshot) => {
       set({ snapshot });
 
-      // Auto-next logic when phase finishes
+      // Auto-advance to the next phase when the current one finishes.
       if (snapshot.matches('finished')) {
         const cycleStore = useCycleStore.getState();
         const { cycles, currentCycleId, currentPhaseIndex, playSounds } = cycleStore;
-        
-        // ✅ Get fresh currentCycle reference
         const currentCycle = cycles.find(c => c.id === currentCycleId);
 
         if (!currentCycle) {
           newActor.send({ type: 'STOP_FOR_EDIT' });
           return;
         }
-        
-        // Play completion sound
+
+        // Play the completed phase's sound if configured.
         const completedPhase = currentCycle.phases[currentPhaseIndex];
         if (playSounds && completedPhase?.soundFile?.url) {
           new Audio(completedPhase.soundFile.url)
@@ -60,32 +66,27 @@ export const useTimerStore = create<TimerState>((set, get) => ({
         const isLastPhase = nextIndex >= currentCycle.phases.length;
 
         if (!isLastPhase) {
-          // ✅ Update index and send SELECT_PHASE
-          const nextPhase = currentCycle.phases[nextIndex];
+          // setCurrentPhaseIndex emits SELECT_PHASE via timerEvents, which the
+          // subscription above forwards to newActor — no direct send needed.
           cycleStore.setCurrentPhaseIndex(nextIndex);
-          
-          // 🔥 KEY FIX: Send SELECT_PHASE to restart timer
-          newActor.send({ 
-            type: 'SELECT_PHASE', 
-            duration: nextPhase.duration * 60 
-          });
-          
         } else {
-          // Cycle complete
-          newActor.send({ type: 'STOP_FOR_EDIT' }); 
+          // All phases complete — reset to beginning.
+          newActor.send({ type: 'STOP_FOR_EDIT' });
           cycleStore.setCurrentPhaseIndex(0);
         }
       }
     });
 
-    set({ 
-      timerActor: newActor, 
-      snapshot: newActor.getSnapshot() 
+    set({
+      timerActor: newActor,
+      snapshot: newActor.getSnapshot(),
+      _unsubscribeEvents: unsubscribeEvents,
     });
   },
 
   stopTimer: () => {
+    get()._unsubscribeEvents?.();
     get().timerActor?.stop();
-    set({ timerActor: null, snapshot: null });
+    set({ timerActor: null, snapshot: null, _unsubscribeEvents: undefined });
   },
 }));
