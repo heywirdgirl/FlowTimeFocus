@@ -4,6 +4,8 @@ import { v4 as uuidv4 } from 'uuid';
 import { cycleTemplates, DEFAULT_PHASE } from './cycle-templates';
 import type { Cycle, Phase, CycleState } from "../types";
 import { startSyncCycles, stopSyncCycles, saveCycle, deleteCycle as deleteCycleFromDb, createNewCycleInDb } from './firebase-sync';
+import { useAuthStore } from '@/features/auth/store/auth-store';
+import { timerEvents } from '@/shared/lib/timer-events';
 
 export interface CycleActions {
     loadGuestData: () => void;
@@ -71,10 +73,7 @@ export const useCycleStore = create<CycleStore>()(
 
                 const firstPhase = cycle?.phases[0];
                 if (firstPhase) {
-                    require('@/features/timer').useTimerStore.getState().send({ 
-                        type: 'SELECT_CYCLE', 
-                        duration: firstPhase.duration * 60
-                    });
+                    timerEvents.emit({ type: 'SELECT_CYCLE', duration: firstPhase.duration * 60 });
                 }
             },
 
@@ -84,12 +83,9 @@ export const useCycleStore = create<CycleStore>()(
                 const newPhase = currentCycle?.phases[index];
 
                 set({ currentPhaseIndex: index });
-                
+
                 if (newPhase) {
-                    require('@/features/timer').useTimerStore.getState().send({
-                        type: 'SELECT_PHASE',
-                        duration: newPhase.duration * 60
-                    });
+                    timerEvents.emit({ type: 'SELECT_PHASE', duration: newPhase.duration * 60 });
                 }
             },
 
@@ -115,22 +111,22 @@ export const useCycleStore = create<CycleStore>()(
                     };
                 }
 
-                const user = require('@/features/auth').useAuthStore.getState().user;
-                if (!user || user.isGuest) {
+                const { user, isGuest } = useAuthStore.getState();
+                if (!user || isGuest) {
                     set({ cycles: [...cycles, newCycle], currentCycleId: newCycle.id });
                     return;
                 }
 
-                await createNewCycleInDb(user.uid, newCycle);
+                await createNewCycleInDb(user.id, newCycle);
             },
 
             saveCurrentCycle: async () => {
                 const { cycles, currentCycleId } = get();
                 const currentCycle = cycles.find(c => c.id === currentCycleId);
-                const user = require('@/features/auth').useAuthStore.getState().user;
+                const { user, isGuest } = useAuthStore.getState();
 
-                if (!user || user.isGuest || !currentCycle) return;
-                await saveCycle(user.uid, currentCycle);
+                if (!user || isGuest || !currentCycle) return;
+                await saveCycle(user.id, currentCycle);
             },
 
             deleteCycle: async (cycleId) => {
@@ -138,20 +134,20 @@ export const useCycleStore = create<CycleStore>()(
                     console.warn('Cannot delete the last cycle');
                     return;
                 }
-                require('@/features/timer').useTimerStore.getState().send({ type: 'STOP_FOR_EDIT' });
+                timerEvents.emit({ type: 'STOP_FOR_EDIT' });
                 const { cycles, currentCycleId } = get();
-                const user = require('@/features/auth').useAuthStore.getState().user;
+                const { user, isGuest } = useAuthStore.getState();
 
                 if (currentCycleId === cycleId) {
                     const newCurrentCycle = cycles.find(c => c.id !== cycleId) || cycleTemplates[0];
                     set({ currentCycleId: newCurrentCycle.id, currentPhaseIndex: 0 });
                 }
 
-                if (!user || user.isGuest) {
+                if (!user || isGuest) {
                     set({ cycles: cycles.filter(c => c.id !== cycleId) });
                     return;
                 }
-                await deleteCycleFromDb(user.uid, cycleId);
+                await deleteCycleFromDb(user.id, cycleId);
             },
 
             addPhase: (cycleId, newPhaseData) => {
@@ -172,7 +168,7 @@ export const useCycleStore = create<CycleStore>()(
             },
 
             updatePhase: (cycleId, phaseId, updates) => {
-                require('@/features/timer').useTimerStore.getState().send({ type: 'STOP_FOR_EDIT' });
+                timerEvents.emit({ type: 'STOP_FOR_EDIT' });
                 set(state => {
                     const cycle = state.cycles.find(c => c.id === cycleId);
                     if (!cycle) return {};
@@ -194,8 +190,8 @@ export const useCycleStore = create<CycleStore>()(
                         return {};
                     }
                     
-                    require('@/features/timer').useTimerStore.getState().send({ type: 'STOP_FOR_EDIT' });
-                    
+                    timerEvents.emit({ type: 'STOP_FOR_EDIT' });
+
                     const updatedPhases = cycle.phases.filter(p => p.id !== phaseId);
                     const updatedCycle = { ...cycle, phases: updatedPhases, updatedAt: Date.now() };
                     

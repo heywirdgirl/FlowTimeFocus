@@ -8,17 +8,12 @@ export const useSettingsStore = create<SettingsState & SettingsActions>()(
     (set) => ({
       theme: 'dark',
       setTheme: (theme) => set({ theme }),
-      playSounds: true,
-      toggleSounds: () => set((state) => ({ playSounds: !state.playSounds })),
     }),
     {
       name: 'settings-storage',
-      partialize: (state) => (
-        {
-          theme: state.theme, 
-          playSounds: state.playSounds
-        }
-      ), 
+      partialize: (state) => ({
+        theme: state.theme,
+      }),
     }
   )
 );
