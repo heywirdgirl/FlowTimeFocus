@@ -1,10 +1,20 @@
-# Flow Time App v1
+# FlowTime Focus
 
-This is a Next.js application designed for time management using a highly configurable "flow time" or Pomodoro-like technique. It uses Zustand for state management, XState for the timer logic, and Firebase for backend data persistence and authentication.
+A timer app for structured focus sessions built on Next.js 15. Users can create custom cycles — sequences of timed phases (work, break, breathing, etc.) — and run them with a state-machine-driven countdown timer.
+
+**Key features:**
+- Custom cycle builder: define any number of phases with individual durations
+- Built-in templates: Classic Pomodoro, Wim Hof Breathing, Meditation Training
+- Timer driven by an XState v5 state machine (`idle → running ⇄ paused → finished`)
+- Background color shifts to reflect the active session type (focus vs. rest)
+- Firebase Auth + Firestore sync for authenticated users; guest mode with in-memory state
+- Theme support (light/dark)
+
+**Stack:** Next.js 15 (App Router) · TypeScript · Zustand · XState v5 · Firebase · Shadcn UI · Tailwind CSS
 
 ## Project Structure
 
-The project is organized following the principles of feature-driven design, which helps in separating concerns and improving scalability.
+The project follows feature-driven design — each feature is a self-contained module with its own components, hooks, and store.
 
 ```
 src
