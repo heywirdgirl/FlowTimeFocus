@@ -21,3 +21,4 @@ firebase-debug.log
 
 # Other
 /coverage
+.env
