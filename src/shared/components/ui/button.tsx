@@ -39,7 +39,7 @@ Button.displayName = "Button"
 
 export { Button }
 
-export const buttonVariants = {
+const _buttonVariants = {
   default: "bg-primary text-primary-foreground hover:bg-primary/90",
   destructive: "bg-destructive text-destructive-foreground hover:bg-destructive/90",
   outline: "border border-input bg-background hover:bg-accent hover:text-accent-foreground",
@@ -47,3 +47,13 @@ export const buttonVariants = {
   ghost: "hover:bg-accent hover:text-accent-foreground",
   link: "text-primary underline-offset-4 hover:underline",
 }
+
+function buttonVariantsFn(opts?: { variant?: keyof typeof _buttonVariants }) {
+  if (!opts) return _buttonVariants
+  return _buttonVariants[opts.variant ?? "default"]
+}
+
+const buttonVariants: any = Object.assign(buttonVariantsFn, _buttonVariants)
+
+export { buttonVariants }
+

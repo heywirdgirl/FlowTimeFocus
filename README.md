@@ -23,6 +23,14 @@ src
 │   ├── globals.css
 │   ├── layout.tsx
 │   └── page.tsx
+├── components
+│   └── ui
+│       ├── button.tsx
+│       ├── dialog.tsx
+│       ├── dropdown-menu.tsx
+│       ├── popover.tsx
+│       ├── select.tsx
+│       └── tooltip.tsx
 ├── core
 │   ├── client-initializer.tsx
 │   ├── index.ts
@@ -142,6 +150,7 @@ src
     *   `sync-store-gate.tsx`: Manages the synchronization of the Zustand store with Firebase.
 *   **`src/features`**: Each feature of the application (e.g., `auth`, `cycles`, `timer`, `theme`) is a self-contained module. Each feature folder typically contains its own `components`, `hooks`, and `store`.
 *   **`src/shared`**: Contains code that is shared across multiple features. This includes reusable UI `components` (from Shadcn UI), `hooks`, `lib` (like Firebase configuration), and `types`.
+*   **`src/components/ui`**: Contains freshly scaffolded Shadcn UI primitives for the app shell and new component wiring, such as `button`, `dialog`, `dropdown-menu`, `popover`, `select`, and `tooltip`.
 
 ## Main File Functionalities
 

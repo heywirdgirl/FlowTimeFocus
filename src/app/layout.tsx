@@ -6,6 +6,10 @@ import { Toaster } from "@/shared/components/ui/toaster";
 import { Header, Footer } from "@/shared/components/layout";
 import { ClientInitializer, SyncStoreGate } from '@/core';
 import { ThemeProvider } from '@/features/theme';
+import { Geist } from "next/font/google";
+import { cn } from "@/lib/utils";
+
+const geist = Geist({subsets:['latin'],variable:'--font-sans'});
 
 export const metadata: Metadata = {
   title: 'FlowTime Focus',
@@ -18,7 +22,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" suppressHydrationWarning className={cn("font-sans", geist.variable)}>
         <body>
           <ThemeProvider>
             <SyncStoreGate /> 
